@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
+import { DEFAULT_COMPETITORS } from '../src/competitors.js';
 import { buildFinalStartOrder, calculateEventPoints, parseResult, rankStandings } from '../src/scoring.js';
+
+assert.equal(DEFAULT_COMPETITORS.length, 15);
+assert.ok(DEFAULT_COMPETITORS.every(competitor => competitor.photo));
 
 assert.equal(parseResult('1:10.50', 'low').val, 70.5);
 assert.equal(parseResult('018.5', 'low').isDist, true);

@@ -1,14 +1,17 @@
-const CACHE_NAME = 'strongman-next-v0.1.0';
+const CACHE_NAME = 'strongman-next-v0.2.0';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
   './version.json',
   './src/app.js',
+  './src/competitors.js',
   './src/data.js',
   './src/scoring.js',
   './src/storage.js',
   './src/styles.css',
+  './assets/icon-192.png',
+  './assets/icon-512.png',
   './assets/logo-strong-man.png'
 ];
 
@@ -30,6 +33,7 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     fetch(event.request)
       .then(response => {
+        if (!response || response.status !== 200) return response;
         const copy = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
         return response;

@@ -110,6 +110,30 @@ summary:focus-visible {
   backdrop-filter: blur(16px);
 }
 
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.utility-button {
+  min-height: 44px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-small);
+  padding: 9px 12px;
+  color: var(--navy);
+  background: #fff;
+  font-weight: 1000;
+}
+
+.utility-button.is-active {
+  color: #fff;
+  border-color: var(--orange);
+  background: var(--orange);
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -383,7 +407,7 @@ label span {
 
 .select-card {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   align-items: center;
   width: 100%;
   min-height: 70px;
@@ -394,6 +418,31 @@ label span {
   color: var(--ink);
   text-align: left;
   background: var(--surface-strong);
+}
+
+.avatar {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid var(--orange);
+  border-radius: 999px;
+  color: #fff;
+  background: var(--navy);
+  font-size: 0.82rem;
+  font-weight: 1000;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar--large {
+  width: 58px;
+  height: 58px;
 }
 
 .select-card.is-selected,
@@ -573,7 +622,7 @@ label span {
 
 .result-card header {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto auto minmax(0, 1fr);
   align-items: center;
   gap: 12px;
 }
@@ -590,8 +639,68 @@ label span {
 
 .quick-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 10px;
+}
+
+.stopwatch-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: grid;
+  place-items: center;
+  padding: max(18px, env(safe-area-inset-top)) 14px max(18px, env(safe-area-inset-bottom));
+  color: #fff;
+  background: #020817;
+}
+
+.stopwatch-panel {
+  position: relative;
+  display: grid;
+  width: min(100%, 760px);
+  gap: 18px;
+  text-align: center;
+}
+
+.stopwatch-close {
+  position: absolute;
+  top: -6px;
+  right: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(255,255,255,0.12);
+  font-size: 2rem;
+  font-weight: 900;
+}
+
+.stopwatch-panel h2 {
+  color: #fff;
+  font-size: clamp(1.4rem, 6vw, 2.6rem);
+}
+
+.stopwatch-time {
+  color: #39ff14;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(4rem, 21vw, 10rem);
+  font-weight: 1000;
+  line-height: 1;
+  text-shadow: 0 0 26px rgba(57,255,20,0.45);
+}
+
+.stopwatch-main {
+  min-height: 132px;
+  border-radius: var(--radius);
+  color: #04111f;
+  background: #39ff14;
+  font-size: clamp(2rem, 10vw, 4rem);
+  font-weight: 1000;
+}
+
+.stopwatch-main.is-running {
+  color: #fff;
+  background: var(--red);
 }
 
 .summary-accordion {
@@ -753,6 +862,39 @@ label span {
   transform: translateY(0);
 }
 
+body.outdoor-mode {
+  --bg: #f7fbff;
+  --surface: #ffffff;
+  --surface-strong: #ffffff;
+  --ink: #020617;
+  --muted: #26384b;
+  --line: #8091a5;
+  --shadow: 0 10px 0 rgba(7, 21, 36, 0.12);
+}
+
+body.outdoor-mode .hero-card,
+body.outdoor-mode .panel,
+body.outdoor-mode .accordion,
+body.outdoor-mode .score-header,
+body.outdoor-mode .result-card,
+body.outdoor-mode .standing-card,
+body.outdoor-mode .order-card {
+  border-width: 2px;
+}
+
+body.outdoor-mode .primary-button,
+body.outdoor-mode .success-button,
+body.outdoor-mode .danger-button,
+body.outdoor-mode .secondary-button,
+body.outdoor-mode .ghost-button,
+body.outdoor-mode .utility-button {
+  border: 2px solid currentColor;
+}
+
+body.outdoor-mode .sticky-actions {
+  background: rgba(255,255,255,0.97);
+}
+
 @media (min-width: 700px) {
   .app-shell {
     padding-inline: 22px;
@@ -789,6 +931,10 @@ label span {
   .score-header {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
+  }
+
+  .quick-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

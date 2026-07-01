@@ -1,6 +1,7 @@
-export const APP_VERSION = '0.1.0';
+import { DEFAULT_COMPETITORS } from './competitors.js';
 
-export const DEFAULT_COMPETITORS = [];
+export const APP_VERSION = '0.2.0';
+export { DEFAULT_COMPETITORS };
 
 export const DEFAULT_EVENTS = [
   { name: 'Kule', type: 'low' },

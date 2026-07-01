@@ -15,6 +15,8 @@ import {
 
 const app = document.getElementById('app');
 const collator = new Intl.Collator('pl', { sensitivity: 'base' });
+let deferredInstallPrompt = null;
+let stopwatchTimer = null;
 const STAGES = ['setup', 'draw', 'scoring', 'summary'];
 const STAGE_LABELS = {
   setup: 'Przygotowanie',
@@ -27,6 +29,7 @@ let state = hydrateState(loadSavedState());
 state.ui = createUiState();
 render();
 registerServiceWorker();
+initPwaInstall();
 
 app.addEventListener('click', handleClick);
 app.addEventListener('input', handleInput);
@@ -46,6 +49,7 @@ function createInitialState() {
     eventLocation: '',
     backupEmail: '',
     finalistsLimit: 5,
+    outdoorMode: true,
     logoData: null,
     competitors,
     events,
@@ -70,7 +74,9 @@ function createUiState() {
       events: true,
       safety: false,
       help: false
-    }
+    },
+    installHelpOpen: false,
+    stopwatch: null
   };
 }
 
@@ -81,7 +87,7 @@ function hydrateState(saved) {
   const next = {
     ...base,
     ...saved,
-    competitors: normalizeCompetitors(saved.competitors || []),
+    competitors: mergeBaseCompetitors(base.competitors, normalizeCompetitors(saved.competitors || [])),
     events: normalizeEvents(saved.events || DEFAULT_EVENTS),
     selectedCompetitorIds: Array.isArray(saved.selectedCompetitorIds) ? saved.selectedCompetitorIds : [],
     selectedEventIds: Array.isArray(saved.selectedEventIds) ? saved.selectedEventIds : [],
@@ -117,11 +123,32 @@ function normalizeCompetitors(items) {
         id: source.id || `competitor-${slug(name)}-${index}`,
         name,
         category: source.category || source.categories?.[0] || '',
+        categories: Array.isArray(source.categories) ? source.categories : [source.category].filter(Boolean),
+        birthDate: source.birthDate || '',
+        residence: source.residence || '',
+        height: source.height || '',
+        weight: source.weight || '',
+        notes: source.notes || '',
         photo: source.photo || ''
       };
     })
     .filter(Boolean)
     .sort((a, b) => collator.compare(a.name, b.name));
+}
+
+function mergeBaseCompetitors(baseCompetitors, savedCompetitors) {
+  const byKey = new Map();
+  [...baseCompetitors, ...savedCompetitors].forEach(competitor => {
+    const key = normalizeKey(competitor.name);
+    if (!key) return;
+    byKey.set(key, {
+      ...byKey.get(key),
+      ...competitor,
+      photo: competitor.photo || byKey.get(key)?.photo || '',
+      categories: competitor.categories?.length ? competitor.categories : byKey.get(key)?.categories || []
+    });
+  });
+  return [...byKey.values()].sort((a, b) => collator.compare(a.name, b.name));
 }
 
 function normalizeEvents(items) {
@@ -146,6 +173,7 @@ function normalizeEvents(items) {
 }
 
 function render() {
+  applyEnvironment();
   document.documentElement.dataset.stage = state.stage;
   const eventTitle = state.eventName?.trim() || 'Nowe zawody';
   app.innerHTML = `
@@ -158,7 +186,11 @@ function render() {
           <p>${escapeHtml(stageSubtitle())}</p>
         </div>
       </div>
-      <button class="icon-button" type="button" data-action="check-update" aria-label="Sprawdź aktualizację">↻</button>
+      <div class="top-actions">
+        <button class="utility-button install-button" type="button" data-action="install-app">Instaluj</button>
+        <button class="utility-button ${state.outdoorMode ? 'is-active' : ''}" type="button" data-action="toggle-outdoor">Słońce</button>
+        <button class="icon-button" type="button" data-action="check-update" aria-label="Sprawdź aktualizację">↻</button>
+      </div>
     </header>
 
     <nav class="stepper" aria-label="Etapy zawodów">
@@ -175,7 +207,10 @@ function render() {
     </main>
 
     ${renderResetGuard()}
+    ${renderInstallHelp()}
+    ${renderStopwatch()}
   `;
+  syncStopwatchTicker();
 }
 
 function renderStage() {
@@ -305,12 +340,14 @@ function renderCompetitorSelection() {
   return ordered.map(competitor => {
     const selectedIndex = state.selectedCompetitorIds.indexOf(competitor.id);
     const selected = selectedIndex >= 0;
+    const meta = [competitor.category, competitor.residence, competitor.weight ? `${competitor.weight} kg` : ''].filter(Boolean).join(' · ');
     return `
-      <button type="button" class="select-card ${selected ? 'is-selected' : ''}" data-action="toggle-competitor" data-id="${escapeAttr(competitor.id)}" data-filter-text="${escapeAttr(competitor.name)}">
+      <button type="button" class="select-card ${selected ? 'is-selected' : ''}" data-action="toggle-competitor" data-id="${escapeAttr(competitor.id)}" data-filter-text="${escapeAttr(`${competitor.name} ${meta} ${competitor.notes || ''}`)}">
         <span class="order-pill">${selected ? selectedIndex + 1 : '+'}</span>
+        <span class="avatar">${competitor.photo ? `<img src="${escapeAttr(competitor.photo)}" alt="">` : escapeHtml(initials(competitor.name))}</span>
         <span class="select-card__main">
           <strong>${escapeHtml(competitor.name)}</strong>
-          ${competitor.category ? `<small>${escapeHtml(competitor.category)}</small>` : '<small>Dotknij, aby wybrać</small>'}
+          ${meta ? `<small>${escapeHtml(meta)}</small>` : '<small>Dotknij, aby wybrać</small>'}
         </span>
         <span class="check-pill">${selected ? '✓' : ''}</span>
       </button>
@@ -450,6 +487,7 @@ function renderResultCard(id, index, event, draft, finalized) {
     <article class="result-card ${String(value).trim() ? 'has-value' : ''}">
       <header>
         <span class="order-pill">${index + 1}</span>
+        <span class="avatar avatar--large">${competitor?.photo ? `<img src="${escapeAttr(competitor.photo)}" alt="">` : escapeHtml(initials(competitor?.name || ''))}</span>
         <div>
           <strong>${escapeHtml(competitor?.name || 'Zawodnik')}</strong>
           <small>${escapeHtml(status)}</small>
@@ -460,6 +498,7 @@ function renderResultCard(id, index, event, draft, finalized) {
         <button type="button" class="success-button compact-ok" data-action="accept-result" data-id="${escapeAttr(id)}">OK</button>
       </div>
       <div class="quick-actions">
+        <button type="button" class="secondary-button" data-action="open-stopwatch" data-id="${escapeAttr(id)}">Stoper</button>
         <button type="button" class="secondary-button" data-action="set-dnf" data-id="${escapeAttr(id)}">DNF / 0</button>
         <button type="button" class="secondary-button" data-action="clear-result" data-id="${escapeAttr(id)}">Wyczyść</button>
       </div>
@@ -517,6 +556,7 @@ function renderSummary() {
       </div>
       <div class="button-column">
         <button type="button" class="secondary-button" data-action="export-state">Eksportuj pełny stan</button>
+        <button type="button" class="success-button" data-action="export-results-html">Eksportuj wyniki HTML</button>
         <button type="button" class="secondary-button" data-action="go-scoring">Wróć do wyników</button>
       </div>
     </section>
@@ -605,6 +645,44 @@ function renderResetGuard() {
   `;
 }
 
+function renderInstallHelp() {
+  if (!state.ui.installHelpOpen) return '';
+  return `
+    <div class="modal-backdrop" role="presentation">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="install-title">
+        <h2 id="install-title">Instalacja aplikacji</h2>
+        <p>Na iPhonie i iPadzie użyj przycisku udostępniania w Safari, a potem wybierz „Do ekranu początkowego”. Na PC wybierz ikonę instalacji w pasku adresu przeglądarki.</p>
+        <p>Aplikacja po instalacji działa offline w zakresie prowadzenia zawodów, wpisywania wyników, punktów kontrolnych oraz eksportu plików.</p>
+        <button type="button" class="primary-button" data-action="close-install-help">Rozumiem</button>
+      </section>
+    </div>
+  `;
+}
+
+function renderStopwatch() {
+  const stopwatch = state.ui.stopwatch;
+  if (!stopwatch) return '';
+  const competitor = competitorById(stopwatch.competitorId);
+  const elapsed = getStopwatchElapsedMs();
+  return `
+    <div class="stopwatch-overlay" role="dialog" aria-modal="true" aria-labelledby="stopwatch-title">
+      <section class="stopwatch-panel">
+        <button type="button" class="stopwatch-close" data-action="stopwatch-close" aria-label="Zamknij stoper">×</button>
+        <span class="eyebrow">Stoper wyniku</span>
+        <h2 id="stopwatch-title">${escapeHtml(competitor?.name || 'Zawodnik')}</h2>
+        <div class="stopwatch-time" data-stopwatch-time>${formatStopwatch(elapsed)}</div>
+        <button type="button" class="stopwatch-main ${stopwatch.running ? 'is-running' : ''}" data-action="stopwatch-toggle">
+          ${stopwatch.running ? 'STOP' : elapsed > 0 ? 'START DALEJ' : 'START'}
+        </button>
+        <div class="button-row">
+          <button type="button" class="secondary-button" data-action="stopwatch-reset">Reset</button>
+          <button type="button" class="success-button" data-action="stopwatch-save">Zapisz wynik</button>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
 async function handleClick(event) {
   const trigger = event.target.closest('[data-action]');
   if (!trigger) return;
@@ -645,6 +723,15 @@ async function handleClick(event) {
   if (action === 'toggle-all-checkpoints') return toggleAllCheckpoints(trigger);
   if (action === 'delete-selected-checkpoints') return deleteSelectedCheckpoints();
   if (action === 'check-update') return checkForUpdates();
+  if (action === 'install-app') return installApp();
+  if (action === 'toggle-outdoor') return toggleOutdoorMode();
+  if (action === 'close-install-help') return closeInstallHelp();
+  if (action === 'open-stopwatch') return openStopwatch(id);
+  if (action === 'stopwatch-toggle') return toggleStopwatch();
+  if (action === 'stopwatch-reset') return resetStopwatch();
+  if (action === 'stopwatch-save') return saveStopwatchResult();
+  if (action === 'stopwatch-close') return closeStopwatch();
+  if (action === 'export-results-html') return exportResultsHtml();
 }
 
 function handleInput(event) {
@@ -1019,6 +1106,103 @@ function deleteSelectedCheckpoints() {
   flash('Punkty kontrolne usunięte.');
 }
 
+async function installApp() {
+  if (isStandalone()) {
+    flash('Aplikacja jest już uruchomiona jak zainstalowana.');
+    return;
+  }
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    const result = await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    flash(result.outcome === 'accepted' ? 'Instalacja rozpoczęta.' : 'Instalację można uruchomić później.');
+    render();
+    return;
+  }
+  state.ui.installHelpOpen = true;
+  render();
+}
+
+function closeInstallHelp() {
+  state.ui.installHelpOpen = false;
+  render();
+}
+
+function toggleOutdoorMode() {
+  state.outdoorMode = !state.outdoorMode;
+  persistAndRender(state.outdoorMode ? 'Tryb pełnego słońca włączony.' : 'Tryb pełnego słońca wyłączony.');
+}
+
+function openStopwatch(id) {
+  state.ui.stopwatch = {
+    competitorId: id,
+    elapsedMs: 0,
+    running: false,
+    startedAt: 0
+  };
+  signal('open');
+  render();
+}
+
+function toggleStopwatch() {
+  const stopwatch = state.ui.stopwatch;
+  if (!stopwatch) return;
+  if (stopwatch.running) {
+    stopwatch.elapsedMs = getStopwatchElapsedMs();
+    stopwatch.running = false;
+    stopwatch.startedAt = 0;
+    signal('stop');
+  } else {
+    stopwatch.running = true;
+    stopwatch.startedAt = performance.now();
+    signal('start');
+  }
+  render();
+}
+
+function resetStopwatch() {
+  const stopwatch = state.ui.stopwatch;
+  if (!stopwatch) return;
+  stopwatch.elapsedMs = 0;
+  stopwatch.startedAt = stopwatch.running ? performance.now() : 0;
+  signal('reset');
+  render();
+}
+
+function saveStopwatchResult() {
+  const stopwatch = state.ui.stopwatch;
+  if (!stopwatch) return;
+  const seconds = (getStopwatchElapsedMs() / 1000).toFixed(2);
+  const draft = getCurrentDraft();
+  draft[stopwatch.competitorId] = seconds;
+  state.ui.stopwatch = null;
+  stopStopwatchTicker();
+  persistAndRender(`Zapisano czas: ${seconds}s.`);
+}
+
+function closeStopwatch() {
+  state.ui.stopwatch = null;
+  stopStopwatchTicker();
+  render();
+}
+
+function exportResultsHtml() {
+  const competitors = state.selectedCompetitorIds.map(id => competitorById(id)).filter(Boolean);
+  const standings = rankStandings(competitors, state.scores, state.eventHistory);
+  const html = buildResultsHtml(standings);
+  const filename = safeFilename(`${state.eventName || 'zawody'}_wyniki_${timestamp()}.html`);
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  flash('Eksport wyników HTML przygotowany.');
+}
+
 async function checkForUpdates() {
   try {
     if ('serviceWorker' in navigator) {
@@ -1169,6 +1353,137 @@ function flash(message) {
   }, 2600);
 }
 
+function applyEnvironment() {
+  document.body.classList.toggle('outdoor-mode', Boolean(state.outdoorMode));
+  document.body.classList.toggle('is-standalone', isStandalone());
+}
+
+function isStandalone() {
+  return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function initPwaInstall() {
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    document.body.classList.add('can-install');
+  });
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    flash('Aplikacja została zainstalowana.');
+    render();
+  });
+}
+
+function getStopwatchElapsedMs() {
+  const stopwatch = state.ui.stopwatch;
+  if (!stopwatch) return 0;
+  if (!stopwatch.running) return stopwatch.elapsedMs || 0;
+  return (stopwatch.elapsedMs || 0) + Math.max(0, performance.now() - stopwatch.startedAt);
+}
+
+function formatStopwatch(ms) {
+  const totalCentiseconds = Math.floor(ms / 10);
+  const minutes = Math.floor(totalCentiseconds / 6000);
+  const seconds = Math.floor((totalCentiseconds % 6000) / 100);
+  const centiseconds = totalCentiseconds % 100;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(centiseconds).padStart(2, '0')}`;
+}
+
+function syncStopwatchTicker() {
+  stopStopwatchTicker();
+  if (!state.ui.stopwatch?.running) return;
+  stopwatchTimer = window.setInterval(() => {
+    const target = document.querySelector('[data-stopwatch-time]');
+    if (target) target.textContent = formatStopwatch(getStopwatchElapsedMs());
+  }, 80);
+}
+
+function stopStopwatchTicker() {
+  if (stopwatchTimer) {
+    window.clearInterval(stopwatchTimer);
+    stopwatchTimer = null;
+  }
+}
+
+function signal(type) {
+  if (navigator.vibrate) {
+    const patterns = {
+      open: [35],
+      start: [90],
+      stop: [150, 70, 80],
+      reset: [40, 40, 40]
+    };
+    navigator.vibrate(patterns[type] || [50]);
+  }
+  try {
+    const audio = new AudioContext();
+    const oscillator = audio.createOscillator();
+    const gain = audio.createGain();
+    oscillator.frequency.value = type === 'stop' ? 330 : 660;
+    gain.gain.value = 0.04;
+    oscillator.connect(gain);
+    gain.connect(audio.destination);
+    oscillator.start();
+    oscillator.stop(audio.currentTime + 0.08);
+  } catch {
+    // Audio is best-effort only; some browsers require user activation.
+  }
+}
+
+function buildResultsHtml(standings) {
+  const rows = standings.map(row => `
+    <tr>
+      <td>${row.rank}</td>
+      <td>${escapeHtml(row.name)}</td>
+      <td>${row.points.toFixed(2)}</td>
+      <td>${escapeHtml(row.tieReason || '')}</td>
+    </tr>
+  `).join('');
+  const history = state.eventHistory.map(event => `
+    <h2>${event.nr}. ${escapeHtml(event.name)}</h2>
+    <table>
+      <thead><tr><th>Miejsce</th><th>Zawodnik</th><th>Wynik</th><th>Punkty</th></tr></thead>
+      <tbody>
+        ${event.results.map(result => `
+          <tr>
+            <td>${escapeHtml(String(result.place))}</td>
+            <td>${escapeHtml(result.name)}</td>
+            <td>${escapeHtml(String(result.result))}</td>
+            <td>${escapeHtml(String(result.points))}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `).join('');
+  return `<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <title>Wyniki - ${escapeHtml(state.eventName || 'Zawody Strong Man')}</title>
+  <style>
+    body{font-family:Arial,sans-serif;margin:24px;color:#111827}
+    h1{font-size:28px;margin-bottom:4px}
+    h2{margin-top:28px}
+    table{width:100%;border-collapse:collapse;margin:12px 0 24px}
+    th,td{border:1px solid #d1d5db;padding:9px;text-align:left}
+    th{background:#0b1f36;color:white}
+    tr:nth-child(even){background:#f8fafc}
+  </style>
+</head>
+<body>
+  <h1>${escapeHtml(state.eventName || 'Zawody Strong Man')}</h1>
+  <p>${escapeHtml(state.eventLocation || '')} · ${new Date().toLocaleString('pl-PL')}</p>
+  <h2>Klasyfikacja</h2>
+  <table>
+    <thead><tr><th>#</th><th>Zawodnik</th><th>Punkty</th><th>Tie-break</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  ${history}
+</body>
+</html>`;
+}
+
 function getLogoSrc() {
   return state.logoData || 'assets/logo-strong-man.png';
 }
@@ -1186,6 +1501,16 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
+}
+
+function initials(name) {
+  return String(name || '?')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0])
+    .join('')
+    .toUpperCase() || '?';
 }
 
 function escapeHtml(value) {
