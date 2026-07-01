@@ -1,0 +1,10 @@
+{
+  "name": "strongman-next",
+  "version": "0.1.0",
+  "description": "Nowa, mobilna aplikacja do prowadzenia zawodów Strong Man.",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/scoring.test.js",
+    "serve": "node scripts/serve.js"
+  }
+}

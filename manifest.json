@@ -1,0 +1,17 @@
+{
+  "name": "Strongman Next",
+  "short_name": "Strongman",
+  "description": "Mobilne prowadzenie zawodów Strong Man.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f3f6fb",
+  "theme_color": "#0b1f36",
+  "icons": [
+    {
+      "src": "assets/logo-strong-man.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
