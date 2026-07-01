@@ -27,6 +27,7 @@ const STAGE_LABELS = {
 
 let state = hydrateState(loadSavedState());
 state.ui = createUiState();
+if (isStandalone()) state.appInstalled = true;
 render();
 registerServiceWorker();
 initPwaInstall();
@@ -50,6 +51,7 @@ function createInitialState() {
     backupEmail: '',
     finalistsLimit: 5,
     outdoorMode: true,
+    appInstalled: false,
     logoData: null,
     competitors,
     events,
@@ -176,6 +178,7 @@ function render() {
   applyEnvironment();
   document.documentElement.dataset.stage = state.stage;
   const eventTitle = state.eventName?.trim() || 'Nowe zawody';
+  const showInstallAction = shouldShowInstallAction();
   app.innerHTML = `
     <header class="topbar">
       <div class="brand">
@@ -186,10 +189,10 @@ function render() {
           <p>${escapeHtml(stageSubtitle())}</p>
         </div>
       </div>
-      <div class="top-actions">
-        <button class="utility-button install-button" type="button" data-action="install-app">Instaluj</button>
-        <button class="utility-button ${state.outdoorMode ? 'is-active' : ''}" type="button" data-action="toggle-outdoor">Słońce</button>
-        <button class="icon-button" type="button" data-action="check-update" aria-label="Sprawdź aktualizację">↻</button>
+      <div class="top-actions ${showInstallAction ? 'has-install' : 'is-compact'}" aria-label="Szybkie akcje">
+        ${showInstallAction ? '<button class="utility-button install-button" type="button" data-action="install-app">Instaluj</button>' : ''}
+        <button class="utility-button sun-button ${state.outdoorMode ? 'is-active' : ''}" type="button" data-action="toggle-outdoor">Słońce</button>
+        <button class="icon-button update-button" type="button" data-action="check-update" aria-label="Sprawdź aktualizację">↻</button>
       </div>
     </header>
 
@@ -442,6 +445,8 @@ function renderScoring() {
   const finalized = state.eventHistory[state.currentEventIndex];
   const filled = orderIds.filter(id => String(draft[id] || '').trim()).length;
   const canGoNext = Boolean(finalized);
+  const allResultsEntered = orderIds.length > 0 && filled === orderIds.length;
+  const guideFinalize = !canGoNext && allResultsEntered;
   const finalEvent = isFinalEventIndex(state.currentEventIndex);
   const nextIsFinal = isFinalEventIndex(state.currentEventIndex + 1);
   const nextLabel = state.currentEventIndex >= state.selectedEventIds.length - 1
@@ -466,13 +471,14 @@ function renderScoring() {
     </section>
 
     <div class="sticky-actions">
-      <button type="button" class="success-button action-large ${!canGoNext ? 'is-guided' : ''}" data-action="finalize-event">
+      <button type="button" class="success-button action-large ${guideFinalize ? 'is-guided' : ''}" data-action="finalize-event">
         ${finalized ? 'Przelicz podsumowanie' : 'Podsumuj konkurencję'}
       </button>
       <button type="button" class="primary-button action-large ${canGoNext ? 'is-guided' : ''}" data-action="next-event" ${canGoNext ? '' : 'disabled'}>
         ${nextLabel}
       </button>
       <button type="button" class="secondary-button action-large" data-action="undo-event" ${state.eventHistory.length ? '' : 'disabled'}>Cofnij ostatnie podsumowanie</button>
+      ${!finalized && !allResultsEntered ? `<p class="action-hint">Do podsumowania brakuje ${orderIds.length - filled} wyników. Przycisk rozbłyśnie po ostatnim zawodniku.</p>` : ''}
     </div>
   `;
 }
@@ -574,17 +580,40 @@ function renderSummary() {
       `).join('')}
     </section>
 
-    <section class="panel">
-      <h2>Historia konkurencji</h2>
-      <div class="history-list">
-        ${state.eventHistory.map(event => `
-          <article>
-            <strong>${event.nr}. ${escapeHtml(event.name)}</strong>
-            <small>${EVENT_TYPE_LABEL[event.type]}</small>
-          </article>
-        `).join('')}
+    <section class="panel event-breakdown">
+      <h2>Punkty za konkurencje</h2>
+      <p>Pełne podsumowanie każdej rozegranej konkurencji: miejsce, wynik i punkty.</p>
+      <div class="event-summary-list">
+        ${state.eventHistory.map(event => renderEventSummaryDetails(event)).join('')}
       </div>
     </section>
+  `;
+}
+
+function renderEventSummaryDetails(event) {
+  const sorted = [...event.results].sort((a, b) => {
+    if (a.place === '-') return 1;
+    if (b.place === '-') return -1;
+    return Number(a.place) - Number(b.place);
+  });
+  const leader = sorted.find(row => row.place !== '-');
+  return `
+    <details class="accordion event-summary-card">
+      <summary>
+        <span>${event.nr}. ${escapeHtml(event.name)}</span>
+        <small>${leader ? `Wygrywa: ${escapeHtml(leader.name)} · ${escapeHtml(String(leader.points))} pkt` : EVENT_TYPE_LABEL[event.type]}</small>
+      </summary>
+      <div class="table-card">
+        ${sorted.map(row => `
+          <div class="table-row">
+            <span>${escapeHtml(String(row.place))}</span>
+            <strong>${escapeHtml(row.name)}</strong>
+            <span>${escapeHtml(String(row.result))}</span>
+            <span>${escapeHtml(String(row.points))} pkt</span>
+          </div>
+        `).join('')}
+      </div>
+    </details>
   `;
 }
 
@@ -1108,12 +1137,19 @@ function deleteSelectedCheckpoints() {
 
 async function installApp() {
   if (isStandalone()) {
+    state.appInstalled = true;
+    persist();
     flash('Aplikacja jest już uruchomiona jak zainstalowana.');
+    render();
     return;
   }
   if (deferredInstallPrompt) {
     deferredInstallPrompt.prompt();
     const result = await deferredInstallPrompt.userChoice;
+    if (result.outcome === 'accepted') {
+      state.appInstalled = true;
+      persist();
+    }
     deferredInstallPrompt = null;
     flash(result.outcome === 'accepted' ? 'Instalacja rozpoczęta.' : 'Instalację można uruchomić później.');
     render();
@@ -1362,6 +1398,10 @@ function isStandalone() {
   return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
 }
 
+function shouldShowInstallAction() {
+  return !state.appInstalled && !isStandalone();
+}
+
 function initPwaInstall() {
   window.addEventListener('beforeinstallprompt', event => {
     event.preventDefault();
@@ -1370,6 +1410,8 @@ function initPwaInstall() {
   });
   window.addEventListener('appinstalled', () => {
     deferredInstallPrompt = null;
+    state.appInstalled = true;
+    persist();
     flash('Aplikacja została zainstalowana.');
     render();
   });

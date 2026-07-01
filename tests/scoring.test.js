@@ -44,6 +44,44 @@ assert.equal(standings[0].id, 'b');
 assert.equal(standings[0].tieStatus, 'Wygrywa remis');
 assert.match(standings[0].tieReason, /więcej 1\. miejsc/);
 
+const standingsBySecondPlaces = rankStandings(
+  [{ id: 'a', name: 'Adam' }, { id: 'b', name: 'Bartek' }, { id: 'c', name: 'Celina' }],
+  { a: 10, b: 10, c: 1 },
+  [
+    { nr: 1, name: 'Belka', type: 'high', results: [
+      { id: 'c', place: 1, points: '3.00', result: '12' },
+      { id: 'a', place: 2, points: '2.00', result: '10' },
+      { id: 'b', place: 3, points: '1.00', result: '8' }
+    ] },
+    { nr: 2, name: 'Kule', type: 'high', results: [
+      { id: 'c', place: 1, points: '3.00', result: '12' },
+      { id: 'a', place: 2, points: '2.00', result: '10' },
+      { id: 'b', place: 3, points: '1.00', result: '8' }
+    ] }
+  ]
+);
+
+assert.equal(standingsBySecondPlaces[0].id, 'a');
+assert.match(standingsBySecondPlaces[0].tieReason, /więcej 2\. miejsc/);
+
+const standingsByLastEvent = rankStandings(
+  [{ id: 'a', name: 'Adam' }, { id: 'b', name: 'Bartek' }],
+  { a: 10, b: 10 },
+  [
+    { nr: 1, name: 'Belka', type: 'high', results: [
+      { id: 'a', place: 1, points: '2.00', result: '11' },
+      { id: 'b', place: 2, points: '1.00', result: '8' }
+    ] },
+    { nr: 2, name: 'Kule', type: 'high', results: [
+      { id: 'b', place: 1, points: '2.00', result: '10' },
+      { id: 'a', place: 2, points: '1.00', result: '9' }
+    ] }
+  ]
+);
+
+assert.equal(standingsByLastEvent[0].id, 'b');
+assert.match(standingsByLastEvent[0].tieReason, /ostatniej wspólnej konkurencji/);
+
 const finalOrder = buildFinalStartOrder(
   [
     { id: 'a', name: 'Adam' },

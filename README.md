@@ -1,6 +1,6 @@
 # Strongman Next
 
-## Wersja testowa 0.2.0
+## Wersja testowa 0.2.1
 
 Ta wersja jest przygotowana jako instalowalna aplikacja PWA dla telefonu, iPada i PC. Po wejściu na stronę z GitHub Pages można ją dodać do ekranu głównego lub zainstalować w przeglądarce na komputerze.
 
@@ -11,6 +11,7 @@ Najważniejsze do testów:
 - tryb `Słońce` o podwyższonym kontraście do pracy na zewnątrz,
 - duże karty wyników z automatycznym zapisem,
 - pełnoekranowy stoper przy zawodniku,
+- pełne podsumowanie punktów za każdą konkurencję w klasyfikacji końcowej,
 - eksport klasyfikacji końcowej do pliku HTML,
 - PWA/offline shell z ikonami aplikacji.
 

@@ -137,16 +137,34 @@ export function breakTie(competitorIdA, competitorIdB, eventHistory, totalCompet
     }
   }
 
-  for (let i = eventHistory.length - 1; i >= 0; i--) {
-    const event = eventHistory[i];
-    const aResult = event.results.find(row => row.id === competitorIdA);
-    const bResult = event.results.find(row => row.id === competitorIdB);
-    if (aResult && bResult) {
-      const aPoints = Number.parseFloat(aResult.points) || 0;
-      const bPoints = Number.parseFloat(bResult.points) || 0;
-      if (aPoints !== bPoints) {
-        return { outcome: bPoints - aPoints, reason: `lepszy wynik w konkurencji ${event.nr}: ${event.name}` };
-      }
+  const lastSharedEvent = [...eventHistory].reverse().find(event =>
+    event.results.some(row => row.id === competitorIdA) &&
+    event.results.some(row => row.id === competitorIdB)
+  );
+
+  if (lastSharedEvent) {
+    const aResult = lastSharedEvent.results.find(row => row.id === competitorIdA);
+    const bResult = lastSharedEvent.results.find(row => row.id === competitorIdB);
+    const aParsed = parseResult(aResult?.rawInput ?? aResult?.result, lastSharedEvent.type);
+    const bParsed = parseResult(bResult?.rawInput ?? bResult?.result, lastSharedEvent.type);
+
+    if (!aParsed.error && !bParsed.error && aParsed.val !== bParsed.val) {
+      const outcome = lastSharedEvent.type === 'high'
+        ? bParsed.val - aParsed.val
+        : aParsed.val - bParsed.val;
+      return {
+        outcome,
+        reason: `lepszy wynik w ostatniej wspólnej konkurencji (${lastSharedEvent.nr}: ${lastSharedEvent.name})`
+      };
+    }
+
+    const aPoints = Number.parseFloat(aResult?.points) || 0;
+    const bPoints = Number.parseFloat(bResult?.points) || 0;
+    if (aPoints !== bPoints) {
+      return {
+        outcome: bPoints - aPoints,
+        reason: `więcej punktów w ostatniej wspólnej konkurencji (${lastSharedEvent.nr}: ${lastSharedEvent.name})`
+      };
     }
   }
 
