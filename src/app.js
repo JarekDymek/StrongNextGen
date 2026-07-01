@@ -24,6 +24,12 @@ const STAGE_LABELS = {
   scoring: 'Wyniki',
   summary: 'Klasyfikacja'
 };
+const STAGE_SHORT_LABELS = {
+  setup: 'Start',
+  draw: 'Kolejność',
+  scoring: 'Wyniki',
+  summary: 'Tabela'
+};
 
 let state = hydrateState(loadSavedState());
 state.ui = createUiState();
@@ -78,7 +84,8 @@ function createUiState() {
       help: false
     },
     installHelpOpen: false,
-    stopwatch: null
+    stopwatch: null,
+    settingsOpen: false
   };
 }
 
@@ -189,18 +196,17 @@ function render() {
           <p>${escapeHtml(stageSubtitle())}</p>
         </div>
       </div>
-      <div class="top-actions ${showInstallAction ? 'has-install' : 'is-compact'}" aria-label="Szybkie akcje">
-        ${showInstallAction ? '<button class="utility-button install-button" type="button" data-action="install-app">Instaluj</button>' : ''}
-        <button class="utility-button sun-button ${state.outdoorMode ? 'is-active' : ''}" type="button" data-action="toggle-outdoor">Słońce</button>
-        <button class="icon-button update-button" type="button" data-action="check-update" aria-label="Sprawdź aktualizację">↻</button>
-      </div>
+      <button class="icon-button settings-button" type="button" data-action="toggle-settings" aria-expanded="${state.ui.settingsOpen ? 'true' : 'false'}" aria-label="Menu aplikacji">☰</button>
     </header>
+
+    ${renderQuickSettings(showInstallAction)}
 
     <nav class="stepper" aria-label="Etapy zawodów">
       ${STAGES.map(stage => `
         <button type="button" class="step ${stage === state.stage ? 'is-active' : ''}" data-action="go-stage" data-stage="${stage}">
           <span>${STAGES.indexOf(stage) + 1}</span>
-          ${STAGE_LABELS[stage]}
+          <b class="step-label-full">${STAGE_LABELS[stage]}</b>
+          <b class="step-label-short">${STAGE_SHORT_LABELS[stage]}</b>
         </button>
       `).join('')}
     </nav>
@@ -221,6 +227,19 @@ function renderStage() {
   if (state.stage === 'scoring') return renderScoring();
   if (state.stage === 'summary') return renderSummary();
   return renderSetup();
+}
+
+function renderQuickSettings(showInstallAction) {
+  if (!state.ui.settingsOpen) return '';
+  return `
+    <section class="quick-settings" aria-label="Menu aplikacji">
+      ${showInstallAction ? '<button class="utility-button install-button" type="button" data-action="install-app">Instaluj</button>' : ''}
+      <button class="utility-button sun-button ${state.outdoorMode ? 'is-active' : ''}" type="button" data-action="toggle-outdoor">
+        ${state.outdoorMode ? 'Słońce: włączone' : 'Słońce: wyłączone'}
+      </button>
+      <button class="utility-button update-button-inline" type="button" data-action="check-update">Sprawdź aktualizację</button>
+    </section>
+  `;
 }
 
 function stageSubtitle() {
@@ -445,8 +464,9 @@ function renderScoring() {
   const finalized = state.eventHistory[state.currentEventIndex];
   const filled = orderIds.filter(id => String(draft[id] || '').trim()).length;
   const canGoNext = Boolean(finalized);
-  const allResultsEntered = orderIds.length > 0 && filled === orderIds.length;
+  const allResultsEntered = areCurrentEventResultsComplete();
   const guideFinalize = !canGoNext && allResultsEntered;
+  const showScoringActions = Boolean(finalized) || allResultsEntered;
   const finalEvent = isFinalEventIndex(state.currentEventIndex);
   const nextIsFinal = isFinalEventIndex(state.currentEventIndex + 1);
   const nextLabel = state.currentEventIndex >= state.selectedEventIds.length - 1
@@ -470,16 +490,17 @@ function renderScoring() {
       ${orderIds.map((id, index) => renderResultCard(id, index, event, draft, finalized)).join('')}
     </section>
 
-    <div class="sticky-actions">
-      <button type="button" class="success-button action-large ${guideFinalize ? 'is-guided' : ''}" data-action="finalize-event">
-        ${finalized ? 'Przelicz podsumowanie' : 'Podsumuj konkurencję'}
-      </button>
-      <button type="button" class="primary-button action-large ${canGoNext ? 'is-guided' : ''}" data-action="next-event" ${canGoNext ? '' : 'disabled'}>
-        ${nextLabel}
-      </button>
-      <button type="button" class="secondary-button action-large" data-action="undo-event" ${state.eventHistory.length ? '' : 'disabled'}>Cofnij ostatnie podsumowanie</button>
-      ${!finalized && !allResultsEntered ? `<p class="action-hint">Do podsumowania brakuje ${orderIds.length - filled} wyników. Przycisk rozbłyśnie po ostatnim zawodniku.</p>` : ''}
-    </div>
+    ${showScoringActions ? `
+      <div class="sticky-actions">
+        <button type="button" class="success-button action-large ${guideFinalize ? 'is-guided' : ''}" data-action="finalize-event">
+          ${finalized ? 'Przelicz podsumowanie' : 'Podsumuj konkurencję'}
+        </button>
+        <button type="button" class="primary-button action-large ${canGoNext ? 'is-guided' : ''}" data-action="next-event" ${canGoNext ? '' : 'disabled'}>
+          ${nextLabel}
+        </button>
+        <button type="button" class="secondary-button action-large" data-action="undo-event" ${state.eventHistory.length ? '' : 'disabled'}>Cofnij ostatnie podsumowanie</button>
+      </div>
+    ` : ''}
   `;
 }
 
@@ -751,6 +772,7 @@ async function handleClick(event) {
   if (action === 'load-checkpoint') return loadCheckpointById(id);
   if (action === 'toggle-all-checkpoints') return toggleAllCheckpoints(trigger);
   if (action === 'delete-selected-checkpoints') return deleteSelectedCheckpoints();
+  if (action === 'toggle-settings') return toggleSettings();
   if (action === 'check-update') return checkForUpdates();
   if (action === 'install-app') return installApp();
   if (action === 'toggle-outdoor') return toggleOutdoorMode();
@@ -779,10 +801,14 @@ function handleInput(event) {
   }
 
   if (target.matches('[data-result]')) {
+    const actionsVisible = Boolean(app.querySelector('.sticky-actions'));
     const draft = getCurrentDraft();
     draft[target.dataset.result] = target.value;
     persist();
     updateResultCardStatus(target);
+    if (actionsVisible && !state.eventHistory[state.currentEventIndex] && !areCurrentEventResultsComplete()) {
+      render();
+    }
     return;
   }
 
@@ -1011,17 +1037,42 @@ function undoEvent() {
 
 function acceptResult(id) {
   const input = app.querySelector(`[data-result="${cssEscape(id)}"]`);
+  const draft = getCurrentDraft();
+  if (!String(draft[id] || '').trim()) {
+    flash('Wpisz wynik albo wybierz DNF / 0.');
+    focusResultInput(id);
+    return;
+  }
+
   if (input) {
     input.closest('.result-card')?.classList.add('has-value');
     input.blur();
   }
-  flash('Wynik zapisany automatycznie.');
+
+  if (focusNextPendingResult(id)) {
+    flash('Wynik zapisany. Następny zawodnik.');
+    return;
+  }
+
+  render();
+  window.setTimeout(() => {
+    app.querySelector('.sticky-actions')?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, 80);
+  flash('Wszystkie wyniki wpisane. Możesz podsumować konkurencję.');
 }
 
 function setResult(id, value) {
   const draft = getCurrentDraft();
   draft[id] = value;
-  persistAndRender();
+  persist();
+  render();
+  if (String(value || '').trim()) {
+    window.setTimeout(() => {
+      if (!focusNextPendingResult(id)) {
+        app.querySelector('.sticky-actions')?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }, 80);
+  }
 }
 
 function createCheckpoint() {
@@ -1164,6 +1215,11 @@ function closeInstallHelp() {
   render();
 }
 
+function toggleSettings() {
+  state.ui.settingsOpen = !state.ui.settingsOpen;
+  render();
+}
+
 function toggleOutdoorMode() {
   state.outdoorMode = !state.outdoorMode;
   persistAndRender(state.outdoorMode ? 'Tryb pełnego słońca włączony.' : 'Tryb pełnego słońca wyłączony.');
@@ -1261,6 +1317,33 @@ function getCurrentDraft() {
   const key = currentEvent()?.id || `event-${state.currentEventIndex}`;
   state.drafts[key] ||= {};
   return state.drafts[key];
+}
+
+function areCurrentEventResultsComplete() {
+  const draft = getCurrentDraft();
+  const orderIds = getOrderForEvent(state.currentEventIndex);
+  return orderIds.length > 0 && orderIds.every(id => String(draft[id] || '').trim());
+}
+
+function focusNextPendingResult(currentId) {
+  const draft = getCurrentDraft();
+  const orderIds = getOrderForEvent(state.currentEventIndex);
+  const currentIndex = Math.max(0, orderIds.indexOf(currentId));
+  const afterCurrent = orderIds.slice(currentIndex + 1).find(id => !String(draft[id] || '').trim());
+  const firstPending = afterCurrent || orderIds.find(id => !String(draft[id] || '').trim());
+  if (!firstPending) return false;
+  focusResultInput(firstPending);
+  return true;
+}
+
+function focusResultInput(id) {
+  const input = app.querySelector(`[data-result="${cssEscape(id)}"]`);
+  if (!input) return;
+  input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  window.setTimeout(() => {
+    input.focus({ preventScroll: true });
+    input.select();
+  }, 180);
 }
 
 function currentEvent() {

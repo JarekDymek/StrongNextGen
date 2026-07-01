@@ -110,15 +110,6 @@ summary:focus-visible {
   backdrop-filter: blur(16px);
 }
 
-.top-actions {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: max-content;
-  align-items: center;
-  gap: 6px;
-  justify-content: flex-end;
-}
-
 .utility-button {
   min-height: 44px;
   border: 2px solid var(--line);
@@ -151,7 +142,7 @@ summary:focus-visible {
   background: var(--orange);
 }
 
-.update-button {
+.settings-button {
   width: 48px;
   height: 48px;
   border-radius: 14px;
@@ -159,7 +150,8 @@ summary:focus-visible {
 }
 
 .brand {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   min-width: 0;
   gap: 12px;
@@ -215,6 +207,17 @@ small {
   margin-bottom: 0;
 }
 
+.quick-settings {
+  display: grid;
+  gap: 8px;
+  margin: -2px 0 12px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  background: rgba(255,255,255,0.96);
+  box-shadow: var(--shadow);
+}
+
 .stepper {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -233,6 +236,16 @@ small {
   background: rgba(255, 255, 255, 0.86);
   font-size: 0.75rem;
   font-weight: 800;
+}
+
+.step b {
+  max-width: 100%;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.step-label-short {
+  display: none;
 }
 
 .step span {
@@ -258,7 +271,7 @@ small {
 .screen {
   display: grid;
   gap: 14px;
-  padding-bottom: 150px;
+  padding-bottom: 82px;
 }
 
 .hero-card,
@@ -952,7 +965,7 @@ body.outdoor-mode .sticky-actions {
 
 @media (max-width: 560px) {
   .topbar {
-    align-items: start;
+    align-items: center;
   }
 
   .brand {
@@ -964,28 +977,32 @@ body.outdoor-mode .sticky-actions {
     height: 44px;
   }
 
-  .top-actions.has-install {
-    grid-auto-flow: row;
-    justify-items: end;
-  }
-
-  .top-actions.is-compact {
-    grid-auto-flow: column;
-  }
-
   .utility-button {
     min-height: 42px;
     padding-inline: 9px;
   }
 
-  .install-button,
-  .sun-button {
-    min-width: 82px;
+  .quick-settings {
+    grid-template-columns: 1fr;
   }
 
-  .update-button {
+  .settings-button {
     width: 46px;
     height: 46px;
+  }
+
+  .step {
+    min-height: 58px;
+    padding: 5px 3px;
+    font-size: 0.72rem;
+  }
+
+  .step-label-full {
+    display: none;
+  }
+
+  .step-label-short {
+    display: block;
   }
 }
 
@@ -999,8 +1016,12 @@ body.outdoor-mode .sticky-actions {
   }
 
   .brand__logo {
-    width: 104px;
-    height: 72px;
+    width: 92px;
+    height: 64px;
+  }
+
+  .quick-settings {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .form-grid {
