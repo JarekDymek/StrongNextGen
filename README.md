@@ -1,6 +1,6 @@
 # Strongman Next
 
-## Wersja testowa 0.2.2
+## Wersja testowa 0.2.3
 
 Ta wersja jest przygotowana jako instalowalna aplikacja PWA dla telefonu, iPada i PC. Po wejściu na stronę z GitHub Pages można ją dodać do ekranu głównego lub zainstalować w przeglądarce na komputerze.
 
@@ -98,6 +98,5 @@ Obsługiwane są też tablice samych nazw:
 - Tryb sędziego pomocniczego jako osobny moduł, najlepiej po stabilnym wyborze backendu.
 - Synchronizacja chmurowa punktów kontrolnych między telefonem i iPadem.
 - Widok publiczny/live scoring.
-- Licencja testowa offline na 3 dni po instalacji z linku.
 - Edycja zakończonych zawodów z pełnym dziennikiem zmian.
 - Profil zawodnika ze zdjęciem, kategoriami i historią startów.

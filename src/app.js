@@ -1482,7 +1482,7 @@ function isStandalone() {
 }
 
 function shouldShowInstallAction() {
-  return !state.appInstalled && !isStandalone();
+  return !isStandalone();
 }
 
 function initPwaInstall() {

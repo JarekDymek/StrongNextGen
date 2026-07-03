@@ -1,6 +1,6 @@
 import { DEFAULT_COMPETITORS } from './competitors.js';
 
-export const APP_VERSION = '0.2.2';
+export const APP_VERSION = '0.2.3';
 export { DEFAULT_COMPETITORS };
 
 export const DEFAULT_EVENTS = [
