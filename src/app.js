@@ -364,15 +364,21 @@ function renderCompetitorSelection() {
     const selected = selectedIndex >= 0;
     const meta = [competitor.category, competitor.residence, competitor.weight ? `${competitor.weight} kg` : ''].filter(Boolean).join(' · ');
     return `
-      <button type="button" class="select-card ${selected ? 'is-selected' : ''}" data-action="toggle-competitor" data-id="${escapeAttr(competitor.id)}" data-filter-text="${escapeAttr(`${competitor.name} ${meta} ${competitor.notes || ''}`)}">
-        <span class="order-pill">${selected ? selectedIndex + 1 : '+'}</span>
-        <span class="avatar">${competitor.photo ? `<img src="${escapeAttr(competitor.photo)}" alt="">` : escapeHtml(initials(competitor.name))}</span>
-        <span class="select-card__main">
-          <strong>${escapeHtml(competitor.name)}</strong>
-          ${meta ? `<small>${escapeHtml(meta)}</small>` : '<small>Dotknij, aby wybrać</small>'}
-        </span>
-        <span class="check-pill">${selected ? '✓' : ''}</span>
-      </button>
+      <article class="selection-item ${selected ? 'is-selected' : ''}" data-filter-text="${escapeAttr(`${competitor.name} ${meta} ${competitor.notes || ''}`)}">
+        <button type="button" class="select-card" data-action="toggle-competitor" data-id="${escapeAttr(competitor.id)}">
+          <span class="order-pill">${selected ? selectedIndex + 1 : '+'}</span>
+          <span class="avatar">${competitor.photo ? `<img src="${escapeAttr(competitor.photo)}" alt="">` : escapeHtml(initials(competitor.name))}</span>
+          <span class="select-card__main">
+            <strong>${escapeHtml(competitor.name)}</strong>
+            ${meta ? `<small>${escapeHtml(meta)}</small>` : '<small>Dotknij, aby wybrać</small>'}
+          </span>
+          <span class="check-pill ${selected ? 'is-checked' : ''}">${selected ? '✓' : ''}</span>
+        </button>
+        <div class="item-actions">
+          <button type="button" class="mini-button" data-action="edit-competitor" data-id="${escapeAttr(competitor.id)}">Edytuj</button>
+          <button type="button" class="mini-button danger-mini" data-action="delete-competitor" data-id="${escapeAttr(competitor.id)}">Usuń</button>
+        </div>
+      </article>
     `;
   }).join('');
 }
@@ -387,17 +393,21 @@ function renderEventSelection() {
     const selected = selectedIndex >= 0;
     const isFinal = selected && selectedIndex === state.selectedEventIds.length - 1 && state.selectedEventIds.length > 1;
     return `
-      <div class="event-row ${selected ? 'is-selected' : ''}" data-filter-text="${escapeAttr(event.name)}">
+      <div class="event-row selection-item ${selected ? 'is-selected' : ''}" data-filter-text="${escapeAttr(event.name)}">
         <button type="button" class="select-card event-select" data-action="toggle-event" data-id="${escapeAttr(event.id)}">
           <span class="order-pill">${selected ? selectedIndex + 1 : '+'}</span>
           <span class="select-card__main">
             <strong>${escapeHtml(event.name)}</strong>
             <small>${EVENT_TYPE_LABEL[event.type]}${isFinal ? ' · Finał' : ''}</small>
           </span>
-          <span class="check-pill">${selected ? '✓' : ''}</span>
+          <span class="check-pill ${selected ? 'is-checked' : ''}">${selected ? '✓' : ''}</span>
         </button>
+        <div class="item-actions">
+          <button type="button" class="mini-button" data-action="edit-event" data-id="${escapeAttr(event.id)}">Edytuj</button>
+          <button type="button" class="mini-button danger-mini" data-action="delete-event" data-id="${escapeAttr(event.id)}">Usuń</button>
+        </div>
         ${selected ? `
-          <div class="reorder-actions">
+          <div class="reorder-actions selection-reorder-actions">
             <button type="button" class="icon-button" data-action="move-event" data-id="${escapeAttr(event.id)}" data-direction="-1" ${selectedIndex === 0 ? 'disabled' : ''} aria-label="Przesuń konkurencję wyżej">↑</button>
             <button type="button" class="icon-button" data-action="move-event" data-id="${escapeAttr(event.id)}" data-direction="1" ${selectedIndex === state.selectedEventIds.length - 1 ? 'disabled' : ''} aria-label="Przesuń konkurencję niżej">↓</button>
           </div>
@@ -748,6 +758,10 @@ async function handleClick(event) {
   if (action === 'toggle-event') return toggleSelected(state.selectedEventIds, id);
   if (action === 'move-event') return moveInArray(state.selectedEventIds, id, Number(trigger.dataset.direction));
   if (action === 'move-start-order') return moveInArray(state.startOrderIds, id, Number(trigger.dataset.direction));
+  if (action === 'edit-competitor') return editCompetitor(id);
+  if (action === 'delete-competitor') return deleteCompetitor(id);
+  if (action === 'edit-event') return editEvent(id);
+  if (action === 'delete-event') return deleteEvent(id);
   if (action === 'shuffle-order') return shuffleStartOrder();
   if (action === 'restore-selection-order') return restoreSelectionOrder();
   if (action === 'start-competition') return startCompetition();
@@ -924,6 +938,112 @@ function moveInArray(list, id, direction) {
   const [item] = list.splice(index, 1);
   list.splice(nextIndex, 0, item);
   persistAndRender();
+}
+
+function editCompetitor(id) {
+  const competitor = competitorById(id);
+  if (!competitor) return;
+
+  const name = window.prompt('Imię i nazwisko zawodnika:', competitor.name);
+  if (name === null) return;
+  const trimmedName = name.trim();
+  if (!trimmedName) return flash('Nazwa zawodnika nie może być pusta.');
+  const duplicate = state.competitors.find(item => item.id !== id && normalizeKey(item.name) === normalizeKey(trimmedName));
+  if (duplicate) return flash('Zawodnik o tej nazwie już istnieje.');
+
+  const category = window.prompt('Kategoria:', competitor.category || '');
+  if (category === null) return;
+  const residence = window.prompt('Miejscowość:', competitor.residence || '');
+  if (residence === null) return;
+  const weight = window.prompt('Waga:', competitor.weight || '');
+  if (weight === null) return;
+  const notes = window.prompt('Notatki:', competitor.notes || '');
+  if (notes === null) return;
+
+  competitor.name = trimmedName;
+  competitor.category = category.trim();
+  competitor.categories = competitor.category ? [competitor.category] : [];
+  competitor.residence = residence.trim();
+  competitor.weight = weight.trim();
+  competitor.notes = notes.trim();
+  state.competitors.sort((a, b) => collator.compare(a.name, b.name));
+  renameCompetitorInHistory(id, trimmedName);
+  persistAndRender('Dane zawodnika zapisane.');
+}
+
+function deleteCompetitor(id) {
+  const competitor = competitorById(id);
+  if (!competitor) return;
+  const selected = state.selectedCompetitorIds.includes(id);
+  const used = state.eventHistory.some(event => event.orderIds?.includes(id) || event.results?.some(result => result.id === id));
+  const warning = used
+    ? `Usunąć zawodnika ${competitor.name}? Zostanie usunięty także z kolejności, wyników i historii rozegranych konkurencji.`
+    : selected
+      ? `Usunąć zawodnika ${competitor.name} z bazy i listy startowej?`
+      : `Usunąć zawodnika ${competitor.name} z bazy?`;
+  if (!window.confirm(warning)) return;
+
+  state.competitors = state.competitors.filter(item => item.id !== id);
+  state.selectedCompetitorIds = state.selectedCompetitorIds.filter(itemId => itemId !== id);
+  state.startOrderIds = state.startOrderIds.filter(itemId => itemId !== id);
+  Object.values(state.drafts || {}).forEach(draft => delete draft[id]);
+  state.eventHistory = state.eventHistory.map(event => ({
+    ...event,
+    orderIds: (event.orderIds || []).filter(itemId => itemId !== id),
+    results: (event.results || []).filter(result => result.id !== id)
+  }));
+  state.scores = buildScores(state.selectedCompetitorIds, state.eventHistory);
+  state.currentEventIndex = Math.max(0, Math.min(state.currentEventIndex, Math.max(state.selectedEventIds.length - 1, 0)));
+  persistAndRender('Zawodnik usunięty.');
+}
+
+function editEvent(id) {
+  const event = eventById(id);
+  if (!event) return;
+  const summarized = state.eventHistory.some(item => item.eventId === id);
+  const name = window.prompt('Nazwa konkurencji:', event.name);
+  if (name === null) return;
+  const trimmedName = name.trim();
+  if (!trimmedName) return flash('Nazwa konkurencji nie może być pusta.');
+
+  const typeInput = window.prompt('Typ punktacji: high = więcej lepiej, low = mniej lepiej', event.type);
+  if (typeInput === null) return;
+  const type = typeInput.trim().toLowerCase() === 'low' ? 'low' : 'high';
+  if (summarized && type !== event.type) {
+    return flash('Nie zmieniam typu punktacji po podsumowaniu. Cofnij podsumowanie tej konkurencji i edytuj ponownie.');
+  }
+
+  const duplicate = state.events.find(item => item.id !== id && normalizeKey(item.name) === normalizeKey(trimmedName) && item.type === type);
+  if (duplicate) return flash('Taka konkurencja już istnieje.');
+
+  event.name = trimmedName;
+  event.type = type;
+  state.events.sort((a, b) => collator.compare(a.name, b.name));
+  state.eventHistory = state.eventHistory.map(item => item.eventId === id ? { ...item, name: item.isFinal ? `${trimmedName} (FINAŁ)` : trimmedName, type } : item);
+  persistAndRender('Konkurencja zapisana.');
+}
+
+function deleteEvent(id) {
+  const event = eventById(id);
+  if (!event) return;
+  const selected = state.selectedEventIds.includes(id);
+  const used = state.eventHistory.some(item => item.eventId === id);
+  const warning = used
+    ? `Usunąć konkurencję ${event.name}? Zostanie usunięta także z historii wyników.`
+    : selected
+      ? `Usunąć konkurencję ${event.name} z bazy i programu zawodów?`
+      : `Usunąć konkurencję ${event.name} z bazy?`;
+  if (!window.confirm(warning)) return;
+
+  state.events = state.events.filter(item => item.id !== id);
+  state.selectedEventIds = state.selectedEventIds.filter(itemId => itemId !== id);
+  delete state.drafts[id];
+  state.eventHistory = state.eventHistory
+    .filter(item => item.eventId !== id)
+    .map((item, index) => ({ ...item, nr: index + 1 }));
+  state.currentEventIndex = Math.max(0, Math.min(state.currentEventIndex, Math.max(state.selectedEventIds.length - 1, 0)));
+  state.scores = buildScores(state.selectedCompetitorIds, state.eventHistory);
+  persistAndRender('Konkurencja usunięta.');
 }
 
 function shuffleStartOrder() {
@@ -1407,6 +1527,13 @@ function competitorById(id) {
 
 function eventById(id) {
   return state.events.find(eventItem => eventItem.id === id);
+}
+
+function renameCompetitorInHistory(id, name) {
+  state.eventHistory = state.eventHistory.map(event => ({
+    ...event,
+    results: (event.results || []).map(result => result.id === id ? { ...result, name } : result)
+  }));
 }
 
 function mergeCompetitors(imported) {
