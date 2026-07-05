@@ -85,7 +85,8 @@ function createUiState() {
     },
     installHelpOpen: false,
     stopwatch: null,
-    settingsOpen: false
+    settingsOpen: false,
+    drawAnimation: null
   };
 }
 
@@ -418,21 +419,28 @@ function renderEventSelection() {
 }
 
 function renderDraw() {
-  const order = getStartOrderIds();
+  const animation = state.ui.drawAnimation;
+  const order = animation?.orderIds || getStartOrderIds();
+  const drawInProgress = Boolean(animation);
+  const drawCompleted = Boolean(state.drawUsed) && !drawInProgress;
   return `
     <section class="panel strong-panel">
       <div class="panel-heading">
         <span class="panel-icon">🎰</span>
         <div>
           <h2>Kolejność startowa pierwszej konkurencji</h2>
-          <p>Domyślnie obowiązuje kolejność wyboru zawodników. Losowanie jest świadomą opcją.</p>
+          <p>Domyślnie wykonaj publiczne losowanie. Start bez losowania to świadoma opcja sędziego.</p>
         </div>
       </div>
       <div class="button-column">
-        <button type="button" class="primary-button" data-action="shuffle-order">Losuj kolejność</button>
-        <button type="button" class="secondary-button" data-action="restore-selection-order">Przywróć kolejność wyboru</button>
+        <button type="button" class="primary-button ${!drawCompleted ? 'is-guided' : ''}" data-action="shuffle-order" ${drawInProgress ? 'disabled' : ''}>
+          ${drawInProgress ? 'Losowanie trwa...' : drawCompleted ? 'Losuj ponownie' : 'Losuj kolejność'}
+        </button>
+        <button type="button" class="secondary-button" data-action="restore-selection-order" ${drawInProgress ? 'disabled' : ''}>Przywróć kolejność wyboru</button>
       </div>
     </section>
+
+    ${renderDrawVisualization(order, drawInProgress, drawCompleted)}
 
     <section class="order-list">
       ${order.map((id, index) => {
@@ -451,9 +459,37 @@ function renderDraw() {
     </section>
 
     <div class="sticky-actions">
-      <button type="button" class="primary-button action-large is-guided" data-action="start-competition">Start zawodów</button>
+      <button type="button" class="${drawCompleted ? 'primary-button is-guided' : 'secondary-button'} action-large" data-action="start-competition" ${drawInProgress ? 'disabled' : ''}>
+        ${drawCompleted ? 'Start zawodów' : 'Start bez losowania'}
+      </button>
       <button type="button" class="secondary-button action-large" data-action="go-setup">Wróć do przygotowania</button>
     </div>
+  `;
+}
+
+function renderDrawVisualization(order, inProgress, completed) {
+  const visible = order.slice(0, 8);
+  return `
+    <section class="draw-visual ${inProgress ? 'is-running' : ''} ${completed ? 'is-complete' : ''}" aria-live="polite">
+      <div class="draw-visual__header">
+        <span class="draw-visual__icon">🎲</span>
+        <div>
+          <strong>${inProgress ? 'Trwa publiczne losowanie' : completed ? 'Kolejność wylosowana' : 'Gotowe do losowania'}</strong>
+          <small>${inProgress ? 'Nazwiska są tasowane na ekranie.' : completed ? 'Poniżej znajduje się finalna kolejność startowa.' : 'Naciśnij „Losuj kolejność”, aby pokazać proces zawodnikom.'}</small>
+        </div>
+      </div>
+      <div class="draw-slots">
+        ${visible.map((id, index) => {
+          const competitor = competitorById(id);
+          return `
+            <div class="draw-slot">
+              <span>${index + 1}</span>
+              <strong>${escapeHtml(competitor?.name || 'Zawodnik')}</strong>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </section>
   `;
 }
 
@@ -940,6 +976,19 @@ function moveInArray(list, id, direction) {
   persistAndRender();
 }
 
+function shuffledCopy(items) {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function delay(ms) {
+  return new Promise(resolve => window.setTimeout(resolve, ms));
+}
+
 function editCompetitor(id) {
   const competitor = competitorById(id);
   if (!competitor) return;
@@ -1046,23 +1095,39 @@ function deleteEvent(id) {
   persistAndRender('Konkurencja usunięta.');
 }
 
-function shuffleStartOrder() {
-  state.startOrderIds = getStartOrderIds();
-  for (let i = state.startOrderIds.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [state.startOrderIds[i], state.startOrderIds[j]] = [state.startOrderIds[j], state.startOrderIds[i]];
+async function shuffleStartOrder() {
+  if (state.ui.drawAnimation) return;
+  const baseOrder = getStartOrderIds();
+  if (baseOrder.length < 2) return flash('Do losowania potrzeba co najmniej 2 zawodników.');
+
+  let animatedOrder = [...baseOrder];
+  for (let step = 0; step < 12; step++) {
+    animatedOrder = shuffledCopy(animatedOrder);
+    state.ui.drawAnimation = {
+      step,
+      orderIds: animatedOrder
+    };
+    render();
+    await delay(step < 8 ? 130 : 210);
   }
+
+  state.startOrderIds = shuffledCopy(baseOrder);
+  state.ui.drawAnimation = null;
   state.drawUsed = true;
   persistAndRender('Kolejność została wylosowana.');
 }
 
 function restoreSelectionOrder() {
+  state.ui.drawAnimation = null;
   state.startOrderIds = [...state.selectedCompetitorIds];
   state.drawUsed = false;
   persistAndRender('Przywrócono kolejność wyboru zawodników.');
 }
 
 function startCompetition() {
+  if (!state.drawUsed && !window.confirm('Rozpocząć zawody bez losowania? Zostanie użyta ręczna kolejność wyboru zawodników.')) {
+    return;
+  }
   if (state.eventHistory.length && !window.confirm('Rozpocząć zawody od nowa? Dotychczasowe podsumowania konkurencji zostaną usunięte.')) {
     return;
   }

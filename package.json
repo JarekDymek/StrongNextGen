@@ -1,6 +1,6 @@
 {
   "name": "strongman-next",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Nowa, mobilna aplikacja do prowadzenia zawodów Strong Man.",
   "type": "module",
   "scripts": {

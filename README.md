@@ -1,6 +1,6 @@
 # Strongman Next
 
-## Wersja testowa 0.2.5
+## Wersja testowa 0.2.6
 
 Ta wersja jest przygotowana jako instalowalna aplikacja PWA dla telefonu, iPada i PC. Po wejściu na stronę z GitHub Pages można ją dodać do ekranu głównego lub zainstalować w przeglądarce na komputerze.
 
