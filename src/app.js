@@ -1424,7 +1424,8 @@ async function checkForUpdates() {
     const response = await fetch(`version.json?ts=${Date.now()}`, { cache: 'no-store' });
     const remote = await response.json();
     if (remote.version && remote.version !== APP_VERSION) {
-      flash(`Dostępna wersja ${remote.version}. Odśwież stronę, aby ją pobrać.`);
+      flash(`Dostępna wersja ${remote.version}. Pobieram aktualizację...`);
+      window.setTimeout(() => window.location.reload(), 900);
       return;
     }
     flash('Masz aktualną wersję aplikacji.');
