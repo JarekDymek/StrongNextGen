@@ -1,6 +1,6 @@
 # Strongman Next
 
-## Wersja testowa 0.2.6
+## Wersja testowa 0.2.7
 
 Ta wersja jest przygotowana jako instalowalna aplikacja PWA dla telefonu, iPada i PC. Po wejściu na stronę z GitHub Pages można ją dodać do ekranu głównego lub zainstalować w przeglądarce na komputerze.
 
@@ -39,6 +39,8 @@ Nowa aplikacja do prowadzenia zawodów Strong Man, zbudowana od zera jako osobne
 - Wybór konkurencji działa kolejnością kliknięć, z możliwością przesuwania wybranych konkurencji.
 - Osobny etap ustawiania kolejności startowej przed zawodami.
 - Wpisywanie wyników jako duże karty zawodników z automatycznym zapisem po wpisaniu.
+- Kolejność po remisie zachowuje wzajemną kolejność startu zawodników z poprzedniej konkurencji.
+- Pełny profil zawodnika jest dostępny ze zdjęcia lub przycisku informacji podczas przygotowania, wpisywania wyników i w klasyfikacji.
 - Guardy dla brakujących wyników, nadpisania podsumowania, cofnięcia konkurencji, importu stanu i resetu.
 - Jawne wskazanie zwycięzcy remisu w klasyfikacji końcowej wraz z powodem tie-breaku.
 - Finał jako ostatnia wybrana konkurencja: startuje top zawodników, w odwróconej kolejności klasyfikacji, z liderem na końcu.
@@ -71,10 +73,21 @@ node tests/scoring.test.js
 
 ```json
 [
-  { "name": "Adam Nowak", "category": "Open" },
+  {
+    "name": "Adam Nowak",
+    "birthDate": "1990-04-12",
+    "residence": "Warszawa",
+    "height": "188",
+    "weight": "135",
+    "category": "Open",
+    "notes": "Najważniejsze osiągnięcia",
+    "photo": "data:image/jpeg;base64,..."
+  },
   { "name": "Bartek Kowalski" }
 ]
 ```
+
+Ponowny import uzupełnia i aktualizuje istniejące profile, nie usuwając danych, gdy odpowiadające im pole w pliku jest puste.
 
 Obsługiwane są też tablice samych nazw:
 

@@ -454,7 +454,7 @@ label span {
 
 .select-card {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) 28px;
+  grid-template-columns: auto minmax(0, 1fr) 28px;
   align-items: center;
   width: 100%;
   min-height: 70px;
@@ -468,6 +468,17 @@ label span {
 }
 
 .event-select {
+  grid-template-columns: auto minmax(0, 1fr) 28px;
+}
+
+.competitor-select-row {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.competitor-select {
   grid-template-columns: auto minmax(0, 1fr) 28px;
 }
 
@@ -489,6 +500,10 @@ label span {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.avatar-button {
+  padding: 0;
 }
 
 .avatar--large {
@@ -556,9 +571,15 @@ label span {
 
 .item-actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-column: 1 / -1;
   gap: 8px;
+}
+
+.info-mini {
+  color: #174ea6;
+  border-color: rgba(36, 94, 232, 0.42);
+  background: #f1f6ff;
 }
 
 .mini-button {
@@ -684,6 +705,10 @@ label span {
   align-items: center;
   gap: 12px;
   padding: 14px;
+}
+
+.standing-card {
+  grid-template-columns: auto minmax(0, 1fr) 48px auto;
 }
 
 .draw-visual {
@@ -816,9 +841,22 @@ label span {
 
 .result-card header {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
+  grid-template-columns: auto auto minmax(0, 1fr) 48px;
   align-items: center;
   gap: 12px;
+}
+
+.profile-info-button {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 2px solid rgba(36, 94, 232, 0.5);
+  border-radius: 999px;
+  color: #174ea6;
+  background: #f1f6ff;
+  font-size: 1.15rem;
+  font-weight: 1000;
 }
 
 .result-entry {
@@ -1050,6 +1088,111 @@ label span {
   padding: 18px;
   background: #fff;
   box-shadow: var(--shadow);
+}
+
+.profile-backdrop {
+  overscroll-behavior: contain;
+}
+
+.profile-modal {
+  position: relative;
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-top: 22px;
+}
+
+.profile-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--navy);
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.profile-header {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding-right: 44px;
+}
+
+.profile-header h2 {
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+  line-height: 1.08;
+}
+
+.profile-photo {
+  display: grid;
+  width: 100px;
+  height: 100px;
+  place-items: center;
+  overflow: hidden;
+  border: 4px solid var(--orange);
+  border-radius: 999px;
+  color: #fff;
+  background: var(--navy);
+  font-size: 1.25rem;
+  font-weight: 1000;
+}
+
+.profile-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-details {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.profile-details div {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1.2fr);
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+  padding: 8px 0;
+}
+
+.profile-details dt {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.profile-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-weight: 1000;
+}
+
+.profile-notes-section {
+  border: 2px solid var(--line);
+  border-radius: var(--radius-small);
+  padding: 14px;
+  background: var(--surface-strong);
+}
+
+.profile-notes-section h3 {
+  margin: 0 0 8px;
+}
+
+.profile-notes,
+.empty-profile-data {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
 }
 
 .toast {

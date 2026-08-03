@@ -115,6 +115,28 @@ export function buildScores(competitorIds, eventHistory) {
   return scores;
 }
 
+export function buildNextStartOrder(competitorIds, previousEvent, fallbackOrder = competitorIds) {
+  const selectedIds = [...competitorIds];
+  if (!previousEvent?.results?.length) return reconcileOrder(fallbackOrder, selectedIds);
+
+  const previousOrder = reconcileOrder(previousEvent.orderIds || [], reconcileOrder(fallbackOrder, selectedIds));
+  const previousPosition = new Map(previousOrder.map((id, index) => [id, index]));
+  const points = new Map(previousEvent.results.map(result => [result.id, Number.parseFloat(result.points) || 0]));
+
+  return selectedIds.sort((a, b) => {
+    const pointsDifference = (points.get(a) || 0) - (points.get(b) || 0);
+    if (pointsDifference !== 0) return pointsDifference;
+    return (previousPosition.get(a) ?? Number.MAX_SAFE_INTEGER) - (previousPosition.get(b) ?? Number.MAX_SAFE_INTEGER);
+  });
+}
+
+function reconcileOrder(order, selectedIds) {
+  const selectedSet = new Set(selectedIds);
+  const existing = order.filter(id => selectedSet.has(id));
+  const missing = selectedIds.filter(id => !existing.includes(id));
+  return [...existing, ...missing];
+}
+
 export function breakTie(competitorIdA, competitorIdB, eventHistory, totalCompetitors) {
   const countPlaces = competitorId => {
     const places = Array(totalCompetitors + 1).fill(0);

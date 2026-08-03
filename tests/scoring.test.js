@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { DEFAULT_COMPETITORS } from '../src/competitors.js';
-import { buildFinalStartOrder, calculateEventPoints, parseResult, rankStandings } from '../src/scoring.js';
+import { buildFinalStartOrder, buildNextStartOrder, calculateEventPoints, parseResult, rankStandings } from '../src/scoring.js';
 
 assert.equal(DEFAULT_COMPETITORS.length, 15);
 assert.ok(DEFAULT_COMPETITORS.every(competitor => competitor.photo));
@@ -30,6 +30,51 @@ const tiedHigh = calculateEventPoints([
 assert.equal(tiedHigh.results[0].points, '2.50');
 assert.equal(tiedHigh.results[1].points, '2.50');
 assert.equal(tiedHigh.results[2].points, '1.00');
+
+const nextOrderAfterTie = buildNextStartOrder(
+  ['a', 'b', 'c', 'd'],
+  {
+    orderIds: ['d', 'b', 'a', 'c'],
+    results: [
+      { id: 'a', points: '3.50' },
+      { id: 'b', points: '3.50' },
+      { id: 'c', points: '2.00' },
+      { id: 'd', points: '1.00' }
+    ]
+  },
+  ['a', 'b', 'c', 'd']
+);
+
+assert.deepEqual(nextOrderAfterTie, ['d', 'c', 'b', 'a']);
+
+const nextOrderAfterThreeWayDnf = buildNextStartOrder(
+  ['a', 'b', 'c', 'd'],
+  {
+    orderIds: ['c', 'a', 'd', 'b'],
+    results: [
+      { id: 'a', points: '0.00' },
+      { id: 'b', points: '4.00' },
+      { id: 'c', points: '0.00' },
+      { id: 'd', points: '0.00' }
+    ]
+  }
+);
+
+assert.deepEqual(nextOrderAfterThreeWayDnf, ['c', 'a', 'd', 'b']);
+
+const nextOrderFromLegacyState = buildNextStartOrder(
+  ['a', 'b', 'c'],
+  {
+    results: [
+      { id: 'a', points: '2.50' },
+      { id: 'b', points: '2.50' },
+      { id: 'c', points: '1.00' }
+    ]
+  },
+  ['b', 'a', 'c']
+);
+
+assert.deepEqual(nextOrderFromLegacyState, ['c', 'b', 'a']);
 
 const standings = rankStandings(
   [{ id: 'a', name: 'Adam' }, { id: 'b', name: 'Bartek' }],

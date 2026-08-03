@@ -1,5 +1,5 @@
 import { APP_VERSION, DEFAULT_COMPETITORS, DEFAULT_EVENTS, EVENT_TYPE_LABEL } from './data.js';
-import { buildFinalStartOrder, buildScores, calculateEventPoints, rankStandings } from './scoring.js';
+import { buildFinalStartOrder, buildNextStartOrder, buildScores, calculateEventPoints, rankStandings } from './scoring.js';
 import {
   clearSavedState,
   deleteCheckpoints,
@@ -43,6 +43,9 @@ app.addEventListener('input', handleInput);
 app.addEventListener('change', handleChange);
 app.addEventListener('submit', handleSubmit);
 app.addEventListener('toggle', handleToggle, true);
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && state.ui.profileCompetitorId) closeCompetitorProfile();
+});
 
 function createInitialState() {
   const competitors = normalizeCompetitors(DEFAULT_COMPETITORS);
@@ -84,6 +87,7 @@ function createUiState() {
       help: false
     },
     installHelpOpen: false,
+    profileCompetitorId: null,
     stopwatch: null,
     settingsOpen: false,
     drawAnimation: null
@@ -129,17 +133,20 @@ function normalizeCompetitors(items) {
       const key = normalizeKey(name);
       if (seen.has(key)) return null;
       seen.add(key);
+      const categories = Array.isArray(source.categories)
+        ? source.categories.filter(Boolean).map(String)
+        : [source.category || source.categories].filter(Boolean).map(String);
       return {
         id: source.id || `competitor-${slug(name)}-${index}`,
         name,
-        category: source.category || source.categories?.[0] || '',
-        categories: Array.isArray(source.categories) ? source.categories : [source.category].filter(Boolean),
-        birthDate: source.birthDate || '',
-        residence: source.residence || '',
-        height: source.height || '',
-        weight: source.weight || '',
-        notes: source.notes || '',
-        photo: source.photo || ''
+        category: source.category || categories[0] || '',
+        categories,
+        birthDate: source.birthDate || source.dateOfBirth || source.birth_date || source.dataUrodzenia || '',
+        residence: source.residence || source.city || source.miejsceZamieszkania || '',
+        height: source.height || source.wzrost || '',
+        weight: source.weight || source.waga || '',
+        notes: source.notes || source.description || source.opis || source.achievements || source.osiagniecia || '',
+        photo: source.photo || source.image || source.avatar || source.icon || ''
       };
     })
     .filter(Boolean)
@@ -218,6 +225,7 @@ function render() {
 
     ${renderResetGuard()}
     ${renderInstallHelp()}
+    ${renderCompetitorProfile()}
     ${renderStopwatch()}
   `;
   syncStopwatchTicker();
@@ -366,16 +374,21 @@ function renderCompetitorSelection() {
     const meta = [competitor.category, competitor.residence, competitor.weight ? `${competitor.weight} kg` : ''].filter(Boolean).join(' · ');
     return `
       <article class="selection-item ${selected ? 'is-selected' : ''}" data-filter-text="${escapeAttr(`${competitor.name} ${meta} ${competitor.notes || ''}`)}">
-        <button type="button" class="select-card" data-action="toggle-competitor" data-id="${escapeAttr(competitor.id)}">
-          <span class="order-pill">${selected ? selectedIndex + 1 : '+'}</span>
-          <span class="avatar">${competitor.photo ? `<img src="${escapeAttr(competitor.photo)}" alt="">` : escapeHtml(initials(competitor.name))}</span>
-          <span class="select-card__main">
-            <strong>${escapeHtml(competitor.name)}</strong>
-            ${meta ? `<small>${escapeHtml(meta)}</small>` : '<small>Dotknij, aby wybrać</small>'}
-          </span>
-          <span class="check-pill ${selected ? 'is-checked' : ''}">${selected ? '✓' : ''}</span>
-        </button>
+        <div class="competitor-select-row">
+          <button type="button" class="avatar avatar-button" data-action="open-competitor-profile" data-id="${escapeAttr(competitor.id)}" aria-label="Pokaż informacje o ${escapeAttr(competitor.name)}">
+            ${competitor.photo ? `<img src="${escapeAttr(competitor.photo)}" alt="">` : escapeHtml(initials(competitor.name))}
+          </button>
+          <button type="button" class="select-card competitor-select" data-action="toggle-competitor" data-id="${escapeAttr(competitor.id)}">
+            <span class="order-pill">${selected ? selectedIndex + 1 : '+'}</span>
+            <span class="select-card__main">
+              <strong>${escapeHtml(competitor.name)}</strong>
+              ${meta ? `<small>${escapeHtml(meta)}</small>` : '<small>Dotknij, aby wybrać</small>'}
+            </span>
+            <span class="check-pill ${selected ? 'is-checked' : ''}">${selected ? '✓' : ''}</span>
+          </button>
+        </div>
         <div class="item-actions">
+          <button type="button" class="mini-button info-mini" data-action="open-competitor-profile" data-id="${escapeAttr(competitor.id)}" aria-label="Pokaż informacje o zawodniku">ⓘ Profil</button>
           <button type="button" class="mini-button" data-action="edit-competitor" data-id="${escapeAttr(competitor.id)}">Edytuj</button>
           <button type="button" class="mini-button danger-mini" data-action="delete-competitor" data-id="${escapeAttr(competitor.id)}">Usuń</button>
         </div>
@@ -560,11 +573,14 @@ function renderResultCard(id, index, event, draft, finalized) {
     <article class="result-card ${String(value).trim() ? 'has-value' : ''}">
       <header>
         <span class="order-pill">${index + 1}</span>
-        <span class="avatar avatar--large">${competitor?.photo ? `<img src="${escapeAttr(competitor.photo)}" alt="">` : escapeHtml(initials(competitor?.name || ''))}</span>
+        <button type="button" class="avatar avatar--large avatar-button" data-action="open-competitor-profile" data-id="${escapeAttr(id)}" aria-label="Pokaż informacje o ${escapeAttr(competitor?.name || 'zawodniku')}">
+          ${competitor?.photo ? `<img src="${escapeAttr(competitor.photo)}" alt="">` : escapeHtml(initials(competitor?.name || ''))}
+        </button>
         <div>
           <strong>${escapeHtml(competitor?.name || 'Zawodnik')}</strong>
           <small>${escapeHtml(status)}</small>
         </div>
+        <button type="button" class="profile-info-button" data-action="open-competitor-profile" data-id="${escapeAttr(id)}" aria-label="Pokaż profil zawodnika">i</button>
       </header>
       <div class="result-entry">
         <input data-result="${escapeAttr(id)}" inputmode="decimal" value="${escapeAttr(value)}" placeholder="${escapeAttr(placeholder)}">
@@ -642,6 +658,7 @@ function renderSummary() {
             <strong>${escapeHtml(row.name)}</strong>
             ${row.tieStatus ? `<small class="tie-note ${row.tieStatus === 'Wygrywa remis' ? 'is-winner' : ''}">${escapeHtml(row.tieStatus)} · ${escapeHtml(row.tieReason)}</small>` : ''}
           </div>
+          <button type="button" class="profile-info-button" data-action="open-competitor-profile" data-id="${escapeAttr(row.id)}" aria-label="Pokaż profil zawodnika">i</button>
           <span>${row.points.toFixed(2)} pkt</span>
         </article>
       `).join('')}
@@ -755,6 +772,46 @@ function renderInstallHelp() {
   `;
 }
 
+function renderCompetitorProfile() {
+  const competitor = competitorById(state.ui.profileCompetitorId);
+  if (!competitor) return '';
+  const categories = [...new Set([competitor.category, ...(competitor.categories || [])].filter(Boolean))];
+  const age = calculateAge(competitor.birthDate);
+  const details = [
+    ['Wiek', age === null ? '' : `${age} lat`],
+    ['Data urodzenia', formatBirthDate(competitor.birthDate)],
+    ['Wzrost', formatMeasurement(competitor.height, 'cm')],
+    ['Waga', formatMeasurement(competitor.weight, 'kg')],
+    ['Miejsce zamieszkania', competitor.residence],
+    ['Kategoria', categories.join(', ')]
+  ].filter(([, value]) => value);
+
+  return `
+    <div class="modal-backdrop profile-backdrop" data-profile-backdrop role="presentation">
+      <section class="modal profile-modal" role="dialog" aria-modal="true" aria-labelledby="profile-title">
+        <button type="button" class="profile-close" data-action="close-competitor-profile" aria-label="Zamknij profil">×</button>
+        <header class="profile-header">
+          <span class="profile-photo">${competitor.photo ? `<img src="${escapeAttr(competitor.photo)}" alt="${escapeAttr(competitor.name)}">` : escapeHtml(initials(competitor.name))}</span>
+          <div>
+            <span class="eyebrow">Profil zawodnika</span>
+            <h2 id="profile-title">${escapeHtml(competitor.name)}</h2>
+          </div>
+        </header>
+        ${details.length ? `
+          <dl class="profile-details">
+            ${details.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(String(value))}</dd></div>`).join('')}
+          </dl>
+        ` : '<p class="empty-profile-data">Brak szczegółowych danych zawodnika.</p>'}
+        <section class="profile-notes-section">
+          <h3>Osiągnięcia i informacje</h3>
+          <p class="profile-notes">${escapeHtml(competitor.notes || 'Brak dodatkowego opisu.')}</p>
+        </section>
+        <button type="button" class="primary-button" data-action="close-competitor-profile">Zamknij</button>
+      </section>
+    </div>
+  `;
+}
+
 function renderStopwatch() {
   const stopwatch = state.ui.stopwatch;
   if (!stopwatch) return '';
@@ -780,6 +837,10 @@ function renderStopwatch() {
 }
 
 async function handleClick(event) {
+  if (event.target.matches('[data-profile-backdrop]')) {
+    closeCompetitorProfile();
+    return;
+  }
   const trigger = event.target.closest('[data-action]');
   if (!trigger) return;
   const action = trigger.dataset.action;
@@ -796,6 +857,8 @@ async function handleClick(event) {
   if (action === 'move-start-order') return moveInArray(state.startOrderIds, id, Number(trigger.dataset.direction));
   if (action === 'edit-competitor') return editCompetitor(id);
   if (action === 'delete-competitor') return deleteCompetitor(id);
+  if (action === 'open-competitor-profile') return openCompetitorProfile(id);
+  if (action === 'close-competitor-profile') return closeCompetitorProfile();
   if (action === 'edit-event') return editEvent(id);
   if (action === 'delete-event') return deleteEvent(id);
   if (action === 'shuffle-order') return shuffleStartOrder();
@@ -1002,8 +1065,12 @@ function editCompetitor(id) {
 
   const category = window.prompt('Kategoria:', competitor.category || '');
   if (category === null) return;
+  const birthDate = window.prompt('Data urodzenia (RRRR-MM-DD):', competitor.birthDate || '');
+  if (birthDate === null) return;
   const residence = window.prompt('Miejscowość:', competitor.residence || '');
   if (residence === null) return;
+  const height = window.prompt('Wzrost w cm:', competitor.height || '');
+  if (height === null) return;
   const weight = window.prompt('Waga:', competitor.weight || '');
   if (weight === null) return;
   const notes = window.prompt('Notatki:', competitor.notes || '');
@@ -1012,12 +1079,26 @@ function editCompetitor(id) {
   competitor.name = trimmedName;
   competitor.category = category.trim();
   competitor.categories = competitor.category ? [competitor.category] : [];
+  competitor.birthDate = birthDate.trim();
   competitor.residence = residence.trim();
+  competitor.height = height.trim();
   competitor.weight = weight.trim();
   competitor.notes = notes.trim();
   state.competitors.sort((a, b) => collator.compare(a.name, b.name));
   renameCompetitorInHistory(id, trimmedName);
   persistAndRender('Dane zawodnika zapisane.');
+}
+
+function openCompetitorProfile(id) {
+  if (!competitorById(id)) return;
+  state.ui.profileCompetitorId = id;
+  render();
+  window.setTimeout(() => app.querySelector('[data-action="close-competitor-profile"]')?.focus(), 30);
+}
+
+function closeCompetitorProfile() {
+  state.ui.profileCompetitorId = null;
+  render();
 }
 
 function deleteCompetitor(id) {
@@ -1291,8 +1372,8 @@ async function importCompetitors() {
   const json = await readJsonFile(file);
   const imported = normalizeCompetitors(Array.isArray(json) ? json : json.competitors || []);
   if (!imported.length) return flash('Nie znaleziono zawodników w pliku.');
-  mergeCompetitors(imported);
-  persistAndRender(`Zaimportowano zawodników: ${imported.length}.`);
+  const result = mergeCompetitors(imported);
+  persistAndRender(`Import zawodników: ${result.added} dodano, ${result.updated} zaktualizowano, ${result.unchanged} bez zmian.`);
 }
 
 function exportCompetitors() {
@@ -1547,15 +1628,7 @@ function getOrderForEvent(index) {
   if (isFinalEventIndex(index)) return getFinalOrderIds();
   const previous = state.eventHistory[index - 1];
   const fallback = getStartOrderIds();
-  if (!previous) return fallback;
-  return [...state.selectedCompetitorIds].sort((a, b) => {
-    const resultA = previous.results.find(row => row.id === a);
-    const resultB = previous.results.find(row => row.id === b);
-    const pointsA = Number.parseFloat(resultA?.points) || 0;
-    const pointsB = Number.parseFloat(resultB?.points) || 0;
-    if (pointsA !== pointsB) return pointsA - pointsB;
-    return fallback.indexOf(a) - fallback.indexOf(b);
-  });
+  return buildNextStartOrder(state.selectedCompetitorIds, previous, fallback);
 }
 
 function isFinalEventIndex(index) {
@@ -1604,12 +1677,48 @@ function renameCompetitorInHistory(id, name) {
 
 function mergeCompetitors(imported) {
   const byKey = new Map(state.competitors.map(item => [normalizeKey(item.name), item]));
+  const byId = new Map(state.competitors.map(item => [String(item.id), item]));
+  const result = { added: 0, updated: 0, unchanged: 0 };
   imported.forEach(item => {
-    if (!byKey.has(normalizeKey(item.name))) {
-      state.competitors.push({ ...item, id: makeId('competitor', item.name) });
+    const nameMatch = byKey.get(normalizeKey(item.name));
+    const idMatch = byId.get(String(item.id));
+    const existing = nameMatch || (idMatch && normalizeKey(idMatch.name) === normalizeKey(item.name) ? idMatch : null);
+    if (!existing) {
+      const importedId = item.id && !byId.has(String(item.id)) ? String(item.id) : makeId('competitor', item.name);
+      const added = { ...item, id: importedId };
+      state.competitors.push(added);
+      byId.set(String(added.id), added);
+      byKey.set(normalizeKey(added.name), added);
+      result.added++;
+      return;
     }
+
+    const previousName = existing.name;
+    const merged = mergeCompetitorDetails(existing, item);
+    const changed = Object.keys(merged).some(key => JSON.stringify(existing[key]) !== JSON.stringify(merged[key]));
+    if (!changed) {
+      result.unchanged++;
+      return;
+    }
+
+    Object.assign(existing, merged);
+    if (existing.name !== previousName) renameCompetitorInHistory(existing.id, existing.name);
+    result.updated++;
   });
   state.competitors.sort((a, b) => collator.compare(a.name, b.name));
+  return result;
+}
+
+function mergeCompetitorDetails(existing, imported) {
+  const merged = { ...existing };
+  const scalarFields = ['name', 'category', 'birthDate', 'residence', 'height', 'weight', 'notes', 'photo'];
+  scalarFields.forEach(field => {
+    const value = String(imported[field] ?? '').trim();
+    if (value) merged[field] = imported[field];
+  });
+  if (imported.categories?.length) merged.categories = [...new Set(imported.categories.filter(Boolean))];
+  if (!merged.categories?.length && merged.category) merged.categories = [merged.category];
+  return merged;
 }
 
 function mergeEvents(imported) {
@@ -1867,6 +1976,29 @@ function safeFilename(value) {
 
 function timestamp() {
   return new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '-');
+}
+
+function calculateAge(value) {
+  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const [, year, month, day] = match.map(Number);
+  const now = new Date();
+  let age = now.getFullYear() - year;
+  const birthdayPassed = now.getMonth() + 1 > month || (now.getMonth() + 1 === month && now.getDate() >= day);
+  if (!birthdayPassed) age--;
+  return age >= 0 && age < 120 ? age : null;
+}
+
+function formatBirthDate(value) {
+  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return String(value || '');
+  return `${match[3]}.${match[2]}.${match[1]}`;
+}
+
+function formatMeasurement(value, unit) {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  return /[a-ząćęłńóśźż]/i.test(text) ? text : `${text} ${unit}`;
 }
 
 function formatDate(value) {
