@@ -78,11 +78,30 @@ export function readJsonFile(file) {
   });
 }
 
+export function readTextFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file, 'utf-8');
+  });
+}
+
 export function pickJsonFile() {
   return new Promise(resolve => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'application/json,.json';
+    input.addEventListener('change', () => resolve(input.files?.[0] || null), { once: true });
+    input.click();
+  });
+}
+
+export function pickSeasonFile() {
+  return new Promise(resolve => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json,text/html,.json,.html,.htm';
     input.addEventListener('change', () => resolve(input.files?.[0] || null), { once: true });
     input.click();
   });

@@ -220,7 +220,7 @@ small {
 
 .stepper {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
   margin: 6px 0 14px;
 }
@@ -1195,6 +1195,26 @@ label span {
   line-height: 1.5;
 }
 
+.profile-data-warning {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border: 2px solid #b54708;
+  border-radius: 8px;
+  background: #fff4e5;
+  color: #7a2e0e;
+}
+
+.profile-data-warning strong,
+.profile-data-warning p {
+  display: block;
+  margin: 0;
+}
+
+.profile-data-warning p {
+  margin-top: 4px;
+  line-height: 1.45;
+}
+
 .toast {
   position: fixed;
   right: 14px;
@@ -1217,6 +1237,184 @@ label span {
   transform: translateY(0);
 }
 
+.season-overview .panel-icon {
+  width: 56px;
+  font-size: 0.9rem;
+  font-weight: 1000;
+}
+
+.season-import-note {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.season-standings,
+.season-event-list,
+.season-editor-results {
+  display: grid;
+  gap: 10px;
+}
+
+.season-standing-card {
+  overflow: clip;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.season-standing-card.is-podium {
+  border-color: rgba(244, 180, 0, 0.72);
+}
+
+.season-standing-card summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 78px;
+  gap: 12px;
+  padding: 12px 14px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.season-standing-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.season-standing-main {
+  min-width: 0;
+}
+
+.season-standing-main strong,
+.season-standing-main small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.season-standing-main small {
+  margin-top: 3px;
+  font-weight: 750;
+}
+
+.season-total {
+  color: var(--green);
+  font-size: 1.2rem;
+  white-space: nowrap;
+}
+
+.season-points-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(30px, 1fr));
+  gap: 6px;
+  padding: 0 14px 14px;
+}
+
+.season-point {
+  display: grid;
+  min-height: 34px;
+  place-items: center;
+  border: 2px solid var(--line);
+  border-radius: 9px;
+  color: var(--navy);
+  background: #eef3f8;
+  font-weight: 1000;
+}
+
+.season-point.is-counted {
+  color: #fff;
+  border-color: var(--green);
+  background: var(--green);
+}
+
+.season-point.is-rejected {
+  color: var(--red);
+  border-color: rgba(201, 42, 42, 0.42);
+  background: #fff1f1;
+}
+
+.season-point.is-empty {
+  color: var(--muted);
+}
+
+.season-events-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.season-event-card {
+  box-shadow: none;
+}
+
+.season-ranking-list {
+  display: grid;
+  gap: 6px;
+}
+
+.season-ranking-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 48px;
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+  padding: 6px 4px;
+}
+
+.season-ranking-row > :first-child {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--navy);
+  font-weight: 1000;
+}
+
+.season-ranking-row strong {
+  overflow-wrap: anywhere;
+}
+
+.season-editor-modal {
+  width: min(94vw, 920px);
+  max-height: min(92vh, 900px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.season-editor-form {
+  display: grid;
+  gap: 14px;
+}
+
+.season-editor-row {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 8px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-small);
+  padding: 10px;
+  background: var(--surface-strong);
+}
+
+.season-editor-row label:last-child {
+  grid-column: 1 / -1;
+}
+
+.season-editor-row label span {
+  font-size: 0.82rem;
+}
+
+.season-editor-actions {
+  position: sticky;
+  bottom: -1px;
+  z-index: 2;
+  padding-top: 10px;
+  background: var(--surface);
+}
+
 body.outdoor-mode {
   --bg: #f7fbff;
   --surface: #ffffff;
@@ -1233,7 +1431,8 @@ body.outdoor-mode .accordion,
 body.outdoor-mode .score-header,
 body.outdoor-mode .result-card,
 body.outdoor-mode .standing-card,
-body.outdoor-mode .order-card {
+body.outdoor-mode .order-card,
+body.outdoor-mode .season-standing-card {
   border-width: 2px;
 }
 
@@ -1281,7 +1480,11 @@ body.outdoor-mode .sticky-actions {
   .step {
     min-height: 58px;
     padding: 5px 3px;
-    font-size: 0.72rem;
+    font-size: 0.66rem;
+  }
+
+  .stepper {
+    gap: 4px;
   }
 
   .step-label-full {
@@ -1338,6 +1541,15 @@ body.outdoor-mode .sticky-actions {
   .quick-actions {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .season-editor-row {
+    grid-template-columns: 90px minmax(0, 1fr) 150px;
+    align-items: end;
+  }
+
+  .season-editor-row label:last-child {
+    grid-column: auto;
+  }
 }
 
 @media (min-width: 980px) {
@@ -1361,12 +1573,14 @@ body.outdoor-mode .sticky-actions {
   .summary-accordion,
   .result-list,
   .standings,
+  .season-standings,
   .order-list {
     grid-column: 1 / -1;
   }
 
   .result-list,
-  .standings {
+  .standings,
+  .season-standings {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

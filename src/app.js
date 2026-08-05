@@ -1,5 +1,6 @@
-import { APP_VERSION, DEFAULT_COMPETITORS, DEFAULT_EVENTS, EVENT_TYPE_LABEL } from './data.js';
+import { APP_VERSION, BASE_REVISION, DEFAULT_COMPETITORS, DEFAULT_EVENTS, DEFAULT_SEASON, EVENT_TYPE_LABEL } from './data.js';
 import { buildFinalStartOrder, buildNextStartOrder, buildScores, calculateEventPoints, rankStandings } from './scoring.js';
+import { calculateSeasonStandings, formatSeasonDate, normalizeSeasonEvent, normalizeSeasonEvents, seasonPointsForPosition } from './season.js';
 import {
   clearSavedState,
   deleteCheckpoints,
@@ -8,7 +9,9 @@ import {
   loadSavedState,
   pickImageFile,
   pickJsonFile,
+  pickSeasonFile,
   readJsonFile,
+  readTextFile,
   saveCheckpoint,
   saveState
 } from './storage.js';
@@ -17,18 +20,20 @@ const app = document.getElementById('app');
 const collator = new Intl.Collator('pl', { sensitivity: 'base' });
 let deferredInstallPrompt = null;
 let stopwatchTimer = null;
-const STAGES = ['setup', 'draw', 'scoring', 'summary'];
+const STAGES = ['setup', 'draw', 'scoring', 'summary', 'season'];
 const STAGE_LABELS = {
   setup: 'Przygotowanie',
   draw: 'Kolejność',
   scoring: 'Wyniki',
-  summary: 'Klasyfikacja'
+  summary: 'Klasyfikacja',
+  season: 'Sezon'
 };
 const STAGE_SHORT_LABELS = {
   setup: 'Start',
-  draw: 'Kolejność',
+  draw: 'Kolej.',
   scoring: 'Wyniki',
-  summary: 'Tabela'
+  summary: 'Tabela',
+  season: 'Sezon'
 };
 
 let state = hydrateState(loadSavedState());
@@ -45,18 +50,21 @@ app.addEventListener('submit', handleSubmit);
 app.addEventListener('toggle', handleToggle, true);
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && state.ui.profileCompetitorId) closeCompetitorProfile();
+  if (event.key === 'Escape' && state.ui.seasonEditor) closeSeasonEditor();
 });
 
 function createInitialState() {
   const competitors = normalizeCompetitors(DEFAULT_COMPETITORS);
   const events = normalizeEvents(DEFAULT_EVENTS);
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    baseRevision: BASE_REVISION,
     appVersion: APP_VERSION,
     createdAt: new Date().toISOString(),
     savedAt: null,
     eventName: 'Nowe zawody Strong Man',
     eventLocation: '',
+    eventDate: '',
     backupEmail: '',
     finalistsLimit: 5,
     outdoorMode: true,
@@ -72,7 +80,9 @@ function createInitialState() {
     currentEventIndex: 0,
     eventHistory: [],
     drafts: {},
-    scores: {}
+    scores: {},
+    seasonEvents: normalizeSeasonEvents(DEFAULT_SEASON.events),
+    seasonMaxCountedStarts: DEFAULT_SEASON.maxCountedStarts || 4
   };
 }
 
@@ -90,7 +100,8 @@ function createUiState() {
     profileCompetitorId: null,
     stopwatch: null,
     settingsOpen: false,
-    drawAnimation: null
+    drawAnimation: null,
+    seasonEditor: null
   };
 }
 
@@ -102,13 +113,17 @@ function hydrateState(saved) {
     ...base,
     ...saved,
     competitors: mergeBaseCompetitors(base.competitors, normalizeCompetitors(saved.competitors || [])),
-    events: normalizeEvents(saved.events || DEFAULT_EVENTS),
+    events: mergeBaseEvents(base.events, normalizeEvents(saved.events || [])),
     selectedCompetitorIds: Array.isArray(saved.selectedCompetitorIds) ? saved.selectedCompetitorIds : [],
     selectedEventIds: Array.isArray(saved.selectedEventIds) ? saved.selectedEventIds : [],
     startOrderIds: Array.isArray(saved.startOrderIds) ? saved.startOrderIds : [],
     eventHistory: Array.isArray(saved.eventHistory) ? saved.eventHistory : [],
     drafts: saved.drafts && typeof saved.drafts === 'object' ? saved.drafts : {},
-    scores: saved.scores && typeof saved.scores === 'object' ? saved.scores : {}
+    scores: saved.scores && typeof saved.scores === 'object' ? saved.scores : {},
+    seasonEvents: normalizeSeasonEvents(saved.seasonEvents?.length ? saved.seasonEvents : base.seasonEvents),
+    seasonMaxCountedStarts: Math.max(1, Number.parseInt(saved.seasonMaxCountedStarts, 10) || base.seasonMaxCountedStarts),
+    baseRevision: BASE_REVISION,
+    schemaVersion: 2
   };
 
   const competitorIds = new Set(next.competitors.map(competitor => competitor.id));
@@ -146,7 +161,8 @@ function normalizeCompetitors(items) {
         height: source.height || source.wzrost || '',
         weight: source.weight || source.waga || '',
         notes: source.notes || source.description || source.opis || source.achievements || source.osiagniecia || '',
-        photo: source.photo || source.image || source.avatar || source.icon || ''
+        photo: source.photo || source.image || source.avatar || source.icon || '',
+        dataWarnings: Array.isArray(source.dataWarnings) ? source.dataWarnings.filter(Boolean).map(String) : []
       };
     })
     .filter(Boolean)
@@ -162,7 +178,8 @@ function mergeBaseCompetitors(baseCompetitors, savedCompetitors) {
       ...byKey.get(key),
       ...competitor,
       photo: competitor.photo || byKey.get(key)?.photo || '',
-      categories: competitor.categories?.length ? competitor.categories : byKey.get(key)?.categories || []
+      categories: competitor.categories?.length ? competitor.categories : byKey.get(key)?.categories || [],
+      dataWarnings: competitor.dataWarnings?.length ? competitor.dataWarnings : byKey.get(key)?.dataWarnings || []
     });
   });
   return [...byKey.values()].sort((a, b) => collator.compare(a.name, b.name));
@@ -187,6 +204,16 @@ function normalizeEvents(items) {
     })
     .filter(Boolean)
     .sort((a, b) => collator.compare(a.name, b.name));
+}
+
+function mergeBaseEvents(baseEvents, savedEvents) {
+  const byKey = new Map();
+  [...baseEvents, ...savedEvents].forEach(eventItem => {
+    const key = `${normalizeKey(eventItem.name)}:${eventItem.type}`;
+    if (!key) return;
+    byKey.set(key, { ...byKey.get(key), ...eventItem });
+  });
+  return [...byKey.values()].sort((a, b) => collator.compare(a.name, b.name));
 }
 
 function render() {
@@ -227,6 +254,7 @@ function render() {
     ${renderInstallHelp()}
     ${renderCompetitorProfile()}
     ${renderStopwatch()}
+    ${renderSeasonEditor()}
   `;
   syncStopwatchTicker();
 }
@@ -235,6 +263,7 @@ function renderStage() {
   if (state.stage === 'draw') return renderDraw();
   if (state.stage === 'scoring') return renderScoring();
   if (state.stage === 'summary') return renderSummary();
+  if (state.stage === 'season') return renderSeason();
   return renderSetup();
 }
 
@@ -256,6 +285,7 @@ function stageSubtitle() {
   if (state.stage === 'setup') return selected;
   if (state.stage === 'draw') return 'Ustaw lub wylosuj pierwszą kolejność startową';
   if (state.stage === 'scoring') return currentEvent()?.name || 'Wpisywanie wyników';
+  if (state.stage === 'season') return `Puchar Polski 2026 · ${state.seasonEvents.length} imprez`;
   return 'Wyniki końcowe i eksport';
 }
 
@@ -279,6 +309,10 @@ function renderSetup() {
         <label>
           <span>Miejsce</span>
           <input value="${escapeAttr(state.eventLocation)}" data-bind="eventLocation" autocomplete="off">
+        </label>
+        <label>
+          <span>Data zawodów</span>
+          <input type="date" value="${escapeAttr(state.eventDate)}" data-bind="eventDate">
         </label>
         <label>
           <span>E-mail backupu</span>
@@ -701,6 +735,135 @@ function renderEventSummaryDetails(event) {
   `;
 }
 
+function renderSeason() {
+  const standings = calculateSeasonStandings(state.seasonEvents, state.seasonMaxCountedStarts);
+  const completedEvents = state.seasonEvents.filter(event => event.ranking.length).length;
+  return `
+    <section class="panel strong-panel season-overview">
+      <div class="panel-heading">
+        <span class="panel-icon">2026</span>
+        <div>
+          <h2>Klasyfikacja generalna</h2>
+          <p>${completedEvents} imprez · punkty 5-4-3-2-1 · liczą się ${state.seasonMaxCountedStarts} najlepsze starty</p>
+        </div>
+      </div>
+      <div class="button-column season-actions">
+        <button type="button" class="primary-button" data-action="add-season-event">Dodaj zawody</button>
+        <button type="button" class="secondary-button" data-action="import-season">Importuj JSON / HTML</button>
+        <button type="button" class="success-button" data-action="export-season">Eksportuj sezon JSON</button>
+      </div>
+      <p class="season-import-note">Plik HTML z wynikami aplikacji można wczytać bez przepisywania tabeli. PDF dodaj ręcznie, aby uniknąć błędów odczytu.</p>
+    </section>
+
+    <section class="season-standings" aria-label="Klasyfikacja generalna sezonu 2026">
+      ${standings.length ? standings.map(row => renderSeasonStanding(row)).join('') : '<div class="empty-state">Brak wyników sezonu.</div>'}
+    </section>
+
+    <section class="panel season-events-panel">
+      <div class="panel-heading">
+        <span class="panel-icon">#</span>
+        <div>
+          <h2>Imprezy sezonu</h2>
+          <p>Chronologiczna lista wyników. Każdą imprezę można rozwinąć, edytować albo usunąć.</p>
+        </div>
+      </div>
+      <div class="season-event-list">
+        ${state.seasonEvents.map((event, index) => renderSeasonEvent(event, index)).join('')}
+      </div>
+    </section>
+  `;
+}
+
+function renderSeasonStanding(row) {
+  const resultByEvent = new Map(row.results.map(result => [result.eventId, result]));
+  return `
+    <details class="season-standing-card ${row.rank <= 3 ? 'is-podium' : ''}">
+      <summary>
+        <span class="rank">${row.rank}</span>
+        <span class="season-standing-main">
+          <strong>${escapeHtml(row.name)}</strong>
+          <small>${row.starts} ${row.starts === 1 ? 'start' : 'starty'} · wszystkie: ${row.allPoints} pkt${row.rejectedPoints ? ` · odrzucone: ${row.rejectedPoints}` : ''}</small>
+        </span>
+        <strong class="season-total">${row.countedPoints} pkt</strong>
+      </summary>
+      <div class="season-points-strip">
+        ${state.seasonEvents.map(event => {
+          const result = resultByEvent.get(event.id);
+          if (!result) return `<span class="season-point is-empty" title="${escapeAttr(event.location)}">-</span>`;
+          const counted = row.countedEventIds.includes(event.id);
+          return `<span class="season-point ${counted ? 'is-counted' : 'is-rejected'}" title="${escapeAttr(`${event.location}: ${result.position}. miejsce`)}">${result.points}</span>`;
+        }).join('')}
+      </div>
+    </details>
+  `;
+}
+
+function renderSeasonEvent(event, index) {
+  const leader = event.ranking.find(result => result.position === 1) || event.ranking[0];
+  return `
+    <details class="accordion season-event-card">
+      <summary>
+        <span>${index + 1}. ${escapeHtml(event.location)} · ${formatSeasonDate(event.date)}</span>
+        <small>${leader ? `Zwycięzca: ${escapeHtml(leader.name)}` : 'Brak klasyfikacji'}</small>
+      </summary>
+      <div class="accordion__body">
+        <div class="season-ranking-list">
+          ${event.ranking.map(result => `
+            <div class="season-ranking-row">
+              <span>${result.position}</span>
+              <strong>${escapeHtml(result.name)}</strong>
+              <span>${seasonPointsForPosition(result.position)} pkt</span>
+            </div>
+          `).join('') || '<div class="empty-state">Brak wpisanych lokat.</div>'}
+        </div>
+        ${event.sourceFile ? `<small>Źródło: ${escapeHtml(event.sourceFile)}</small>` : ''}
+        <div class="button-row">
+          <button type="button" class="secondary-button" data-action="edit-season-event" data-id="${escapeAttr(event.id)}">Edytuj</button>
+          <button type="button" class="danger-button" data-action="delete-season-event" data-id="${escapeAttr(event.id)}">Usuń</button>
+        </div>
+      </div>
+    </details>
+  `;
+}
+
+function renderSeasonEditor() {
+  const editor = state.ui.seasonEditor;
+  if (!editor) return '';
+  const rows = Array.from({ length: 5 }, (_, index) => editor.ranking?.[index] || { position: index + 1, name: '', competitionPoints: '' });
+  return `
+    <div class="modal-backdrop season-editor-backdrop" role="presentation">
+      <section class="modal season-editor-modal" role="dialog" aria-modal="true" aria-labelledby="season-editor-title">
+        <h2 id="season-editor-title">${editor.id ? 'Edytuj zawody sezonu' : 'Dodaj zawody sezonu'}</h2>
+        <p>Wpisz pięć pozycji klasyfikacji końcowej. Przy remisie powtórz lokatę, na przykład 1, 2, 2, 4, 5.</p>
+        <form data-form="season-event" class="season-editor-form">
+          <input type="hidden" name="id" value="${escapeAttr(editor.id || '')}">
+          <div class="form-grid">
+            <label><span>Data</span><input type="date" name="date" value="${escapeAttr(editor.date || '')}" required></label>
+            <label><span>Miejscowość</span><input name="location" value="${escapeAttr(editor.location || '')}" autocomplete="off" required></label>
+          </div>
+          <label><span>Plik źródłowy / opis</span><input name="sourceFile" value="${escapeAttr(editor.sourceFile || '')}" autocomplete="off"></label>
+          <datalist id="season-competitors">
+            ${state.competitors.filter(competitor => competitor.categories?.includes('Puchar Polski')).map(competitor => `<option value="${escapeAttr(competitor.name)}"></option>`).join('')}
+          </datalist>
+          <div class="season-editor-results">
+            ${rows.map((row, index) => `
+              <div class="season-editor-row">
+                <label><span>Lokata</span><input type="number" min="1" max="5" name="position-${index}" value="${escapeAttr(row.position)}" inputmode="numeric" required></label>
+                <label><span>Zawodnik</span><input name="competitor-${index}" value="${escapeAttr(row.name || '')}" list="season-competitors" autocomplete="off" required></label>
+                <label><span>Pkt zawodów</span><input type="number" step="0.01" min="0" name="competitionPoints-${index}" value="${escapeAttr(row.competitionPoints || '')}" inputmode="decimal"></label>
+              </div>
+            `).join('')}
+          </div>
+          <div class="button-row season-editor-actions">
+            <button type="button" class="secondary-button" data-action="close-season-editor">Anuluj</button>
+            <button type="submit" class="success-button">Zapisz zawody</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  `;
+}
+
 function accordion(id, title, subtitle, body, defaultOpen = true) {
   const open = state.ui.sections[id] ?? defaultOpen;
   return `
@@ -776,10 +939,11 @@ function renderCompetitorProfile() {
   const competitor = competitorById(state.ui.profileCompetitorId);
   if (!competitor) return '';
   const categories = [...new Set([competitor.category, ...(competitor.categories || [])].filter(Boolean))];
-  const age = calculateAge(competitor.birthDate);
+  const dataWarnings = Array.isArray(competitor.dataWarnings) ? competitor.dataWarnings.filter(Boolean) : [];
+  const age = dataWarnings.length ? null : calculateAge(competitor.birthDate);
   const details = [
     ['Wiek', age === null ? '' : `${age} lat`],
-    ['Data urodzenia', formatBirthDate(competitor.birthDate)],
+    ['Data urodzenia', competitor.birthDate ? `${formatBirthDate(competitor.birthDate)}${dataWarnings.length ? ' (do weryfikacji)' : ''}` : ''],
     ['Wzrost', formatMeasurement(competitor.height, 'cm')],
     ['Waga', formatMeasurement(competitor.weight, 'kg')],
     ['Miejsce zamieszkania', competitor.residence],
@@ -802,6 +966,12 @@ function renderCompetitorProfile() {
             ${details.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(String(value))}</dd></div>`).join('')}
           </dl>
         ` : '<p class="empty-profile-data">Brak szczegółowych danych zawodnika.</p>'}
+        ${dataWarnings.length ? `
+          <aside class="profile-data-warning" role="note">
+            <strong>Dane wymagają weryfikacji</strong>
+            <p>${escapeHtml(dataWarnings.join(' '))}</p>
+          </aside>
+        ` : ''}
         <section class="profile-notes-section">
           <h3>Osiągnięcia i informacje</h3>
           <p class="profile-notes">${escapeHtml(competitor.notes || 'Brak dodatkowego opisu.')}</p>
@@ -877,6 +1047,12 @@ async function handleClick(event) {
   if (action === 'export-competitors') return exportCompetitors();
   if (action === 'import-events') return importEvents();
   if (action === 'export-events') return exportEvents();
+  if (action === 'add-season-event') return openSeasonEditor();
+  if (action === 'edit-season-event') return openSeasonEditor(id);
+  if (action === 'delete-season-event') return deleteSeasonEvent(id);
+  if (action === 'close-season-editor') return closeSeasonEditor();
+  if (action === 'import-season') return importSeason();
+  if (action === 'export-season') return exportSeason();
   if (action === 'change-logo') return changeLogo();
   if (action === 'reset-logo') return resetLogo();
   if (action === 'open-reset') return openReset();
@@ -947,6 +1123,11 @@ function handleSubmit(event) {
   event.preventDefault();
   const data = new FormData(form);
 
+  if (form.dataset.form === 'season-event') {
+    saveSeasonEvent(data);
+    return;
+  }
+
   if (form.dataset.form === 'add-competitor') {
     const name = String(data.get('name') || '').trim();
     if (!name) return flash('Wpisz nazwisko zawodnika.');
@@ -992,6 +1173,11 @@ function goStage(stage) {
   if (stage === 'setup') return guardedGoSetup();
   if (stage === 'draw') return goDraw();
   if (stage === 'scoring') return goScoring();
+  if (stage === 'season') {
+    state.stage = 'season';
+    persistAndRender();
+    return;
+  }
   if (stage === 'summary') {
     if (!state.eventHistory.length) return flash('Klasyfikacja pojawi się po podsumowaniu konkurencji.');
     state.stage = 'summary';
@@ -1394,6 +1580,247 @@ function exportEvents() {
   downloadJson(`konkurencje_${timestamp()}.json`, state.events);
 }
 
+function openSeasonEditor(id = '', seed = null) {
+  const source = seed || state.seasonEvents.find(event => event.id === id) || {
+    id: '',
+    date: state.eventDate || '',
+    location: state.eventLocation || '',
+    sourceFile: '',
+    ranking: []
+  };
+  state.ui.seasonEditor = structuredClone(source);
+  render();
+  window.setTimeout(() => app.querySelector('.season-editor-modal input:not([type="hidden"])')?.focus(), 60);
+}
+
+function closeSeasonEditor() {
+  state.ui.seasonEditor = null;
+  render();
+}
+
+function saveSeasonEvent(data) {
+  const id = String(data.get('id') || '').trim();
+  const date = String(data.get('date') || '').trim();
+  const location = String(data.get('location') || '').trim();
+  const sourceFile = String(data.get('sourceFile') || '').trim();
+  const ranking = Array.from({ length: 5 }, (_, index) => {
+    const typedName = String(data.get(`competitor-${index}`) || '').trim();
+    const existing = state.competitors.find(competitor => normalizeKey(competitor.name) === normalizeKey(typedName));
+    const name = existing?.name || typedName;
+    return {
+      position: Number.parseInt(data.get(`position-${index}`), 10),
+      competitorId: existing?.id || '',
+      name,
+      sourceName: typedName,
+      seasonPoints: seasonPointsForPosition(data.get(`position-${index}`)),
+      competitionPoints: Number(data.get(`competitionPoints-${index}`) || 0),
+    };
+  });
+
+  if (!date || !location) return flash('Wpisz datę i miejscowość zawodów.');
+  if (ranking.some(row => !row.name || row.position < 1 || row.position > 5)) {
+    return flash('Wpisz pięciu zawodników i prawidłowe lokaty 1-5.');
+  }
+  if (new Set(ranking.map(row => normalizeKey(row.name))).size !== ranking.length) {
+    return flash('Ten sam zawodnik nie może wystąpić dwa razy w jednej klasyfikacji.');
+  }
+  const sortedPositions = ranking.map(row => row.position).sort((a, b) => a - b);
+  if (sortedPositions[0] !== 1 || sortedPositions.some((position, index) => index > 0 && position !== sortedPositions[index - 1] && position !== index + 1)) {
+    return flash('Popraw układ lokat. Po remisie następna lokata musi uwzględniać liczbę zawodników, np. 1, 2, 2, 4, 5.');
+  }
+
+  const duplicate = state.seasonEvents.find(event => event.id !== id && event.date === date && normalizeKey(event.location) === normalizeKey(location));
+  if (duplicate && !window.confirm(`Zawody ${duplicate.location} z dnia ${formatSeasonDate(duplicate.date)} już istnieją. Zastąpić je?`)) return;
+
+  ranking.forEach(row => {
+    let competitor = state.competitors.find(item => normalizeKey(item.name) === normalizeKey(row.name));
+    if (!competitor) {
+      competitor = {
+        id: makeId('competitor', row.name),
+        name: row.name,
+        category: 'Puchar Polski',
+        categories: ['Puchar Polski'],
+        birthDate: '', residence: '', height: '', weight: '', notes: '', photo: ''
+      };
+      state.competitors.push(competitor);
+    } else if (!competitor.categories?.includes('Puchar Polski')) {
+      competitor.categories = [...new Set([...(competitor.categories || []), 'Puchar Polski'])];
+    }
+    row.competitorId = competitor.id;
+  });
+  state.competitors.sort((a, b) => collator.compare(a.name, b.name));
+
+  const previous = state.seasonEvents.find(event => event.id === id) || duplicate;
+  const normalized = normalizeSeasonEvent({
+    ...previous,
+    id: previous?.id || `season-${date}-${slug(location)}-${Date.now()}`,
+    date,
+    location,
+    name: `${location} · ${formatSeasonDate(date)}`,
+    sourceFile,
+    ranking,
+  });
+  state.seasonEvents = renumberSeasonEvents([
+    ...state.seasonEvents.filter(event => event.id !== id && event.id !== duplicate?.id),
+    normalized,
+  ]);
+  state.ui.seasonEditor = null;
+  persistAndRender('Zawody sezonu zapisane i klasyfikacja przeliczona.');
+}
+
+function deleteSeasonEvent(id) {
+  const seasonEvent = state.seasonEvents.find(event => event.id === id);
+  if (!seasonEvent) return;
+  if (!window.confirm(`Usunąć z sezonu zawody ${seasonEvent.location} · ${formatSeasonDate(seasonEvent.date)}? Klasyfikacja zostanie natychmiast przeliczona.`)) return;
+  state.seasonEvents = renumberSeasonEvents(state.seasonEvents.filter(event => event.id !== id));
+  persistAndRender('Zawody usunięte z klasyfikacji sezonu.');
+}
+
+function exportSeason() {
+  const payload = {
+    schemaVersion: 1,
+    season: 2026,
+    seriesName: DEFAULT_SEASON.seriesName,
+    maxCountedStarts: state.seasonMaxCountedStarts,
+    pointsByPosition: DEFAULT_SEASON.pointsByPosition,
+    exportedAt: new Date().toISOString(),
+    events: state.seasonEvents,
+    standings: calculateSeasonStandings(state.seasonEvents, state.seasonMaxCountedStarts),
+  };
+  downloadJson(`klasyfikacja_generalna_2026_${timestamp()}.json`, payload);
+  flash('Eksport sezonu przygotowany.');
+}
+
+async function importSeason() {
+  const file = await pickSeasonFile();
+  if (!file) return;
+  try {
+    const text = await readTextFile(file);
+    if (file.name.toLowerCase().endsWith('.json') || text.trim().startsWith('{') || text.trim().startsWith('[')) {
+      const payload = JSON.parse(text);
+      if (Array.isArray(payload?.eventHistory)) {
+        const seed = seasonEventFromCompetitionState(payload, file.name);
+        if (!seed) return flash('Stan nie zawiera pełnej klasyfikacji zawodów.');
+        openSeasonEditor('', seed);
+        return;
+      }
+      if (Array.isArray(payload?.events) && payload.events.length > 1) {
+        const imported = normalizeSeasonEvents(payload.events);
+        if (!imported.length) return flash('W pliku nie znaleziono prawidłowych zawodów sezonu.');
+        if (!window.confirm(`Zaimportować ${imported.length} imprez i zastąpić wpisy o tej samej dacie oraz miejscowości?`)) return;
+        state.seasonEvents = mergeSeasonEvents(state.seasonEvents, imported);
+        ensureSeasonCompetitors(imported);
+        persistAndRender(`Zaimportowano ${imported.length} imprez sezonu.`);
+        return;
+      }
+      const candidate = normalizeSeasonEvent(payload?.events?.[0] || payload);
+      if (candidate) {
+        openSeasonEditor(candidate.id, candidate);
+        return;
+      }
+      return flash('Nie rozpoznano formatu pliku sezonu.');
+    }
+
+    if (/<html[\s>]/i.test(text)) {
+      const seed = parseSeasonHtml(text, file.name);
+      if (!seed) return flash('W HTML nie znaleziono klasyfikacji końcowej 1-5.');
+      openSeasonEditor('', seed);
+      return;
+    }
+    flash('Obsługiwane są pliki JSON i HTML. Wynik PDF dodaj ręcznie.');
+  } catch {
+    flash('Nie udało się odczytać pliku. Sprawdź, czy jest kompletny.');
+  }
+}
+
+function parseSeasonHtml(text, sourceFile) {
+  const documentNode = new DOMParser().parseFromString(text, 'text/html');
+  const table = [...documentNode.querySelectorAll('table')].find(candidate => {
+    const header = normalizeKey(candidate.querySelector('tr')?.textContent || '');
+    return header.includes('zawodnik') && (header.includes('punkty') || header.includes('suma'));
+  });
+  if (!table) return null;
+  const ranking = [...table.querySelectorAll('tbody tr, tr')]
+    .map(row => [...row.querySelectorAll('td')].map(cell => cell.textContent.trim()))
+    .filter(cells => cells.length >= 3)
+    .map(cells => ({
+      position: Number.parseInt(cells[0].match(/\d+/)?.[0], 10),
+      name: cells[1],
+      sourceName: cells[1],
+      competitionPoints: Number(String(cells[2]).replace(',', '.')) || 0,
+    }))
+    .filter(row => row.position >= 1 && row.position <= 5 && row.name)
+    .slice(0, 5);
+  if (ranking.length !== 5) return null;
+
+  const pageText = documentNode.body?.textContent || '';
+  const dateMatch = pageText.match(/(\d{1,2})[.\/-](\d{1,2})[.\/-](2026)/);
+  const date = dateMatch ? `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}` : '';
+  const subtitle = [...documentNode.querySelectorAll('h2, body > p')]
+    .map(node => node.textContent.trim())
+    .find(value => value && !/klasyfikacja|szczegółowe|wygenerowano/i.test(value) && !/^\d+\./.test(value));
+  const location = String(subtitle || '')
+    .split('·')[0]
+    .replace(/\d{1,2}[.\/-]\d{1,2}[.\/-]2026.*$/, '')
+    .trim();
+  return { id: '', date, location, sourceFile, ranking };
+}
+
+function seasonEventFromCompetitionState(payload, sourceFile) {
+  const competitors = (payload.selectedCompetitorIds || [])
+    .map(id => payload.competitors?.find(competitor => competitor.id === id))
+    .filter(Boolean);
+  if (!competitors.length || !payload.eventHistory?.length) return null;
+  const scores = payload.scores && typeof payload.scores === 'object'
+    ? payload.scores
+    : buildScores(payload.selectedCompetitorIds || [], payload.eventHistory);
+  const standings = rankStandings(competitors, scores, payload.eventHistory).slice(0, 5);
+  if (standings.length !== 5) return null;
+  return {
+    id: '',
+    date: payload.eventDate || '',
+    location: payload.eventLocation || '',
+    sourceFile,
+    ranking: standings.map(row => ({
+      position: row.rank,
+      competitorId: row.id,
+      name: row.name,
+      sourceName: row.name,
+      competitionPoints: row.points,
+    })),
+  };
+}
+
+function mergeSeasonEvents(current, imported) {
+  const byKey = new Map(current.map(event => [`${event.date}:${normalizeKey(event.location)}`, event]));
+  imported.forEach(event => byKey.set(`${event.date}:${normalizeKey(event.location)}`, event));
+  return renumberSeasonEvents([...byKey.values()]);
+}
+
+function renumberSeasonEvents(items) {
+  return normalizeSeasonEvents(items).map((event, index) => ({ ...event, number: index + 1 }));
+}
+
+function ensureSeasonCompetitors(events) {
+  events.flatMap(event => event.ranking).forEach(row => {
+    const existing = state.competitors.find(competitor => normalizeKey(competitor.name) === normalizeKey(row.name));
+    if (existing) {
+      row.competitorId = existing.id;
+      return;
+    }
+    const competitor = {
+      id: makeId('competitor', row.name),
+      name: row.name,
+      category: 'Puchar Polski',
+      categories: ['Puchar Polski'],
+      birthDate: '', residence: '', height: '', weight: '', notes: '', photo: ''
+    };
+    state.competitors.push(competitor);
+    row.competitorId = competitor.id;
+  });
+  state.competitors.sort((a, b) => collator.compare(a.name, b.name));
+}
+
 async function changeLogo() {
   const file = await pickImageFile();
   if (!file) return;
@@ -1718,6 +2145,7 @@ function mergeCompetitorDetails(existing, imported) {
   });
   if (imported.categories?.length) merged.categories = [...new Set(imported.categories.filter(Boolean))];
   if (!merged.categories?.length && merged.category) merged.categories = [merged.category];
+  if (imported.dataWarnings?.length) merged.dataWarnings = [...new Set(imported.dataWarnings.filter(Boolean).map(String))];
   return merged;
 }
 
@@ -1900,7 +2328,7 @@ function buildResultsHtml(standings) {
 </head>
 <body>
   <h1>${escapeHtml(state.eventName || 'Zawody Strong Man')}</h1>
-  <p>${escapeHtml(state.eventLocation || '')} · ${new Date().toLocaleString('pl-PL')}</p>
+  <p>${escapeHtml(state.eventLocation || '')}${state.eventDate ? ` · ${formatSeasonDate(state.eventDate)}` : ''} · wyeksportowano ${new Date().toLocaleString('pl-PL')}</p>
   <h2>Klasyfikacja</h2>
   <table>
     <thead><tr><th>#</th><th>Zawodnik</th><th>Punkty</th><th>Tie-break</th></tr></thead>
@@ -1955,6 +2383,8 @@ function escapeAttr(value) {
 
 function normalizeKey(value) {
   return String(value || '')
+    .replaceAll('ł', 'l')
+    .replaceAll('Ł', 'L')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()

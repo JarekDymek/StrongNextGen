@@ -1,0 +1,1524 @@
+// Generated from the verified 2026 Puchar Polski result sources.
+export const DEFAULT_SEASON = {
+  "schemaVersion": 1,
+  "season": 2026,
+  "seriesName": "Puchar Polski Strongman Tyberian Team",
+  "maxCountedStarts": 4,
+  "pointsByPosition": {
+    "1": 5,
+    "2": 4,
+    "3": 3,
+    "4": 2,
+    "5": 1
+  },
+  "updatedThrough": "2026-08-02",
+  "events": [
+    {
+      "id": "season-2026-01",
+      "number": 1,
+      "date": "2026-05-01",
+      "location": "Siewierz",
+      "name": "Siewierz · 01.05.2026",
+      "sourceFile": "SIEWIERZ 1.05.2026",
+      "ranking": [
+        {
+          "position": 1,
+          "competitorId": "competitor-lukasz-kieliszkowski",
+          "name": "Łukasz Kieliszkowski",
+          "sourceName": "ŁUKASZ KIELISZKOWSKI",
+          "seasonPoints": 5,
+          "competitionPoints": 23.0
+        },
+        {
+          "position": 2,
+          "competitorId": "competitor-marcin-stankiewicz",
+          "name": "Marcin Stankiewicz",
+          "sourceName": "MARCIN STANKIEWICZ",
+          "seasonPoints": 4,
+          "competitionPoints": 20.0
+        },
+        {
+          "position": 3,
+          "competitorId": "competitor-bartlomiej-babol",
+          "name": "Bartłomiej Bąbol",
+          "sourceName": "BARTŁOMIEJ BĄBOL",
+          "seasonPoints": 3,
+          "competitionPoints": 19.0
+        },
+        {
+          "position": 4,
+          "competitorId": "competitor-bartosz-postoj",
+          "name": "Bartosz Postój",
+          "sourceName": "BARTŁOMIEJ POSYÓJ (i) Wygrana przez: więcej 2. miejsc",
+          "seasonPoints": 2,
+          "competitionPoints": 11.0
+        },
+        {
+          "position": 5,
+          "competitorId": "competitor-krzysztof-kacnerski",
+          "name": "Krzysztof Kacnerski",
+          "sourceName": "KRZYSZTOF KACNERSKI",
+          "seasonPoints": 1,
+          "competitionPoints": 11.0
+        }
+      ],
+      "competitions": [
+        {
+          "id": "event-spacer-farmera-140-kg-2-x-20-m",
+          "name": "Spacer Farmera 140 kg - 2 x 20 m",
+          "type": "low",
+          "final": false,
+          "sourceName": "Spacer Farmera na czas 140 kg 2x20m"
+        },
+        {
+          "id": "event-wyciskanie-belki-140-kg-60-sek",
+          "name": "Wyciskanie belki 140 kg - 60 sek.",
+          "type": "high",
+          "final": false,
+          "sourceName": "Wyciskanie belki 140 kg"
+        },
+        {
+          "id": "event-uchwyt-herkulesa",
+          "name": "Uchwyt Herkulesa",
+          "type": "high",
+          "final": false,
+          "sourceName": "Uchwyt Herkulesa"
+        },
+        {
+          "id": "event-spacer-buszmena-380-kg-20-m",
+          "name": "Spacer Buszmena 380 kg - 20 m",
+          "type": "low",
+          "final": false,
+          "sourceName": "Spacer Buszmena 380 kg"
+        },
+        {
+          "id": "event-worki-zaladunek-3-x-100-kg",
+          "name": "Worki - załadunek 3 x 100 kg",
+          "type": "low",
+          "final": false,
+          "sourceName": "Worki 3x100 kg"
+        },
+        {
+          "id": "event-przerzucanie-opony-360-kg-6-obrotow",
+          "name": "Przerzucanie opony 360 kg - 6 obrotów",
+          "type": "low",
+          "final": true,
+          "sourceName": "Przerzucanie opony 360 hg"
+        }
+      ]
+    },
+    {
+      "id": "season-2026-02",
+      "number": 2,
+      "date": "2026-05-30",
+      "location": "Czerwonak",
+      "name": "Czerwonak · 30.05.2026",
+      "sourceFile": "Czerwonak 30.05",
+      "ranking": [
+        {
+          "position": 1,
+          "competitorId": "competitor-jakub-szczechowski",
+          "name": "Jakub Szczechowski",
+          "sourceName": "JAKUB SZCZECHOWSKI",
+          "seasonPoints": 5,
+          "competitionPoints": 24.0
+        },
+        {
+          "position": 2,
+          "competitorId": "competitor-marcin-schabowski",
+          "name": "Marcin Schabowski",
+          "sourceName": "MARCIN SCHABOWSKI",
+          "seasonPoints": 4,
+          "competitionPoints": 22.0
+        },
+        {
+          "position": 3,
+          "competitorId": "competitor-tomasz-lademann",
+          "name": "Tomasz Lademann",
+          "sourceName": "TOMASZ LADEMANN",
+          "seasonPoints": 3,
+          "competitionPoints": 20.0
+        },
+        {
+          "position": 4,
+          "competitorId": "competitor-pawel-kostrzewski",
+          "name": "Paweł Kostrzewski",
+          "sourceName": "PAWEL KOSTRZEWSKI",
+          "seasonPoints": 2,
+          "competitionPoints": 13.0
+        },
+        {
+          "position": 5,
+          "competitorId": "competitor-mariusz-pachut",
+          "name": "Mariusz Pachut",
+          "sourceName": "MARIUSZ PACHUT",
+          "seasonPoints": 1,
+          "competitionPoints": 11.0
+        }
+      ],
+      "competitions": [
+        {
+          "id": "event-spacer-farmera-140-kg-2-x-20-m",
+          "name": "Spacer Farmera 140 kg - 2 x 20 m",
+          "type": "low",
+          "final": false,
+          "sourceName": "Spacer Farmera 140 kg - 2 x 20m"
+        },
+        {
+          "id": "event-wyciskanie-belki-140-kg-60-sek",
+          "name": "Wyciskanie belki 140 kg - 60 sek.",
+          "type": "high",
+          "final": false,
+          "sourceName": "Wyciskanie belki 140 kg - 60 sek"
+        },
+        {
+          "id": "event-przerzucanie-workow-nad-poprzeczka-20-30-kg",
+          "name": "Przerzucanie worków nad poprzeczką - 20-30 kg",
+          "type": "low",
+          "final": false,
+          "sourceName": "Worki - przerzucanie nad poprzeczka - 20, 22, 24, 26, 28, 30 kg"
+        },
+        {
+          "id": "event-worki-zaladunek-3-x-100-kg",
+          "name": "Worki - załadunek 3 x 100 kg",
+          "type": "low",
+          "final": false,
+          "sourceName": "Worki - zaladunek 3 x 100 kg"
+        },
+        {
+          "id": "event-przerzucanie-opony-360-kg-6-obrotow",
+          "name": "Przerzucanie opony 360 kg - 6 obrotów",
+          "type": "low",
+          "final": false,
+          "sourceName": "Przerzucanie opony 360 kg - 6 obrotow"
+        },
+        {
+          "id": "event-uchwyt-herkulesa",
+          "name": "Uchwyt Herkulesa",
+          "type": "high",
+          "final": true,
+          "sourceName": "Uchwyt Herkulesa"
+        }
+      ]
+    },
+    {
+      "id": "season-2026-03",
+      "number": 3,
+      "date": "2026-06-01",
+      "location": "Kleszczów",
+      "name": "Kleszczów · 01.06.2026",
+      "sourceFile": "Kleszczów 1.06",
+      "ranking": [
+        {
+          "position": 1,
+          "competitorId": "competitor-lukasz-kieliszkowski",
+          "name": "Łukasz Kieliszkowski",
+          "sourceName": "LUKASZ KIELISZKOWSKI",
+          "seasonPoints": 5,
+          "competitionPoints": 24.5
+        },
+        {
+          "position": 2,
+          "competitorId": "competitor-rafal-sojc",
+          "name": "Rafał Sojc",
+          "sourceName": "RAFAL SOJC",
+          "seasonPoints": 4,
+          "competitionPoints": 20.5
+        },
+        {
+          "position": 3,
+          "competitorId": "competitor-bartlomiej-babol",
+          "name": "Bartłomiej Bąbol",
+          "sourceName": "BARTLOMIEJ BABOL",
+          "seasonPoints": 3,
+          "competitionPoints": 17.5
+        },
+        {
+          "position": 4,
+          "competitorId": "competitor-bartosz-postoj",
+          "name": "Bartosz Postój",
+          "sourceName": "BARTOSZ POSTOJ",
+          "seasonPoints": 2,
+          "competitionPoints": 15.5
+        },
+        {
+          "position": 5,
+          "competitorId": "competitor-pawel-piskorz",
+          "name": "Paweł Piskorz",
+          "sourceName": "PAWEL PISKORZ",
+          "seasonPoints": 1,
+          "competitionPoints": 12.0
+        }
+      ],
+      "competitions": [
+        {
+          "id": "event-spacer-farmera-140-kg-2-x-20-m",
+          "name": "Spacer Farmera 140 kg - 2 x 20 m",
+          "type": "low",
+          "final": false,
+          "sourceName": "Spacer Farmera 140 kg - 2 x 20m"
+        },
+        {
+          "id": "event-przerzucanie-workow-nad-poprzeczka-20-30-kg",
+          "name": "Przerzucanie worków nad poprzeczką - 20-30 kg",
+          "type": "low",
+          "final": false,
+          "sourceName": "Worki - przerzucanie nad poprzeczka - 20, 22, 24, 26, 28, 30 kg"
+        },
+        {
+          "id": "event-wyciskanie-belki-140-kg-60-sek",
+          "name": "Wyciskanie belki 140 kg - 60 sek.",
+          "type": "high",
+          "final": false,
+          "sourceName": "Wyciskanie belki 140 kg - 60 sek"
+        },
+        {
+          "id": "event-laczona-worki-kowadlo",
+          "name": "Łączona: worki + kowadło",
+          "type": "low",
+          "final": false,
+          "sourceName": "Laczona: worki + kowadlo"
+        },
+        {
+          "id": "event-przerzucanie-opony-360-kg-6-obrotow",
+          "name": "Przerzucanie opony 360 kg - 6 obrotów",
+          "type": "low",
+          "final": false,
+          "sourceName": "Przerzucanie opony 360 kg - 6 obrotow"
+        },
+        {
+          "id": "event-martwy-ciag-powtorzenia",
+          "name": "Martwy ciąg (powtórzenia)",
+          "type": "high",
+          "final": true,
+          "sourceName": "Martwy ciag (powtorzenia)"
+        }
+      ]
+    },
+    {
+      "id": "season-2026-04",
+      "number": 4,
+      "date": "2026-06-06",
+      "location": "Ruciane-Nida",
+      "name": "Ruciane-Nida · 06.06.2026",
+      "sourceFile": "Ruciane-Nida 06.06.2026 r",
+      "ranking": [
+        {
+          "position": 1,
+          "competitorId": "competitor-rafal-sojc",
+          "name": "Rafał Sojc",
+          "sourceName": "RAFAL SOJC",
+          "seasonPoints": 5,
+          "competitionPoints": 25.0
+        },
+        {
+          "position": 2,
+          "competitorId": "competitor-pawel-piskorz",
+          "name": "Paweł Piskorz",
+          "sourceName": "PAWEL PISKORZ",
+          "seasonPoints": 4,
+          "competitionPoints": 21.0
+        },
+        {
+          "position": 3,
+          "competitorId": "competitor-marcin-stankiewicz",
+          "name": "Marcin Stankiewicz",
+          "sourceName": "MARCIN STANKIEWICZ",
+          "seasonPoints": 3,
+          "competitionPoints": 19.0
+        },
+        {
+          "position": 4,
+          "competitorId": "competitor-przemyslaw-marczewski",
+          "name": "Przemysław Marczewski",
+          "sourceName": "PRZEMYSLAW MARCZEWSKI",
+          "seasonPoints": 2,
+          "competitionPoints": 15.0
+        },
+        {
+          "position": 5,
+          "competitorId": "competitor-mariusz-pachut",
+          "name": "Mariusz Pachut",
+          "sourceName": "MARIUSZ PACHUT",
+          "seasonPoints": 1,
+          "competitionPoints": 6.0
+        }
+      ],
+      "competitions": [
+        {
+          "id": "event-spacer-farmera-140-kg-na-dystans",
+          "name": "Spacer Farmera 140 kg - na dystans",
+          "type": "high",
+          "final": false,
+          "sourceName": "Spacer Farmera 140 kg - 2 x 20m"
+        },
+        {
+          "id": "event-zegar",
+          "name": "Zegar",
+          "type": "high",
+          "final": false,
+          "sourceName": "Zegar"
+        },
+        {
+          "id": "event-axel-gryf-130-kg-60-sek",
+          "name": "Axel Gryf 130 kg - 60 sek.",
+          "type": "high",
+          "final": false,
+          "sourceName": "Axel Gryf 130 kg. X 60 sek"
+        },
+        {
+          "id": "event-spacer-buszmena-380-kg-20-m",
+          "name": "Spacer Buszmena 380 kg - 20 m",
+          "type": "low",
+          "final": false,
+          "sourceName": "Spacer Buszmena 380 kg. x 20m"
+        },
+        {
+          "id": "event-przeciaganie-auta-w-siadzie",
+          "name": "Przeciąganie auta w siadzie",
+          "type": "low",
+          "final": false,
+          "sourceName": "Przeciaganie auta w siadzie"
+        },
+        {
+          "id": "event-przerzucanie-kuli-przez-yoke-140-kg-60-sek",
+          "name": "Przerzucanie kuli przez Yoke - 140 kg, 60 sek.",
+          "type": "high",
+          "final": true,
+          "sourceName": "Przerzucanie kuli przez Yoke - 140 kg x 60 sek"
+        }
+      ]
+    },
+    {
+      "id": "season-2026-05",
+      "number": 5,
+      "date": "2026-06-07",
+      "location": "Prabuty",
+      "name": "Prabuty · 07.06.2026",
+      "sourceFile": "Prabuty 07.06.2026 r",
+      "ranking": [
+        {
+          "position": 1,
+          "competitorId": "competitor-lukasz-kieliszkowski",
+          "name": "Łukasz Kieliszkowski",
+          "sourceName": "LUKASZ KIELISZKOWSKI",
+          "seasonPoints": 5,
+          "competitionPoints": 25.0
+        },
+        {
+          "position": 2,
+          "competitorId": "competitor-jakub-szczechowski",
+          "name": "Jakub Szczechowski",
+          "sourceName": "JAKUB SZCZECHOWSKI",
+          "seasonPoints": 4,
+          "competitionPoints": 23.0
+        },
+        {
+          "position": 3,
+          "competitorId": "competitor-bartlomiej-babol",
+          "name": "Bartłomiej Bąbol",
+          "sourceName": "BARTLOMIEJ BABOL",
+          "seasonPoints": 3,
+          "competitionPoints": 18.5
+        },
+        {
+          "position": 4,
+          "competitorId": "competitor-pawel-kostrzewski",
+          "name": "Paweł Kostrzewski",
+          "sourceName": "PAWEL KOSTRZEWSKI",
+          "seasonPoints": 2,
+          "competitionPoints": 15.0
+        },
+        {
+          "position": 5,
+          "competitorId": "competitor-krzysztof-kacnerski",
+          "name": "Krzysztof Kacnerski",
+          "sourceName": "KRZYSZTOF KACNERSKI",
+          "seasonPoints": 1,
+          "competitionPoints": 7.5
+        }
+      ],
+      "competitions": [
+        {
+          "id": "event-spacer-farmera-140-kg-na-dystans",
+          "name": "Spacer Farmera 140 kg - na dystans",
+          "type": "high",
+          "final": false,
+          "sourceName": "Spacer Farmera na dystans 140 kg"
+        },
+        {
+          "id": "event-zegar",
+          "name": "Zegar",
+          "type": "high",
+          "final": false,
+          "sourceName": "Zegar"
+        },
+        {
+          "id": "event-przerzucanie-workow-nad-poprzeczka-20-30-kg",
+          "name": "Przerzucanie worków nad poprzeczką - 20-30 kg",
+          "type": "low",
+          "final": false,
+          "sourceName": "Worki - przerzucanie nad poprzeczka - 20, 22, 24, 26, 28, 30 kg"
+        },
+        {
+          "id": "event-laczona-barkowa-belka-140-kg-axel-130-kg-i-hantel-90-kg",
+          "name": "Łączona barkowa: belka 140 kg, Axel 130 kg i hantel 90 kg",
+          "type": "low",
+          "final": false,
+          "sourceName": "Laczona Barkowa: Belka 140, Axel 130 i Hantel 90kg"
+        },
+        {
+          "id": "event-przerzucanie-kuli-przez-yoke-140-kg-60-sek",
+          "name": "Przerzucanie kuli przez Yoke - 140 kg, 60 sek.",
+          "type": "high",
+          "final": false,
+          "sourceName": "Przerzucanie kuli przez Yoke - 140 kg x 60 sek"
+        },
+        {
+          "id": "event-przeciaganie-auta-w-siadzie",
+          "name": "Przeciąganie auta w siadzie",
+          "type": "low",
+          "final": true,
+          "sourceName": "Przeciaganie auta w siadzie"
+        }
+      ]
+    },
+    {
+      "id": "season-2026-06",
+      "number": 6,
+      "date": "2026-06-12",
+      "location": "Tuszyn",
+      "name": "Tuszyn · 12.06.2026",
+      "sourceFile": "Tuszyn 12.06.2026 r",
+      "ranking": [
+        {
+          "position": 1,
+          "competitorId": "competitor-pawel-piskorz",
+          "name": "Paweł Piskorz",
+          "sourceName": "PAWEL PISKORZ",
+          "seasonPoints": 5,
+          "competitionPoints": 21.0
+        },
+        {
+          "position": 2,
+          "competitorId": "competitor-bartosz-postoj",
+          "name": "Bartosz Postój",
+          "sourceName": "BARTOSZ POSTOJ",
+          "seasonPoints": 4,
+          "competitionPoints": 19.0
+        },
+        {
+          "position": 3,
+          "competitorId": "competitor-lukasz-kieliszkowski",
+          "name": "Łukasz Kieliszkowski",
+          "sourceName": "LUKASZ KIELISZKOWSKI",
+          "seasonPoints": 3,
+          "competitionPoints": 18.5
+        },
+        {
+          "position": 4,
+          "competitorId": "competitor-bartlomiej-babol",
+          "name": "Bartłomiej Bąbol",
+          "sourceName": "BARTLOMIEJ BABOL",
+          "seasonPoints": 2,
+          "competitionPoints": 17.0
+        },
+        {
+          "position": 5,
+          "competitorId": "competitor-adam-wadolowski",
+          "name": "Adam Wądołowski",
+          "sourceName": "ADAM WADOLOWSKI",
+          "seasonPoints": 1,
+          "competitionPoints": 14.5
+        }
+      ],
+      "competitions": [
+        {
+          "id": "event-wyciskanie-platformy-na-barki",
+          "name": "Wyciskanie platformy na barki",
+          "type": "high",
+          "final": false,
+          "sourceName": "Wyciskanie Platformy na barki"
+        },
+        {
+          "id": "event-przerzucanie-workow-nad-poprzeczka-20-30-kg",
+          "name": "Przerzucanie worków nad poprzeczką - 20-30 kg",
+          "type": "low",
+          "final": false,
+          "sourceName": "Worki - przerzucanie nad poprzeczka - 20, 22, 24, 26, 28, 30 kg"
+        },
+        {
+          "id": "event-laczona-worki-kowadlo",
+          "name": "Łączona: worki + kowadło",
+          "type": "low",
+          "final": false,
+          "sourceName": "Laczona: worki + kowadlo"
+        },
+        {
+          "id": "event-nosidlo-300-kg-2-x-20-m",
+          "name": "Nosidło 300 kg - 2 x 20 m",
+          "type": "low",
+          "final": false,
+          "sourceName": "NOSIDLO 300 kg - 2 x 20m"
+        },
+        {
+          "id": "event-spacer-buszmena-380-kg-20-m",
+          "name": "Spacer Buszmena 380 kg - 20 m",
+          "type": "low",
+          "final": false,
+          "sourceName": "Spacer Buszmena 380 kg. x 20m"
+        },
+        {
+          "id": "event-tir-w-siadzie",
+          "name": "Tir w siadzie",
+          "type": "low",
+          "final": true,
+          "sourceName": "Tir w siadzie"
+        }
+      ]
+    },
+    {
+      "id": "season-2026-07",
+      "number": 7,
+      "date": "2026-06-27",
+      "location": "Busko-Zdrój",
+      "name": "Busko-Zdrój · 27.06.2026",
+      "sourceFile": "Busko-Zdroj 27.06.2026 r",
+      "ranking": [
+        {
+          "position": 1,
+          "competitorId": "competitor-rafal-sojc",
+          "name": "Rafał Sojc",
+          "sourceName": "RAFAL SOJC",
+          "seasonPoints": 5,
+          "competitionPoints": 24.5
+        },
+        {
+          "position": 2,
+          "competitorId": "competitor-marcin-stankiewicz",
+          "name": "Marcin Stankiewicz",
+          "sourceName": "MARCIN STANKIEWICZ",
+          "seasonPoints": 4,
+          "competitionPoints": 19.5
+        },
+        {
+          "position": 2,
+          "competitorId": "competitor-bartlomiej-babol",
+          "name": "Bartłomiej Bąbol",
+          "sourceName": "BARTLOMIEJ BABOL",
+          "seasonPoints": 4,
+          "competitionPoints": 19.5
+        },
+        {
+          "position": 4,
+          "competitorId": "competitor-bartosz-postoj",
+          "name": "Bartosz Postój",
+          "sourceName": "BARTOSZ POSTOJ",
+          "seasonPoints": 2,
+          "competitionPoints": 15.5
+        },
+        {
+          "position": 5,
+          "competitorId": "competitor-michal-maruszewski",
+          "name": "Michał Maruszewski",
+          "sourceName": "MICHAL MARUSZEWSKI",
+          "seasonPoints": 1,
+          "competitionPoints": 11.0
+        }
+      ],
+      "competitions": [
+        {
+          "id": "event-spacer-farmera-140-kg-na-dystans",
+          "name": "Spacer Farmera 140 kg - na dystans",
+          "type": "high",
+          "final": false,
+          "sourceName": "Spacer Farmera na dystans 140 kg"
+        },
+        {
+          "id": "event-wyciskanie-belki-140-kg-60-sek",
+          "name": "Wyciskanie belki 140 kg - 60 sek.",
+          "type": "high",
+          "final": false,
+          "sourceName": "Wyciskanie belki 140 kg - 60 sek"
+        },
+        {
+          "id": "event-przerzucanie-opony-360-kg-6-obrotow",
+          "name": "Przerzucanie opony 360 kg - 6 obrotów",
+          "type": "low",
+          "final": false,
+          "sourceName": "Przerzucanie opony 360 kg. x 6 obrotow"
+        },
+        {
+          "id": "event-spacer-buszmena-380-kg-20-m",
+          "name": "Spacer Buszmena 380 kg - 20 m",
+          "type": "low",
+          "final": false,
+          "sourceName": "Spacer Buszmena 380 kg - 20m"
+        },
+        {
+          "id": "event-przeciaganie-lodzi-w-siadzie",
+          "name": "Przeciąganie łodzi w siadzie",
+          "type": "low",
+          "final": false,
+          "sourceName": "Przeciaganie LODZI w siadzie"
+        },
+        {
+          "id": "event-przeciaganie-auta-w-siadzie",
+          "name": "Przeciąganie auta w siadzie",
+          "type": "low",
+          "final": true,
+          "sourceName": "Przeciaganie auta w siadzie"
+        }
+      ]
+    },
+    {
+      "id": "season-2026-08",
+      "number": 8,
+      "date": "2026-07-26",
+      "location": "Kleczew",
+      "name": "Kleczew · 26.07.2026",
+      "sourceFile": "KLECZEW · 26.07.2026",
+      "ranking": [
+        {
+          "position": 1,
+          "competitorId": "competitor-pawel-piskorz",
+          "name": "Paweł Piskorz",
+          "sourceName": "PAWEŁ PISKORZ",
+          "seasonPoints": 5,
+          "competitionPoints": 23.0
+        },
+        {
+          "position": 2,
+          "competitorId": "competitor-marcin-stankiewicz",
+          "name": "Marcin Stankiewicz",
+          "sourceName": "MARCIN STANKIEWICZ",
+          "seasonPoints": 4,
+          "competitionPoints": 19.0
+        },
+        {
+          "position": 3,
+          "competitorId": "competitor-pawel-kostrzewski",
+          "name": "Paweł Kostrzewski",
+          "sourceName": "PAWEŁ KOSTRZEWSKI",
+          "seasonPoints": 3,
+          "competitionPoints": 17.5
+        },
+        {
+          "position": 4,
+          "competitorId": "competitor-adam-wadolowski",
+          "name": "Adam Wądołowski",
+          "sourceName": "ADAM WĄDOŁOWSKI",
+          "seasonPoints": 2,
+          "competitionPoints": 16.0
+        },
+        {
+          "position": 5,
+          "competitorId": "competitor-krzysztof-kacnerski",
+          "name": "Krzysztof Kacnerski",
+          "sourceName": "KRZYSZTOF KACNERSKI",
+          "seasonPoints": 1,
+          "competitionPoints": 14.5
+        }
+      ],
+      "competitions": [
+        {
+          "id": "event-spacer-farmera-na-dystans",
+          "name": "Spacer Farmera na dystans",
+          "type": "high",
+          "final": false,
+          "sourceName": "Spacer Farmera na dystans"
+        },
+        {
+          "id": "event-spacer-buszmena-380-kg-20-m",
+          "name": "Spacer Buszmena 380 kg - 20 m",
+          "type": "low",
+          "final": false,
+          "sourceName": "Spacer Buszmena 380 kg - 20m"
+        },
+        {
+          "id": "event-wyciskanie-belki-140-kg-60-sek",
+          "name": "Wyciskanie belki 140 kg - 60 sek.",
+          "type": "high",
+          "final": false,
+          "sourceName": "Wyciskanie belki 140 kg - 60 sek"
+        },
+        {
+          "id": "event-kegi-x-6-przerzucanie-nad-poprzeczka",
+          "name": "Kegi x 6 - przerzucanie nad poprzeczką",
+          "type": "low",
+          "final": false,
+          "sourceName": "KEGI x 6 nad poprzeczką"
+        },
+        {
+          "id": "event-zegar",
+          "name": "Zegar",
+          "type": "high",
+          "final": false,
+          "sourceName": "Zegar"
+        },
+        {
+          "id": "event-uchwyt-herkulesa",
+          "name": "Uchwyt Herkulesa",
+          "type": "high",
+          "final": true,
+          "sourceName": "Uchwyt Herkulesa"
+        }
+      ]
+    },
+    {
+      "id": "season-2026-09",
+      "number": 9,
+      "date": "2026-07-26",
+      "location": "Lubawka",
+      "name": "Lubawka · 26.07.2026",
+      "sourceFile": "LUBAWKA · 26.07.2026",
+      "ranking": [
+        {
+          "position": 1,
+          "competitorId": "competitor-pawel-piskorz",
+          "name": "Paweł Piskorz",
+          "sourceName": "PAWEŁ PISKORZ",
+          "seasonPoints": 5,
+          "competitionPoints": 26.0
+        },
+        {
+          "position": 2,
+          "competitorId": "competitor-rafal-sojc",
+          "name": "Rafał Sojc",
+          "sourceName": "RAFAŁ SOJC",
+          "seasonPoints": 4,
+          "competitionPoints": 21.0
+        },
+        {
+          "position": 3,
+          "competitorId": "competitor-pawel-kostrzewski",
+          "name": "Paweł Kostrzewski",
+          "sourceName": "PAWEŁ KOSTRZEWSKI",
+          "seasonPoints": 3,
+          "competitionPoints": 18.0
+        },
+        {
+          "position": 4,
+          "competitorId": "competitor-bartosz-postoj",
+          "name": "Bartosz Postój",
+          "sourceName": "BARTOSZ POSTÓJ",
+          "seasonPoints": 2,
+          "competitionPoints": 16.0
+        },
+        {
+          "position": 5,
+          "competitorId": "competitor-mariusz-pachut",
+          "name": "Mariusz Pachut",
+          "sourceName": "MARIUSZ PACHUT",
+          "seasonPoints": 1,
+          "competitionPoints": 9.0
+        }
+      ],
+      "competitions": [
+        {
+          "id": "event-spacer-farmera-140-kg-2-x-20-m",
+          "name": "Spacer Farmera 140 kg - 2 x 20 m",
+          "type": "low",
+          "final": false,
+          "sourceName": "Spacer Farmera na czas 140 kg 2x20m"
+        },
+        {
+          "id": "event-worki-zaladunek-3-x-100-kg",
+          "name": "Worki - załadunek 3 x 100 kg",
+          "type": "low",
+          "final": false,
+          "sourceName": "Worki - załadunek 3 x 100 kg"
+        },
+        {
+          "id": "event-wyciskanie-belek-140-150-i-160-kg",
+          "name": "Wyciskanie belek 140, 150 i 160 kg",
+          "type": "low",
+          "final": false,
+          "sourceName": "Wyciskanie Belek 3 x 140, 150, 160 kg"
+        },
+        {
+          "id": "event-kegi-x-6-przerzucanie-nad-poprzeczka",
+          "name": "Kegi x 6 - przerzucanie nad poprzeczką",
+          "type": "low",
+          "final": false,
+          "sourceName": "KEGI x 6 - PRZERZUCANIE"
+        },
+        {
+          "id": "event-zegar",
+          "name": "Zegar",
+          "type": "high",
+          "final": false,
+          "sourceName": "Zegar"
+        },
+        {
+          "id": "event-uchwyt-herkulesa",
+          "name": "Uchwyt Herkulesa",
+          "type": "high",
+          "final": true,
+          "sourceName": "Uchwyt Herkulesa"
+        }
+      ]
+    },
+    {
+      "id": "season-2026-10",
+      "number": 10,
+      "date": "2026-08-02",
+      "location": "Radwanice",
+      "name": "Radwanice · 02.08.2026",
+      "sourceFile": "RADWANICE 2.08.2026 r",
+      "ranking": [
+        {
+          "position": 1,
+          "competitorId": "competitor-jakub-szczechowski",
+          "name": "Jakub Szczechowski",
+          "sourceName": "JAKUB SZCZECHOWSKI",
+          "seasonPoints": 5,
+          "competitionPoints": 28.0
+        },
+        {
+          "position": 2,
+          "competitorId": "competitor-pawel-kostrzewski",
+          "name": "Paweł Kostrzewski",
+          "sourceName": "PAWEŁ KOSTRZEWSKI",
+          "seasonPoints": 4,
+          "competitionPoints": 21.0
+        },
+        {
+          "position": 3,
+          "competitorId": "competitor-pawel-piskorz",
+          "name": "Paweł Piskorz",
+          "sourceName": "PAWEŁ PISKORZ",
+          "seasonPoints": 3,
+          "competitionPoints": 16.0
+        },
+        {
+          "position": 4,
+          "competitorId": "competitor-krzysztof-kacnerski",
+          "name": "Krzysztof Kacnerski",
+          "sourceName": "KRZYSZTOF KACNERSKI",
+          "seasonPoints": 2,
+          "competitionPoints": 15.0
+        },
+        {
+          "position": 5,
+          "competitorId": "competitor-mariusz-pachut",
+          "name": "Mariusz Pachut",
+          "sourceName": "MARIUSZ PACHUT",
+          "seasonPoints": 1,
+          "competitionPoints": 6.0
+        }
+      ],
+      "competitions": [
+        {
+          "id": "event-spacer-farmera-140-kg-2-x-20-m",
+          "name": "Spacer Farmera 140 kg - 2 x 20 m",
+          "type": "low",
+          "final": false,
+          "sourceName": "Spacer Farmera na czas 140 kg 2x20m"
+        },
+        {
+          "id": "event-przerzucanie-workow-nad-poprzeczka-20-30-kg",
+          "name": "Przerzucanie worków nad poprzeczką - 20-30 kg",
+          "type": "low",
+          "final": false,
+          "sourceName": "Worki - przerzucanie nad poprzeczką - 20, 22, 24, 26, 28, 30 kg"
+        },
+        {
+          "id": "event-wyciskanie-belki-140-kg-60-sek",
+          "name": "Wyciskanie belki 140 kg - 60 sek.",
+          "type": "high",
+          "final": false,
+          "sourceName": "Wyciskanie belki 140 kg - 60 sek"
+        },
+        {
+          "id": "event-przerzucanie-opony-360-kg-8-obrotow",
+          "name": "Przerzucanie opony 360 kg - 8 obrotów",
+          "type": "low",
+          "final": false,
+          "sourceName": "Przerzucanie opony 360 kg x 8 obrotów"
+        },
+        {
+          "id": "event-przeciaganie-auta",
+          "name": "Przeciąganie auta",
+          "type": "low",
+          "final": false,
+          "sourceName": "Przeciąganie Auta"
+        },
+        {
+          "id": "event-martwy-ciag-na-platformie",
+          "name": "Martwy ciąg na platformie",
+          "type": "high",
+          "final": true,
+          "sourceName": "Martwy ciąg na Platformie"
+        }
+      ]
+    }
+  ],
+  "standings": [
+    {
+      "competitorId": "competitor-pawel-piskorz",
+      "name": "Paweł Piskorz",
+      "starts": 6,
+      "results": [
+        {
+          "eventId": "season-2026-03",
+          "eventNumber": 3,
+          "date": "2026-06-01",
+          "location": "Kleszczów",
+          "position": 5,
+          "points": 1
+        },
+        {
+          "eventId": "season-2026-04",
+          "eventNumber": 4,
+          "date": "2026-06-06",
+          "location": "Ruciane-Nida",
+          "position": 2,
+          "points": 4
+        },
+        {
+          "eventId": "season-2026-06",
+          "eventNumber": 6,
+          "date": "2026-06-12",
+          "location": "Tuszyn",
+          "position": 1,
+          "points": 5
+        },
+        {
+          "eventId": "season-2026-08",
+          "eventNumber": 8,
+          "date": "2026-07-26",
+          "location": "Kleczew",
+          "position": 1,
+          "points": 5
+        },
+        {
+          "eventId": "season-2026-09",
+          "eventNumber": 9,
+          "date": "2026-07-26",
+          "location": "Lubawka",
+          "position": 1,
+          "points": 5
+        },
+        {
+          "eventId": "season-2026-10",
+          "eventNumber": 10,
+          "date": "2026-08-02",
+          "location": "Radwanice",
+          "position": 3,
+          "points": 3
+        }
+      ],
+      "allPoints": 23,
+      "countedPoints": 19,
+      "rejectedPoints": 4,
+      "rank": 1
+    },
+    {
+      "competitorId": "competitor-lukasz-kieliszkowski",
+      "name": "Łukasz Kieliszkowski",
+      "starts": 4,
+      "results": [
+        {
+          "eventId": "season-2026-01",
+          "eventNumber": 1,
+          "date": "2026-05-01",
+          "location": "Siewierz",
+          "position": 1,
+          "points": 5
+        },
+        {
+          "eventId": "season-2026-03",
+          "eventNumber": 3,
+          "date": "2026-06-01",
+          "location": "Kleszczów",
+          "position": 1,
+          "points": 5
+        },
+        {
+          "eventId": "season-2026-05",
+          "eventNumber": 5,
+          "date": "2026-06-07",
+          "location": "Prabuty",
+          "position": 1,
+          "points": 5
+        },
+        {
+          "eventId": "season-2026-06",
+          "eventNumber": 6,
+          "date": "2026-06-12",
+          "location": "Tuszyn",
+          "position": 3,
+          "points": 3
+        }
+      ],
+      "allPoints": 18,
+      "countedPoints": 18,
+      "rejectedPoints": 0,
+      "rank": 2
+    },
+    {
+      "competitorId": "competitor-rafal-sojc",
+      "name": "Rafał Sojc",
+      "starts": 4,
+      "results": [
+        {
+          "eventId": "season-2026-03",
+          "eventNumber": 3,
+          "date": "2026-06-01",
+          "location": "Kleszczów",
+          "position": 2,
+          "points": 4
+        },
+        {
+          "eventId": "season-2026-04",
+          "eventNumber": 4,
+          "date": "2026-06-06",
+          "location": "Ruciane-Nida",
+          "position": 1,
+          "points": 5
+        },
+        {
+          "eventId": "season-2026-07",
+          "eventNumber": 7,
+          "date": "2026-06-27",
+          "location": "Busko-Zdrój",
+          "position": 1,
+          "points": 5
+        },
+        {
+          "eventId": "season-2026-09",
+          "eventNumber": 9,
+          "date": "2026-07-26",
+          "location": "Lubawka",
+          "position": 2,
+          "points": 4
+        }
+      ],
+      "allPoints": 18,
+      "countedPoints": 18,
+      "rejectedPoints": 0,
+      "rank": 2
+    },
+    {
+      "competitorId": "competitor-marcin-stankiewicz",
+      "name": "Marcin Stankiewicz",
+      "starts": 4,
+      "results": [
+        {
+          "eventId": "season-2026-01",
+          "eventNumber": 1,
+          "date": "2026-05-01",
+          "location": "Siewierz",
+          "position": 2,
+          "points": 4
+        },
+        {
+          "eventId": "season-2026-04",
+          "eventNumber": 4,
+          "date": "2026-06-06",
+          "location": "Ruciane-Nida",
+          "position": 3,
+          "points": 3
+        },
+        {
+          "eventId": "season-2026-07",
+          "eventNumber": 7,
+          "date": "2026-06-27",
+          "location": "Busko-Zdrój",
+          "position": 2,
+          "points": 4
+        },
+        {
+          "eventId": "season-2026-08",
+          "eventNumber": 8,
+          "date": "2026-07-26",
+          "location": "Kleczew",
+          "position": 2,
+          "points": 4
+        }
+      ],
+      "allPoints": 15,
+      "countedPoints": 15,
+      "rejectedPoints": 0,
+      "rank": 4
+    },
+    {
+      "competitorId": "competitor-jakub-szczechowski",
+      "name": "Jakub Szczechowski",
+      "starts": 3,
+      "results": [
+        {
+          "eventId": "season-2026-02",
+          "eventNumber": 2,
+          "date": "2026-05-30",
+          "location": "Czerwonak",
+          "position": 1,
+          "points": 5
+        },
+        {
+          "eventId": "season-2026-05",
+          "eventNumber": 5,
+          "date": "2026-06-07",
+          "location": "Prabuty",
+          "position": 2,
+          "points": 4
+        },
+        {
+          "eventId": "season-2026-10",
+          "eventNumber": 10,
+          "date": "2026-08-02",
+          "location": "Radwanice",
+          "position": 1,
+          "points": 5
+        }
+      ],
+      "allPoints": 14,
+      "countedPoints": 14,
+      "rejectedPoints": 0,
+      "rank": 5
+    },
+    {
+      "competitorId": "competitor-bartlomiej-babol",
+      "name": "Bartłomiej Bąbol",
+      "starts": 5,
+      "results": [
+        {
+          "eventId": "season-2026-01",
+          "eventNumber": 1,
+          "date": "2026-05-01",
+          "location": "Siewierz",
+          "position": 3,
+          "points": 3
+        },
+        {
+          "eventId": "season-2026-03",
+          "eventNumber": 3,
+          "date": "2026-06-01",
+          "location": "Kleszczów",
+          "position": 3,
+          "points": 3
+        },
+        {
+          "eventId": "season-2026-05",
+          "eventNumber": 5,
+          "date": "2026-06-07",
+          "location": "Prabuty",
+          "position": 3,
+          "points": 3
+        },
+        {
+          "eventId": "season-2026-06",
+          "eventNumber": 6,
+          "date": "2026-06-12",
+          "location": "Tuszyn",
+          "position": 4,
+          "points": 2
+        },
+        {
+          "eventId": "season-2026-07",
+          "eventNumber": 7,
+          "date": "2026-06-27",
+          "location": "Busko-Zdrój",
+          "position": 2,
+          "points": 4
+        }
+      ],
+      "allPoints": 15,
+      "countedPoints": 13,
+      "rejectedPoints": 2,
+      "rank": 6
+    },
+    {
+      "competitorId": "competitor-pawel-kostrzewski",
+      "name": "Paweł Kostrzewski",
+      "starts": 5,
+      "results": [
+        {
+          "eventId": "season-2026-02",
+          "eventNumber": 2,
+          "date": "2026-05-30",
+          "location": "Czerwonak",
+          "position": 4,
+          "points": 2
+        },
+        {
+          "eventId": "season-2026-05",
+          "eventNumber": 5,
+          "date": "2026-06-07",
+          "location": "Prabuty",
+          "position": 4,
+          "points": 2
+        },
+        {
+          "eventId": "season-2026-08",
+          "eventNumber": 8,
+          "date": "2026-07-26",
+          "location": "Kleczew",
+          "position": 3,
+          "points": 3
+        },
+        {
+          "eventId": "season-2026-09",
+          "eventNumber": 9,
+          "date": "2026-07-26",
+          "location": "Lubawka",
+          "position": 3,
+          "points": 3
+        },
+        {
+          "eventId": "season-2026-10",
+          "eventNumber": 10,
+          "date": "2026-08-02",
+          "location": "Radwanice",
+          "position": 2,
+          "points": 4
+        }
+      ],
+      "allPoints": 14,
+      "countedPoints": 12,
+      "rejectedPoints": 2,
+      "rank": 7
+    },
+    {
+      "competitorId": "competitor-bartosz-postoj",
+      "name": "Bartosz Postój",
+      "starts": 5,
+      "results": [
+        {
+          "eventId": "season-2026-01",
+          "eventNumber": 1,
+          "date": "2026-05-01",
+          "location": "Siewierz",
+          "position": 4,
+          "points": 2
+        },
+        {
+          "eventId": "season-2026-03",
+          "eventNumber": 3,
+          "date": "2026-06-01",
+          "location": "Kleszczów",
+          "position": 4,
+          "points": 2
+        },
+        {
+          "eventId": "season-2026-06",
+          "eventNumber": 6,
+          "date": "2026-06-12",
+          "location": "Tuszyn",
+          "position": 2,
+          "points": 4
+        },
+        {
+          "eventId": "season-2026-07",
+          "eventNumber": 7,
+          "date": "2026-06-27",
+          "location": "Busko-Zdrój",
+          "position": 4,
+          "points": 2
+        },
+        {
+          "eventId": "season-2026-09",
+          "eventNumber": 9,
+          "date": "2026-07-26",
+          "location": "Lubawka",
+          "position": 4,
+          "points": 2
+        }
+      ],
+      "allPoints": 12,
+      "countedPoints": 10,
+      "rejectedPoints": 2,
+      "rank": 8
+    },
+    {
+      "competitorId": "competitor-krzysztof-kacnerski",
+      "name": "Krzysztof Kacnerski",
+      "starts": 4,
+      "results": [
+        {
+          "eventId": "season-2026-01",
+          "eventNumber": 1,
+          "date": "2026-05-01",
+          "location": "Siewierz",
+          "position": 5,
+          "points": 1
+        },
+        {
+          "eventId": "season-2026-05",
+          "eventNumber": 5,
+          "date": "2026-06-07",
+          "location": "Prabuty",
+          "position": 5,
+          "points": 1
+        },
+        {
+          "eventId": "season-2026-08",
+          "eventNumber": 8,
+          "date": "2026-07-26",
+          "location": "Kleczew",
+          "position": 5,
+          "points": 1
+        },
+        {
+          "eventId": "season-2026-10",
+          "eventNumber": 10,
+          "date": "2026-08-02",
+          "location": "Radwanice",
+          "position": 4,
+          "points": 2
+        }
+      ],
+      "allPoints": 5,
+      "countedPoints": 5,
+      "rejectedPoints": 0,
+      "rank": 9
+    },
+    {
+      "competitorId": "competitor-marcin-schabowski",
+      "name": "Marcin Schabowski",
+      "starts": 1,
+      "results": [
+        {
+          "eventId": "season-2026-02",
+          "eventNumber": 2,
+          "date": "2026-05-30",
+          "location": "Czerwonak",
+          "position": 2,
+          "points": 4
+        }
+      ],
+      "allPoints": 4,
+      "countedPoints": 4,
+      "rejectedPoints": 0,
+      "rank": 10
+    },
+    {
+      "competitorId": "competitor-mariusz-pachut",
+      "name": "Mariusz Pachut",
+      "starts": 4,
+      "results": [
+        {
+          "eventId": "season-2026-02",
+          "eventNumber": 2,
+          "date": "2026-05-30",
+          "location": "Czerwonak",
+          "position": 5,
+          "points": 1
+        },
+        {
+          "eventId": "season-2026-04",
+          "eventNumber": 4,
+          "date": "2026-06-06",
+          "location": "Ruciane-Nida",
+          "position": 5,
+          "points": 1
+        },
+        {
+          "eventId": "season-2026-09",
+          "eventNumber": 9,
+          "date": "2026-07-26",
+          "location": "Lubawka",
+          "position": 5,
+          "points": 1
+        },
+        {
+          "eventId": "season-2026-10",
+          "eventNumber": 10,
+          "date": "2026-08-02",
+          "location": "Radwanice",
+          "position": 5,
+          "points": 1
+        }
+      ],
+      "allPoints": 4,
+      "countedPoints": 4,
+      "rejectedPoints": 0,
+      "rank": 10
+    },
+    {
+      "competitorId": "competitor-adam-wadolowski",
+      "name": "Adam Wądołowski",
+      "starts": 2,
+      "results": [
+        {
+          "eventId": "season-2026-06",
+          "eventNumber": 6,
+          "date": "2026-06-12",
+          "location": "Tuszyn",
+          "position": 5,
+          "points": 1
+        },
+        {
+          "eventId": "season-2026-08",
+          "eventNumber": 8,
+          "date": "2026-07-26",
+          "location": "Kleczew",
+          "position": 4,
+          "points": 2
+        }
+      ],
+      "allPoints": 3,
+      "countedPoints": 3,
+      "rejectedPoints": 0,
+      "rank": 12
+    },
+    {
+      "competitorId": "competitor-tomasz-lademann",
+      "name": "Tomasz Lademann",
+      "starts": 1,
+      "results": [
+        {
+          "eventId": "season-2026-02",
+          "eventNumber": 2,
+          "date": "2026-05-30",
+          "location": "Czerwonak",
+          "position": 3,
+          "points": 3
+        }
+      ],
+      "allPoints": 3,
+      "countedPoints": 3,
+      "rejectedPoints": 0,
+      "rank": 12
+    },
+    {
+      "competitorId": "competitor-przemyslaw-marczewski",
+      "name": "Przemysław Marczewski",
+      "starts": 1,
+      "results": [
+        {
+          "eventId": "season-2026-04",
+          "eventNumber": 4,
+          "date": "2026-06-06",
+          "location": "Ruciane-Nida",
+          "position": 4,
+          "points": 2
+        }
+      ],
+      "allPoints": 2,
+      "countedPoints": 2,
+      "rejectedPoints": 0,
+      "rank": 14
+    },
+    {
+      "competitorId": "competitor-michal-maruszewski",
+      "name": "Michał Maruszewski",
+      "starts": 1,
+      "results": [
+        {
+          "eventId": "season-2026-07",
+          "eventNumber": 7,
+          "date": "2026-06-27",
+          "location": "Busko-Zdrój",
+          "position": 5,
+          "points": 1
+        }
+      ],
+      "allPoints": 1,
+      "countedPoints": 1,
+      "rejectedPoints": 0,
+      "rank": 15
+    }
+  ]
+};

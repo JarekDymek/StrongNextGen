@@ -1,6 +1,6 @@
 # Strongman Next
 
-## Wersja testowa 0.2.7
+## Wersja testowa 0.3.1
 
 Ta wersja jest przygotowana jako instalowalna aplikacja PWA dla telefonu, iPada i PC. Po wejściu na stronę z GitHub Pages można ją dodać do ekranu głównego lub zainstalować w przeglądarce na komputerze.
 
@@ -14,6 +14,10 @@ Najważniejsze do testów:
 - pełne podsumowanie punktów za każdą konkurencję w klasyfikacji końcowej,
 - eksport klasyfikacji końcowej do pliku HTML,
 - PWA/offline shell z ikonami aplikacji.
+- zakładka `Sezon` z klasyfikacją generalną Pucharu Polski 2026,
+- edycja, usuwanie i dodawanie kolejnych imprez sezonu,
+- import klasyfikacji zawodów z plików JSON i HTML,
+- ujednolicona baza 20 zawodników i 37 konkurencji z audytem normalizacji.
 
 Adres testowy po publikacji:
 
@@ -49,6 +53,20 @@ Nowa aplikacja do prowadzenia zawodów Strong Man, zbudowana od zera jako osobne
 - Eksport/import pełnego stanu aplikacji.
 - PWA/offline shell z service workerem.
 - Testy reguł punktacji.
+- Testy punktacji sezonu: pięć miejsc, cztery najlepsze starty i wspólne miejsca przy remisie.
+
+## Sezon 2026 i pliki danych
+
+Zakładka `Sezon` jest niezależna od aktualnie prowadzonych zawodów. Pokazuje klasyfikację generalną, wszystkie starty zawodnika, cztery wyniki zaliczane do sumy oraz punkty odrzucone. Zmiana lub usunięcie imprezy natychmiast przelicza tabelę.
+
+Pliki wymiany i arkusz znajdują się w katalogu `data`:
+
+- `sezon_2026.json` - dziesięć zweryfikowanych imprez i klasyfikacje 1-5,
+- `zawodnicy_2026_ujednoliceni.json` - pełna baza zawodników,
+- `zawodnicy_puchar_polski_2026.json` - zawodnicy wydzieleni do Pucharu Polski,
+- `konkurencje_2026_ujednolicone.json` - baza konkurencji bez duplikatów,
+- `audyt_normalizacji_2026.json` - użyte aliasy i dane wymagające weryfikacji,
+- `Klasyfikacja_generalna_Tyberian_Team_2026.xlsx` - edytowalny skoroszyt z formułami i miejscem na kolejne imprezy.
 
 ## Uruchomienie
 
