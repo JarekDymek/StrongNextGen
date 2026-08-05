@@ -2,7 +2,7 @@ import { DEFAULT_COMPETITORS } from './competitors.js';
 import { DEFAULT_EVENTS } from './events-data.js';
 import { DEFAULT_SEASON } from './season-data.js';
 
-export const APP_VERSION = '0.3.1';
+export const APP_VERSION = '0.3.2';
 export const BASE_REVISION = 'season-2026-08-05';
 export { DEFAULT_COMPETITORS, DEFAULT_EVENTS, DEFAULT_SEASON };
 

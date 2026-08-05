@@ -1,6 +1,7 @@
 import { APP_VERSION, BASE_REVISION, DEFAULT_COMPETITORS, DEFAULT_EVENTS, DEFAULT_SEASON, EVENT_TYPE_LABEL } from './data.js';
 import { buildFinalStartOrder, buildNextStartOrder, buildScores, calculateEventPoints, rankStandings } from './scoring.js';
 import { calculateSeasonStandings, formatSeasonDate, normalizeSeasonEvent, normalizeSeasonEvents, seasonPointsForPosition } from './season.js';
+import { buildSeasonHtml } from './season-export.js';
 import {
   clearSavedState,
   deleteCheckpoints,
@@ -750,7 +751,8 @@ function renderSeason() {
       <div class="button-column season-actions">
         <button type="button" class="primary-button" data-action="add-season-event">Dodaj zawody</button>
         <button type="button" class="secondary-button" data-action="import-season">Importuj JSON / HTML</button>
-        <button type="button" class="success-button" data-action="export-season">Eksportuj sezon JSON</button>
+        <button type="button" class="success-button" data-action="export-season-html">Eksportuj czytelny HTML</button>
+        <button type="button" class="secondary-button" data-action="export-season">Eksportuj dane JSON</button>
       </div>
       <p class="season-import-note">Plik HTML z wynikami aplikacji można wczytać bez przepisywania tabeli. PDF dodaj ręcznie, aby uniknąć błędów odczytu.</p>
     </section>
@@ -1053,6 +1055,7 @@ async function handleClick(event) {
   if (action === 'close-season-editor') return closeSeasonEditor();
   if (action === 'import-season') return importSeason();
   if (action === 'export-season') return exportSeason();
+  if (action === 'export-season-html') return exportSeasonHtml(trigger);
   if (action === 'change-logo') return changeLogo();
   if (action === 'reset-logo') return resetLogo();
   if (action === 'open-reset') return openReset();
@@ -1691,6 +1694,33 @@ function exportSeason() {
   flash('Eksport sezonu przygotowany.');
 }
 
+async function exportSeasonHtml(trigger) {
+  if (trigger?.disabled) return;
+  if (trigger) {
+    trigger.disabled = true;
+    trigger.setAttribute('aria-busy', 'true');
+  }
+  try {
+    const standings = calculateSeasonStandings(state.seasonEvents, state.seasonMaxCountedStarts);
+    const html = buildSeasonHtml({
+      season: 2026,
+      seriesName: DEFAULT_SEASON.seriesName,
+      maxCountedStarts: state.seasonMaxCountedStarts,
+      events: state.seasonEvents,
+      standings,
+      exportedAt: new Date().toISOString(),
+      logoData: await getExportLogoData()
+    });
+    downloadHtmlFile(`klasyfikacja_generalna_2026_${timestamp()}.html`, html);
+    flash('Czytelny plik HTML klasyfikacji został przygotowany.');
+  } finally {
+    if (trigger?.isConnected) {
+      trigger.disabled = false;
+      trigger.removeAttribute('aria-busy');
+    }
+  }
+}
+
 async function importSeason() {
   const file = await pickSeasonFile();
   if (!file) return;
@@ -1975,7 +2005,12 @@ function exportResultsHtml() {
   const competitors = state.selectedCompetitorIds.map(id => competitorById(id)).filter(Boolean);
   const standings = rankStandings(competitors, state.scores, state.eventHistory);
   const html = buildResultsHtml(standings);
-  const filename = safeFilename(`${state.eventName || 'zawody'}_wyniki_${timestamp()}.html`);
+  const filename = `${safeFilename(`${state.eventName || 'zawody'}_wyniki_${timestamp()}`)}.html`;
+  downloadHtmlFile(filename, html);
+  flash('Eksport wyników HTML przygotowany.');
+}
+
+function downloadHtmlFile(filename, html) {
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -1985,7 +2020,17 @@ function exportResultsHtml() {
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
-  flash('Eksport wyników HTML przygotowany.');
+}
+
+async function getExportLogoData() {
+  if (state.logoData?.startsWith('data:image/')) return state.logoData;
+  try {
+    const response = await fetch(new URL('assets/logo-strong-man.png', document.baseURI));
+    if (!response.ok) return '';
+    return await readAsDataUrl(await response.blob());
+  } catch {
+    return '';
+  }
 }
 
 async function checkForUpdates() {

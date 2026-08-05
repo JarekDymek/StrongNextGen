@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { DEFAULT_SEASON } from '../src/season-data.js';
+import { buildSeasonHtml } from '../src/season-export.js';
 import { calculateSeasonStandings, normalizeSeasonEvent, seasonPointsForPosition } from '../src/season.js';
 
 assert.equal(DEFAULT_SEASON.events.length, 10);
@@ -30,5 +31,20 @@ const tieEvent = normalizeSeasonEvent({
 });
 assert.equal(tieEvent.date, '2026-08-15');
 assert.deepEqual(tieEvent.ranking.map(row => row.seasonPoints), [5, 4, 4, 2, 1]);
+
+const publicHtml = buildSeasonHtml({
+  season: 2026,
+  seriesName: 'Puchar Polski <Strongman>',
+  maxCountedStarts: 4,
+  events: DEFAULT_SEASON.events,
+  standings,
+  exportedAt: '2026-08-05T12:00:00Z',
+});
+assert.match(publicHtml, /^<!doctype html>/);
+assert.match(publicHtml, /Puchar Polski &lt;Strongman&gt;/);
+assert.match(publicHtml, /Paweł Piskorz/);
+assert.match(publicHtml, /is-rejected/);
+assert.match(publicHtml, /Wyniki poszczególnych imprez/);
+assert.doesNotMatch(publicHtml, /<script/i);
 
 console.log('Season tests passed');

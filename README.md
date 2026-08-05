@@ -1,6 +1,6 @@
 # Strongman Next
 
-## Wersja testowa 0.3.1
+## Wersja testowa 0.3.2
 
 Ta wersja jest przygotowana jako instalowalna aplikacja PWA dla telefonu, iPada i PC. Po wejściu na stronę z GitHub Pages można ją dodać do ekranu głównego lub zainstalować w przeglądarce na komputerze.
 
@@ -17,6 +17,7 @@ Najważniejsze do testów:
 - zakładka `Sezon` z klasyfikacją generalną Pucharu Polski 2026,
 - edycja, usuwanie i dodawanie kolejnych imprez sezonu,
 - import klasyfikacji zawodów z plików JSON i HTML,
+- samodzielny eksport klasyfikacji sezonu do responsywnego pliku HTML do wysyłania i publikacji,
 - ujednolicona baza 20 zawodników i 37 konkurencji z audytem normalizacji.
 
 Adres testowy po publikacji:
