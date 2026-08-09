@@ -119,15 +119,21 @@ export function buildNextStartOrder(competitorIds, previousEvent, fallbackOrder 
   const selectedIds = [...competitorIds];
   if (!previousEvent?.results?.length) return reconcileOrder(fallbackOrder, selectedIds);
 
-  const previousOrder = reconcileOrder(previousEvent.orderIds || [], reconcileOrder(fallbackOrder, selectedIds));
+  const fallback = reconcileOrder(fallbackOrder, selectedIds);
+  const previousOrder = reconcileOrder(previousEvent.orderIds || [], fallback);
   const previousPosition = new Map(previousOrder.map((id, index) => [id, index]));
+  const fallbackPosition = new Map(fallback.map((id, index) => [id, index]));
   const points = new Map(previousEvent.results.map(result => [result.id, Number.parseFloat(result.points) || 0]));
 
-  return selectedIds.sort((a, b) => {
-    const pointsDifference = (points.get(a) || 0) - (points.get(b) || 0);
+  return selectedIds.map((id, inputIndex) => ({ id, inputIndex })).sort((a, b) => {
+    const pointsDifference = (points.get(a.id) || 0) - (points.get(b.id) || 0);
     if (pointsDifference !== 0) return pointsDifference;
-    return (previousPosition.get(a) ?? Number.MAX_SAFE_INTEGER) - (previousPosition.get(b) ?? Number.MAX_SAFE_INTEGER);
-  });
+    const priorDifference = (previousPosition.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (previousPosition.get(b.id) ?? Number.MAX_SAFE_INTEGER);
+    if (priorDifference !== 0) return priorDifference;
+    const fallbackDifference = (fallbackPosition.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (fallbackPosition.get(b.id) ?? Number.MAX_SAFE_INTEGER);
+    if (fallbackDifference !== 0) return fallbackDifference;
+    return a.inputIndex - b.inputIndex;
+  }).map(entry => entry.id);
 }
 
 function reconcileOrder(order, selectedIds) {

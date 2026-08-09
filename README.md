@@ -1,6 +1,6 @@
 # Strongman Next
 
-## Wersja testowa 0.3.2
+## Wersja testowa 0.4.0
 
 Ta wersja jest przygotowana jako instalowalna aplikacja PWA dla telefonu, iPada i PC. Po wejściu na stronę z GitHub Pages można ją dodać do ekranu głównego lub zainstalować w przeglądarce na komputerze.
 
@@ -40,6 +40,9 @@ Nowa aplikacja do prowadzenia zawodów Strong Man, zbudowana od zera jako osobne
 - Stałe logo Strong Man z możliwością podmiany.
 - Baza konkurencji przeniesiona z dotychczasowej aplikacji, deduplikowana i sortowana alfabetycznie.
 - Baza zawodników jest wbudowana na start, z importem JSON i ręcznym dodawaniem.
+- Zawodnicy są zapisywani w osobnej trwałej bazie; import starszych zawodów odzyskuje brakujące rekordy bez zmiany identyfikatorów i wyników.
+- Formularz zawodnika obsługuje podgląd, zmianę i usuwanie zdjęcia oraz automatyczny JPEG do 120 px i około 10 KB.
+- Wyszukiwanie można łączyć z filtrami `Puchar Polski`, `Legenda`, `Tyberian Team` i `Bez kategorii`.
 - Wybór zawodników działa kolejnością kliknięć: pierwszy wybrany startuje pierwszy, chyba że sędzia użyje losowania.
 - Wybór konkurencji działa kolejnością kliknięć, z możliwością przesuwania wybranych konkurencji.
 - Osobny etap ustawiania kolejności startowej przed zawodami.
@@ -73,6 +76,7 @@ Pliki wymiany i arkusz znajdują się w katalogu `data`:
 
 ```bash
 npm.cmd test
+npm.cmd run test:ui
 npm.cmd run serve
 ```
 

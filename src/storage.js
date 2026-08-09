@@ -1,5 +1,6 @@
 const STATE_KEY = 'strongman-next.state.v1';
 const CHECKPOINTS_KEY = 'strongman-next.checkpoints.v1';
+const COMPETITOR_DATABASE_KEY = 'strongman-next.competitor-database.v1';
 
 export function loadSavedState() {
   try {
@@ -19,6 +20,21 @@ export function saveState(state) {
 
 export function clearSavedState() {
   localStorage.removeItem(STATE_KEY);
+}
+
+export function loadCompetitorDatabase() {
+  try {
+    const raw = localStorage.getItem(COMPETITOR_DATABASE_KEY);
+    if (raw === null) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : Array.isArray(parsed?.competitors) ? parsed.competitors : [];
+  } catch {
+    return null;
+  }
+}
+
+export function saveCompetitorDatabase(competitors) {
+  localStorage.setItem(COMPETITOR_DATABASE_KEY, JSON.stringify(Array.isArray(competitors) ? competitors : []));
 }
 
 export function loadCheckpoints() {

@@ -3,9 +3,22 @@ import { buildFinalStartOrder, buildNextStartOrder, buildScores, calculateEventP
 import { calculateSeasonStandings, formatSeasonDate, normalizeSeasonEvent, normalizeSeasonEvents, seasonPointsForPosition } from './season.js';
 import { buildSeasonHtml } from './season-export.js';
 import {
+  competitorMatchesCategory,
+  getCompetitorCategories,
+  mergeCompetitorCollections,
+  normalizeCategoryKey,
+  normalizeCompetitorKey,
+  normalizeCompetitorRecord,
+  normalizeCompetitorRecords,
+  remapCompetitionStateCompetitorIds,
+  upsertCompetitorRecord
+} from './competitor-data.js';
+import { processCompetitorPhoto } from './image-tools.js';
+import {
   clearSavedState,
   deleteCheckpoints,
   downloadJson,
+  loadCompetitorDatabase,
   loadCheckpoints,
   loadSavedState,
   pickImageFile,
@@ -14,6 +27,7 @@ import {
   readJsonFile,
   readTextFile,
   saveCheckpoint,
+  saveCompetitorDatabase,
   saveState
 } from './storage.js';
 
@@ -37,8 +51,9 @@ const STAGE_SHORT_LABELS = {
   season: 'Sezon'
 };
 
-let state = hydrateState(loadSavedState());
+let state = hydrateState(loadSavedState(), loadCompetitorDatabase());
 state.ui = createUiState();
+saveCompetitorDatabase(state.competitors);
 if (isStandalone()) state.appInstalled = true;
 render();
 registerServiceWorker();
@@ -52,13 +67,14 @@ app.addEventListener('toggle', handleToggle, true);
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && state.ui.profileCompetitorId) closeCompetitorProfile();
   if (event.key === 'Escape' && state.ui.seasonEditor) closeSeasonEditor();
+  if (event.key === 'Escape' && state.ui.competitorEditor) closeCompetitorEditor();
 });
 
-function createInitialState() {
-  const competitors = normalizeCompetitors(DEFAULT_COMPETITORS);
+function createInitialState(competitorSource = DEFAULT_COMPETITORS) {
+  const competitors = normalizeCompetitors(competitorSource);
   const events = normalizeEvents(DEFAULT_EVENTS);
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     baseRevision: BASE_REVISION,
     appVersion: APP_VERSION,
     createdAt: new Date().toISOString(),
@@ -102,29 +118,36 @@ function createUiState() {
     stopwatch: null,
     settingsOpen: false,
     drawAnimation: null,
-    seasonEditor: null
+    seasonEditor: null,
+    competitorEditor: null,
+    competitorSearch: '',
+    competitorCategoryFilter: 'all'
   };
 }
 
-function hydrateState(saved) {
-  const base = createInitialState();
+function hydrateState(saved, durableDatabase = null) {
+  const databaseSeed = Array.isArray(durableDatabase) ? durableDatabase : DEFAULT_COMPETITORS;
+  const base = createInitialState(databaseSeed);
   if (!saved || typeof saved !== 'object') return base;
+
+  const recovered = mergeCompetitorCollections(base.competitors, saved.competitors || [], { mode: 'fillMissing' });
+  const migratedSaved = remapCompetitionStateCompetitorIds(saved, recovered.aliases);
 
   const next = {
     ...base,
-    ...saved,
-    competitors: mergeBaseCompetitors(base.competitors, normalizeCompetitors(saved.competitors || [])),
-    events: mergeBaseEvents(base.events, normalizeEvents(saved.events || [])),
-    selectedCompetitorIds: Array.isArray(saved.selectedCompetitorIds) ? saved.selectedCompetitorIds : [],
-    selectedEventIds: Array.isArray(saved.selectedEventIds) ? saved.selectedEventIds : [],
-    startOrderIds: Array.isArray(saved.startOrderIds) ? saved.startOrderIds : [],
-    eventHistory: Array.isArray(saved.eventHistory) ? saved.eventHistory : [],
-    drafts: saved.drafts && typeof saved.drafts === 'object' ? saved.drafts : {},
-    scores: saved.scores && typeof saved.scores === 'object' ? saved.scores : {},
-    seasonEvents: normalizeSeasonEvents(saved.seasonEvents?.length ? saved.seasonEvents : base.seasonEvents),
-    seasonMaxCountedStarts: Math.max(1, Number.parseInt(saved.seasonMaxCountedStarts, 10) || base.seasonMaxCountedStarts),
+    ...migratedSaved,
+    competitors: sortCompetitors(recovered.records),
+    events: mergeBaseEvents(base.events, normalizeEvents(migratedSaved.events || [])),
+    selectedCompetitorIds: Array.isArray(migratedSaved.selectedCompetitorIds) ? migratedSaved.selectedCompetitorIds : [],
+    selectedEventIds: Array.isArray(migratedSaved.selectedEventIds) ? migratedSaved.selectedEventIds : [],
+    startOrderIds: Array.isArray(migratedSaved.startOrderIds) ? migratedSaved.startOrderIds : [],
+    eventHistory: Array.isArray(migratedSaved.eventHistory) ? migratedSaved.eventHistory : [],
+    drafts: migratedSaved.drafts && typeof migratedSaved.drafts === 'object' ? migratedSaved.drafts : {},
+    scores: migratedSaved.scores && typeof migratedSaved.scores === 'object' ? migratedSaved.scores : {},
+    seasonEvents: normalizeSeasonEvents(migratedSaved.seasonEvents?.length ? migratedSaved.seasonEvents : base.seasonEvents),
+    seasonMaxCountedStarts: Math.max(1, Number.parseInt(migratedSaved.seasonMaxCountedStarts, 10) || base.seasonMaxCountedStarts),
     baseRevision: BASE_REVISION,
-    schemaVersion: 2
+    schemaVersion: 3
   };
 
   const competitorIds = new Set(next.competitors.map(competitor => competitor.id));
@@ -140,50 +163,11 @@ function hydrateState(saved) {
 }
 
 function normalizeCompetitors(items) {
-  const seen = new Set();
-  return (items || [])
-    .map((item, index) => {
-      const source = typeof item === 'string' ? { name: item } : item || {};
-      const name = String(source.name || '').trim();
-      if (!name) return null;
-      const key = normalizeKey(name);
-      if (seen.has(key)) return null;
-      seen.add(key);
-      const categories = Array.isArray(source.categories)
-        ? source.categories.filter(Boolean).map(String)
-        : [source.category || source.categories].filter(Boolean).map(String);
-      return {
-        id: source.id || `competitor-${slug(name)}-${index}`,
-        name,
-        category: source.category || categories[0] || '',
-        categories,
-        birthDate: source.birthDate || source.dateOfBirth || source.birth_date || source.dataUrodzenia || '',
-        residence: source.residence || source.city || source.miejsceZamieszkania || '',
-        height: source.height || source.wzrost || '',
-        weight: source.weight || source.waga || '',
-        notes: source.notes || source.description || source.opis || source.achievements || source.osiagniecia || '',
-        photo: source.photo || source.image || source.avatar || source.icon || '',
-        dataWarnings: Array.isArray(source.dataWarnings) ? source.dataWarnings.filter(Boolean).map(String) : []
-      };
-    })
-    .filter(Boolean)
-    .sort((a, b) => collator.compare(a.name, b.name));
+  return sortCompetitors(normalizeCompetitorRecords(items).records);
 }
 
-function mergeBaseCompetitors(baseCompetitors, savedCompetitors) {
-  const byKey = new Map();
-  [...baseCompetitors, ...savedCompetitors].forEach(competitor => {
-    const key = normalizeKey(competitor.name);
-    if (!key) return;
-    byKey.set(key, {
-      ...byKey.get(key),
-      ...competitor,
-      photo: competitor.photo || byKey.get(key)?.photo || '',
-      categories: competitor.categories?.length ? competitor.categories : byKey.get(key)?.categories || [],
-      dataWarnings: competitor.dataWarnings?.length ? competitor.dataWarnings : byKey.get(key)?.dataWarnings || []
-    });
-  });
-  return [...byKey.values()].sort((a, b) => collator.compare(a.name, b.name));
+function sortCompetitors(items) {
+  return [...items].sort((a, b) => collator.compare(a.name, b.name));
 }
 
 function normalizeEvents(items) {
@@ -254,10 +238,12 @@ function render() {
     ${renderResetGuard()}
     ${renderInstallHelp()}
     ${renderCompetitorProfile()}
+    ${renderCompetitorEditor()}
     ${renderStopwatch()}
     ${renderSeasonEditor()}
   `;
   syncStopwatchTicker();
+  applyCompetitorFilters();
 }
 
 function renderStage() {
@@ -331,18 +317,16 @@ function renderSetup() {
     `)}
 
     ${accordion('competitors', 'Zawodnicy', `${selectedCompetitors} wybranych. Kolejność kliknięć jest kolejnością startową.`, `
-      <form class="inline-form" data-form="add-competitor">
-        <input name="name" placeholder="Imię i nazwisko zawodnika" autocomplete="off">
-        <button type="submit" class="primary-button">Dodaj</button>
-      </form>
+      <button type="button" class="primary-button" data-action="open-competitor-editor">Dodaj zawodnika</button>
       <div class="button-row">
         <button type="button" class="secondary-button" data-action="import-competitors">Import zawodników</button>
         <button type="button" class="secondary-button" data-action="export-competitors">Eksport listy</button>
       </div>
       <label class="search-box">
         <span>Szukaj zawodnika</span>
-        <input data-filter="competitors" placeholder="Wpisz fragment nazwiska">
+        <input data-filter="competitors" value="${escapeAttr(state.ui.competitorSearch)}" placeholder="Wpisz fragment imienia lub nazwiska">
       </label>
+      ${renderCompetitorCategoryFilters()}
       <div class="selection-list" data-list="competitors">
         ${renderCompetitorSelection()}
       </div>
@@ -398,6 +382,27 @@ function renderSetup() {
   `;
 }
 
+function renderCompetitorCategoryFilters() {
+  const filters = [
+    ['all', 'Wszyscy'],
+    ['Puchar Polski', 'Puchar Polski'],
+    ['Legenda', 'Legenda'],
+    ['Tyberian Team', 'Tyberian Team'],
+    ['uncategorized', 'Bez kategorii']
+  ];
+  const active = normalizeCategoryKey(state.ui.competitorCategoryFilter);
+  return `
+    <div class="category-filters" role="group" aria-label="Filtr kategorii zawodnik&#243;w">
+      ${filters.map(([value, label]) => {
+        const selected = active === normalizeCategoryKey(value);
+        return `<button type="button" class="category-filter ${selected ? 'is-active' : ''}"
+          data-action="set-competitor-category-filter" data-category="${escapeAttr(value)}"
+          aria-pressed="${selected}">${escapeHtml(label)}</button>`;
+      }).join('')}
+    </div>
+  `;
+}
+
 function renderCompetitorSelection() {
   if (!state.competitors.length) {
     return `<div class="empty-state">Brak zawodników w bazie. Dodaj ręcznie albo zaimportuj plik JSON.</div>`;
@@ -406,9 +411,10 @@ function renderCompetitorSelection() {
   return ordered.map(competitor => {
     const selectedIndex = state.selectedCompetitorIds.indexOf(competitor.id);
     const selected = selectedIndex >= 0;
-    const meta = [competitor.category, competitor.residence, competitor.weight ? `${competitor.weight} kg` : ''].filter(Boolean).join(' · ');
+    const categories = getCompetitorCategories(competitor);
+    const meta = [categories.join(', '), competitor.residence, competitor.weight ? `${competitor.weight} kg` : ''].filter(Boolean).join(' · ');
     return `
-      <article class="selection-item ${selected ? 'is-selected' : ''}" data-filter-text="${escapeAttr(`${competitor.name} ${meta} ${competitor.notes || ''}`)}">
+      <article class="selection-item ${selected ? 'is-selected' : ''}" data-competitor-id="${escapeAttr(competitor.id)}" data-filter-text="${escapeAttr(`${competitor.name} ${meta} ${competitor.notes || ''}`)}">
         <div class="competitor-select-row">
           <button type="button" class="avatar avatar-button" data-action="open-competitor-profile" data-id="${escapeAttr(competitor.id)}" aria-label="Pokaż informacje o ${escapeAttr(competitor.name)}">
             ${competitor.photo ? `<img src="${escapeAttr(competitor.photo)}" alt="">` : escapeHtml(initials(competitor.name))}
@@ -984,6 +990,89 @@ function renderCompetitorProfile() {
   `;
 }
 
+function renderCompetitorEditor() {
+  const editor = state.ui.competitorEditor;
+  if (!editor) return '';
+  const categories = getCompetitorCategories(editor);
+  const knownCategories = ['Puchar Polski', 'Legenda', 'Tyberian Team', 'Aktywny Zawodnik'];
+  const knownKeys = new Set(knownCategories.map(normalizeCategoryKey));
+  const customCategories = categories.filter(category => !knownKeys.has(normalizeCategoryKey(category))).join(', ');
+  const isEdit = Boolean(editor.id);
+  return `
+    <div class="modal-backdrop competitor-editor-backdrop" role="presentation">
+      <section class="modal competitor-editor-modal" role="dialog" aria-modal="true" aria-labelledby="competitor-editor-title">
+        <button type="button" class="profile-close" data-action="close-competitor-editor" aria-label="Zamknij formularz">&times;</button>
+        <header class="editor-header">
+          <span class="eyebrow">Trwa&#322;a baza zawodnik&#243;w</span>
+          <h2 id="competitor-editor-title">${isEdit ? 'Edytuj zawodnika' : 'Dodaj zawodnika'}</h2>
+          <p>Rekord b&#281;dzie dost&#281;pny w tych i kolejnych zawodach.</p>
+        </header>
+        <form class="competitor-form" data-form="competitor-editor">
+          <input type="hidden" name="id" value="${escapeAttr(editor.id || '')}">
+          <label class="field-full">
+            <span>Imi&#281; i nazwisko</span>
+            <input name="name" value="${escapeAttr(editor.name || '')}" data-competitor-editor-field autocomplete="name" required>
+          </label>
+          <fieldset class="category-fieldset field-full">
+            <legend>Kategorie</legend>
+            <div class="category-options">
+              ${knownCategories.map(category => `
+                <label class="category-option">
+                  <input type="checkbox" name="categories" value="${escapeAttr(category)}" ${categories.some(value => normalizeCategoryKey(value) === normalizeCategoryKey(category)) ? 'checked' : ''}>
+                  <span>${escapeHtml(category)}</span>
+                </label>
+              `).join('')}
+            </div>
+            <label>
+              <span>Inne kategorie, oddzielone przecinkami</span>
+              <input name="categoriesCustom" value="${escapeAttr(customCategories)}" data-competitor-editor-field autocomplete="off">
+            </label>
+          </fieldset>
+          <label>
+            <span>Data urodzenia</span>
+            <input type="date" name="birthDate" value="${escapeAttr(editor.birthDate || '')}" data-competitor-editor-field>
+          </label>
+          <label>
+            <span>Miejscowo&#347;&#263;</span>
+            <input name="residence" value="${escapeAttr(editor.residence || '')}" data-competitor-editor-field autocomplete="address-level2">
+          </label>
+          <label>
+            <span>Wzrost (cm)</span>
+            <input name="height" value="${escapeAttr(editor.height || '')}" data-competitor-editor-field inputmode="numeric">
+          </label>
+          <label>
+            <span>Waga (kg)</span>
+            <input name="weight" value="${escapeAttr(editor.weight || '')}" data-competitor-editor-field inputmode="decimal">
+          </label>
+          <label class="field-full">
+            <span>Osi&#261;gni&#281;cia i informacje</span>
+            <textarea name="notes" rows="4" data-competitor-editor-field>${escapeHtml(editor.notes || '')}</textarea>
+          </label>
+          <section class="photo-editor field-full" aria-labelledby="photo-editor-title">
+            <div class="photo-preview" aria-hidden="true">
+              ${editor.photo ? `<img src="${escapeAttr(editor.photo)}" alt="">` : `<span>${escapeHtml(initials(editor.name || 'Nowy zawodnik'))}</span>`}
+            </div>
+            <div class="photo-editor__actions">
+              <strong id="photo-editor-title">Zdjęcie zawodnika</strong>
+              <p>Automatycznie zmniejszymy je do maks. 120 px i zapiszemy jako lekki JPEG.</p>
+              <label class="secondary-button file-button">
+                <span>${editor.photo ? 'Zmie&#324; zdj&#281;cie' : 'Wybierz zdj&#281;cie'}</span>
+                <input type="file" accept="image/*" data-competitor-photo>
+              </label>
+              ${editor.photo ? '<button type="button" class="danger-button" data-action="remove-competitor-photo">Usu&#324; zdj&#281;cie</button>' : ''}
+            </div>
+          </section>
+          <p class="form-status field-full ${editor.photoError ? 'is-error' : ''}" data-photo-status role="status">${escapeHtml(editor.photoError || editor.photoStatus || '')}</p>
+          <div class="editor-actions field-full">
+            <button type="button" class="secondary-button" data-action="close-competitor-editor">Anuluj</button>
+            <button type="submit" class="success-button" ${editor.photoProcessing ? 'disabled' : ''}>Zapisz zawodnika</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  `;
+}
+
 function renderStopwatch() {
   const stopwatch = state.ui.stopwatch;
   if (!stopwatch) return '';
@@ -1027,7 +1116,11 @@ async function handleClick(event) {
   if (action === 'toggle-event') return toggleSelected(state.selectedEventIds, id);
   if (action === 'move-event') return moveInArray(state.selectedEventIds, id, Number(trigger.dataset.direction));
   if (action === 'move-start-order') return moveInArray(state.startOrderIds, id, Number(trigger.dataset.direction));
+  if (action === 'open-competitor-editor') return openCompetitorEditor();
   if (action === 'edit-competitor') return editCompetitor(id);
+  if (action === 'close-competitor-editor') return closeCompetitorEditor();
+  if (action === 'remove-competitor-photo') return removeCompetitorPhoto();
+  if (action === 'set-competitor-category-filter') return setCompetitorCategoryFilter(trigger.dataset.category);
   if (action === 'delete-competitor') return deleteCompetitor(id);
   if (action === 'open-competitor-profile') return openCompetitorProfile(id);
   if (action === 'close-competitor-profile') return closeCompetitorProfile();
@@ -1105,6 +1198,7 @@ function handleInput(event) {
   }
 
   if (target.matches('[data-filter]')) {
+    if (target.dataset.filter === 'competitors') state.ui.competitorSearch = target.value;
     applyFilter(target.dataset.filter, target.value);
     return;
   }
@@ -1115,9 +1209,12 @@ function handleInput(event) {
   }
 }
 
-function handleChange(event) {
+async function handleChange(event) {
   const target = event.target;
   if (target.matches('[data-checkpoint-id]')) return;
+  if (target.matches('[data-competitor-photo]')) {
+    await changeCompetitorPhoto(target.files?.[0], target.closest('form'));
+  }
 }
 
 function handleSubmit(event) {
@@ -1131,20 +1228,9 @@ function handleSubmit(event) {
     return;
   }
 
-  if (form.dataset.form === 'add-competitor') {
-    const name = String(data.get('name') || '').trim();
-    if (!name) return flash('Wpisz nazwisko zawodnika.');
-    const existing = state.competitors.find(competitor => normalizeKey(competitor.name) === normalizeKey(name));
-    if (existing) {
-      if (!state.selectedCompetitorIds.includes(existing.id)) state.selectedCompetitorIds.push(existing.id);
-      persistAndRender('Zawodnik już był w bazie, został zaznaczony.');
-      return;
-    }
-    const competitor = { id: makeId('competitor', name), name, category: '', photo: '' };
-    state.competitors.push(competitor);
-    state.competitors.sort((a, b) => collator.compare(a.name, b.name));
-    state.selectedCompetitorIds.push(competitor.id);
-    persistAndRender('Dodano i zaznaczono zawodnika.');
+  if (form.dataset.form === 'competitor-editor') {
+    saveCompetitorEditor(data);
+    return;
   }
 
   if (form.dataset.form === 'add-event') {
@@ -1242,40 +1328,123 @@ function delay(ms) {
 }
 
 function editCompetitor(id) {
-  const competitor = competitorById(id);
-  if (!competitor) return;
+  openCompetitorEditor(id);
+}
 
-  const name = window.prompt('Imię i nazwisko zawodnika:', competitor.name);
-  if (name === null) return;
-  const trimmedName = name.trim();
-  if (!trimmedName) return flash('Nazwa zawodnika nie może być pusta.');
-  const duplicate = state.competitors.find(item => item.id !== id && normalizeKey(item.name) === normalizeKey(trimmedName));
-  if (duplicate) return flash('Zawodnik o tej nazwie już istnieje.');
+function openCompetitorEditor(id = '') {
+  const existing = id ? competitorById(id) : null;
+  state.ui.competitorEditor = normalizeCompetitorRecord(existing || {
+    id: '',
+    name: '',
+    category: '',
+    categories: [],
+    birthDate: '',
+    residence: '',
+    height: '',
+    weight: '',
+    notes: '',
+    photo: '',
+    dataWarnings: []
+  }) || {
+    id: '', name: '', category: '', categories: [], birthDate: '', residence: '', height: '', weight: '', notes: '', photo: '', dataWarnings: []
+  };
+  if (!existing) state.ui.competitorEditor.id = '';
+  state.ui.competitorEditor.photoStatus = '';
+  state.ui.competitorEditor.photoError = '';
+  state.ui.competitorEditor.photoProcessing = false;
+  state.ui.competitorEditor.photoRemoved = false;
+  render();
+  window.setTimeout(() => app.querySelector('[data-form="competitor-editor"] input[name="name"]')?.focus(), 30);
+}
 
-  const category = window.prompt('Kategoria:', competitor.category || '');
-  if (category === null) return;
-  const birthDate = window.prompt('Data urodzenia (RRRR-MM-DD):', competitor.birthDate || '');
-  if (birthDate === null) return;
-  const residence = window.prompt('Miejscowość:', competitor.residence || '');
-  if (residence === null) return;
-  const height = window.prompt('Wzrost w cm:', competitor.height || '');
-  if (height === null) return;
-  const weight = window.prompt('Waga:', competitor.weight || '');
-  if (weight === null) return;
-  const notes = window.prompt('Notatki:', competitor.notes || '');
-  if (notes === null) return;
+function closeCompetitorEditor() {
+  state.ui.competitorEditor = null;
+  render();
+}
 
-  competitor.name = trimmedName;
-  competitor.category = category.trim();
-  competitor.categories = competitor.category ? [competitor.category] : [];
-  competitor.birthDate = birthDate.trim();
-  competitor.residence = residence.trim();
-  competitor.height = height.trim();
-  competitor.weight = weight.trim();
-  competitor.notes = notes.trim();
-  state.competitors.sort((a, b) => collator.compare(a.name, b.name));
-  renameCompetitorInHistory(id, trimmedName);
-  persistAndRender('Dane zawodnika zapisane.');
+function syncCompetitorEditorFromForm(form) {
+  const editor = state.ui.competitorEditor;
+  if (!editor || !form) return;
+  const data = new FormData(form);
+  ['name', 'birthDate', 'residence', 'height', 'weight', 'notes'].forEach(field => {
+    editor[field] = String(data.get(field) || '').trim();
+  });
+  const custom = String(data.get('categoriesCustom') || '').split(/[;,|]/g);
+  editor.categories = [...data.getAll('categories'), ...custom].map(String).map(value => value.trim()).filter(Boolean);
+  editor.category = editor.categories[0] || '';
+}
+
+async function changeCompetitorPhoto(file, form) {
+  const editor = state.ui.competitorEditor;
+  if (!editor || !file) return;
+  syncCompetitorEditorFromForm(form);
+  editor.photoProcessing = true;
+  editor.photoError = '';
+  editor.photoStatus = 'Przetwarzam zdj\u0119cie...';
+  const status = app.querySelector('[data-photo-status]');
+  if (status) status.textContent = editor.photoStatus;
+  const submit = form?.querySelector('[type="submit"]');
+  if (submit) submit.disabled = true;
+  try {
+    const result = await processCompetitorPhoto(file);
+    editor.photo = result.dataUrl;
+    editor.photoRemoved = false;
+    editor.photoStatus = `Gotowe: ${result.width} x ${result.height} px, ${(result.bytes / 1024).toFixed(1)} KB.`;
+  } catch (error) {
+    editor.photoError = error?.message || 'Nie uda\u0142o si\u0119 przetworzy\u0107 zdj\u0119cia.';
+    editor.photoStatus = '';
+  } finally {
+    editor.photoProcessing = false;
+    render();
+  }
+}
+
+function removeCompetitorPhoto() {
+  const editor = state.ui.competitorEditor;
+  if (!editor) return;
+  const form = app.querySelector('[data-form="competitor-editor"]');
+  syncCompetitorEditorFromForm(form);
+  editor.photo = '';
+  editor.photoRemoved = true;
+  editor.photoError = '';
+  editor.photoStatus = 'Zdj\u0119cie zostanie usuni\u0119te po zapisaniu formularza.';
+  render();
+}
+
+function saveCompetitorEditor(data) {
+  const editor = state.ui.competitorEditor;
+  if (!editor || editor.photoProcessing) return;
+  const name = String(data.get('name') || '').trim().replace(/\s+/g, ' ');
+  if (!name) return flash('Wpisz imi\u0119 i nazwisko zawodnika.');
+  const id = String(data.get('id') || editor.id || '');
+  const duplicate = state.competitors.find(item => item.id !== id && normalizeCompetitorKey(item.name) === normalizeCompetitorKey(name));
+  if (id && duplicate) return flash('Inny zawodnik o tym imieniu i nazwisku ju\u017c istnieje.');
+
+  const customCategories = String(data.get('categoriesCustom') || '').split(/[;,|]/g);
+  const categories = [...data.getAll('categories'), ...customCategories].map(String).map(value => value.trim()).filter(Boolean);
+  const source = {
+    id: id || makeId('competitor', name),
+    name,
+    category: categories[0] || '',
+    categories,
+    birthDate: String(data.get('birthDate') || '').trim(),
+    residence: String(data.get('residence') || '').trim(),
+    height: String(data.get('height') || '').trim(),
+    weight: String(data.get('weight') || '').trim(),
+    notes: String(data.get('notes') || '').trim(),
+    photo: editor.photo || '',
+    dataWarnings: editor.dataWarnings || []
+  };
+  const previousName = id ? competitorById(id)?.name : '';
+  const result = upsertCompetitorRecord(state.competitors, source, { mode: 'preferIncoming' });
+  if (editor.photoRemoved) result.competitor.photo = '';
+  state.competitors = sortCompetitors(result.records);
+  const competitorId = result.competitor.id;
+  if (!state.selectedCompetitorIds.includes(competitorId)) state.selectedCompetitorIds.push(competitorId);
+  state.startOrderIds = reconcileOrder(state.startOrderIds, state.selectedCompetitorIds);
+  if (previousName && previousName !== result.competitor.name) renameCompetitorInHistory(competitorId, result.competitor.name);
+  state.ui.competitorEditor = null;
+  persistAndRender(result.added ? 'Dodano zawodnika do zawod\u00f3w i trwa\u0142ej bazy.' : 'Dane zawodnika zapisane w trwa\u0142ej bazie.');
 }
 
 function openCompetitorProfile(id) {
@@ -1445,7 +1614,7 @@ function finalizeCurrentEvent() {
     type: event.type,
     isFinal: isFinalEventIndex(state.currentEventIndex),
     finalistsLimit: isFinalEventIndex(state.currentEventIndex) ? orderIds.length : null,
-    orderIds,
+    orderIds: [...orderIds],
     createdAt: new Date().toISOString(),
     results: calculated.results
   };
@@ -1550,7 +1719,7 @@ async function importState() {
     return;
   }
   if (!window.confirm('Wczytać stan z pliku i zastąpić aktualny stan aplikacji?')) return;
-  state = hydrateState(json);
+  state = hydrateState(json, loadCompetitorDatabase());
   state.ui = createUiState();
   persistAndRender('Stan został wczytany.');
 }
@@ -1566,7 +1735,8 @@ async function importCompetitors() {
 }
 
 function exportCompetitors() {
-  downloadJson(`zawodnicy_${timestamp()}.json`, state.competitors);
+  saveCompetitorDatabase(state.competitors);
+  downloadJson(`zawodnicy_${timestamp()}.json`, loadCompetitorDatabase() || state.competitors);
 }
 
 async function importEvents() {
@@ -1879,7 +2049,7 @@ function confirmReset() {
   const input = app.querySelector('[data-reset-input]');
   if (input?.value !== 'RESET') return;
   clearSavedState();
-  state = createInitialState();
+  state = hydrateState(null, loadCompetitorDatabase());
   state.ui = createUiState();
   persistAndRender('Aplikacja została zresetowana.');
 }
@@ -1888,7 +2058,7 @@ function loadCheckpointById(id) {
   const checkpoint = loadCheckpoints().find(item => item.id === id);
   if (!checkpoint) return;
   if (!window.confirm('Wczytać punkt kontrolny i zastąpić aktualny stan?')) return;
-  state = hydrateState(checkpoint.snapshot);
+  state = hydrateState(checkpoint.snapshot, loadCompetitorDatabase());
   state.ui = createUiState();
   persistAndRender('Punkt kontrolny został wczytany.');
 }
@@ -2148,50 +2318,16 @@ function renameCompetitorInHistory(id, name) {
 }
 
 function mergeCompetitors(imported) {
-  const byKey = new Map(state.competitors.map(item => [normalizeKey(item.name), item]));
-  const byId = new Map(state.competitors.map(item => [String(item.id), item]));
   const result = { added: 0, updated: 0, unchanged: 0 };
   imported.forEach(item => {
-    const nameMatch = byKey.get(normalizeKey(item.name));
-    const idMatch = byId.get(String(item.id));
-    const existing = nameMatch || (idMatch && normalizeKey(idMatch.name) === normalizeKey(item.name) ? idMatch : null);
-    if (!existing) {
-      const importedId = item.id && !byId.has(String(item.id)) ? String(item.id) : makeId('competitor', item.name);
-      const added = { ...item, id: importedId };
-      state.competitors.push(added);
-      byId.set(String(added.id), added);
-      byKey.set(normalizeKey(added.name), added);
-      result.added++;
-      return;
-    }
-
-    const previousName = existing.name;
-    const merged = mergeCompetitorDetails(existing, item);
-    const changed = Object.keys(merged).some(key => JSON.stringify(existing[key]) !== JSON.stringify(merged[key]));
-    if (!changed) {
-      result.unchanged++;
-      return;
-    }
-
-    Object.assign(existing, merged);
-    if (existing.name !== previousName) renameCompetitorInHistory(existing.id, existing.name);
-    result.updated++;
+    const upserted = upsertCompetitorRecord(state.competitors, item, { mode: 'preferIncoming' });
+    state.competitors = upserted.records;
+    if (upserted.added) result.added++;
+    else if (upserted.updated) result.updated++;
+    else result.unchanged++;
   });
-  state.competitors.sort((a, b) => collator.compare(a.name, b.name));
+  state.competitors = sortCompetitors(state.competitors);
   return result;
-}
-
-function mergeCompetitorDetails(existing, imported) {
-  const merged = { ...existing };
-  const scalarFields = ['name', 'category', 'birthDate', 'residence', 'height', 'weight', 'notes', 'photo'];
-  scalarFields.forEach(field => {
-    const value = String(imported[field] ?? '').trim();
-    if (value) merged[field] = imported[field];
-  });
-  if (imported.categories?.length) merged.categories = [...new Set(imported.categories.filter(Boolean))];
-  if (!merged.categories?.length && merged.category) merged.categories = [merged.category];
-  if (imported.dataWarnings?.length) merged.dataWarnings = [...new Set(imported.dataWarnings.filter(Boolean).map(String))];
-  return merged;
 }
 
 function mergeEvents(imported) {
@@ -2215,7 +2351,31 @@ function updateResultCardStatus(input) {
   }
 }
 
+function setCompetitorCategoryFilter(category) {
+  state.ui.competitorCategoryFilter = category || 'all';
+  render();
+}
+
+function applyCompetitorFilters() {
+  const list = app.querySelector('[data-list="competitors"]');
+  if (!list || !state.ui) return;
+  const input = app.querySelector('[data-filter="competitors"]');
+  if (input && input.value !== state.ui.competitorSearch) input.value = state.ui.competitorSearch;
+  const needle = normalizeCompetitorKey(state.ui.competitorSearch);
+  list.querySelectorAll('[data-competitor-id]').forEach(row => {
+    const competitor = competitorById(row.dataset.competitorId);
+    const matchesText = !needle || normalizeCompetitorKey(row.dataset.filterText).includes(needle);
+    const matchesCategory = competitorMatchesCategory(competitor, state.ui.competitorCategoryFilter);
+    row.hidden = !(matchesText && matchesCategory);
+  });
+}
+
 function applyFilter(type, value) {
+  if (type === 'competitors') {
+    state.ui.competitorSearch = value;
+    applyCompetitorFilters();
+    return;
+  }
   const list = app.querySelector(`[data-list="${cssEscape(type)}"]`);
   if (!list) return;
   const needle = normalizeKey(value);
@@ -2226,6 +2386,8 @@ function applyFilter(type, value) {
 
 function persist() {
   state.scores = buildScores(state.selectedCompetitorIds, state.eventHistory);
+  state.schemaVersion = 3;
+  saveCompetitorDatabase(state.competitors);
   saveState(state);
 }
 

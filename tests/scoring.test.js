@@ -64,6 +64,22 @@ const nextOrderAfterThreeWayDnf = buildNextStartOrder(
 
 assert.deepEqual(nextOrderAfterThreeWayDnf, ['c', 'a', 'd', 'b']);
 
+const nextOrderIgnoresResultArrayOrder = buildNextStartOrder(
+  ['anna', 'bartek', 'celina', 'darek'],
+  JSON.parse(JSON.stringify({
+    orderIds: ['darek', 'celina', 'anna', 'bartek'],
+    results: [
+      { id: 'bartek', points: '2.00' },
+      { id: 'anna', points: '2.00' },
+      { id: 'darek', points: '2.00' },
+      { id: 'celina', points: '2.00' }
+    ]
+  })),
+  ['anna', 'bartek', 'celina', 'darek']
+);
+
+assert.deepEqual(nextOrderIgnoresResultArrayOrder, ['darek', 'celina', 'anna', 'bartek']);
+
 const nextOrderFromLegacyState = buildNextStartOrder(
   ['a', 'b', 'c'],
   {
