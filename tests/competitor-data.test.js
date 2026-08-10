@@ -5,6 +5,7 @@ import {
   mergeCompetitorCollections,
   normalizeCompetitorKey,
   normalizeCompetitorRecord,
+  mergeCompetitorDetails,
   remapCompetitionStateCompetitorIds,
   upsertCompetitorRecord
 } from '../src/competitor-data.js';
@@ -84,6 +85,38 @@ assert.equal(competitorMatchesCategory(multiCategory, 'Legenda'), true);
 assert.equal(competitorMatchesCategory(multiCategory, 'Tyberian Team'), true);
 assert.equal(competitorMatchesCategory(multiCategory, 'uncategorized'), false);
 assert.equal(competitorMatchesCategory({ name: 'Bez Kategorii' }, 'uncategorized'), true);
+
+const migratedCategories = normalizeCompetitorRecord({
+  id: 'migration',
+  name: 'Migracja Kategorii',
+  category: '  AKTYWNY   ZAWODNIK ',
+  categories: ['Aktywny zawodnik', 'Aktywny Zawodnik', 'Inny', 'Bez kategorii']
+});
+assert.equal(migratedCategories.category, 'Inny');
+assert.deepEqual(migratedCategories.categories, ['Inny']);
+
+const categoriesReplaced = mergeCompetitorDetails({
+  id: 'replace',
+  name: 'Edycja Testowa',
+  category: 'Puchar Polski',
+  categories: ['Puchar Polski', 'Legenda', 'POKAZY']
+}, {
+  id: 'replace',
+  name: 'Edycja Testowa',
+  category: 'Puchar Polski',
+  categories: ['Puchar Polski']
+}, { mode: 'preferIncoming', categoriesMode: 'replace' });
+assert.deepEqual(categoriesReplaced.categories, ['Puchar Polski']);
+assert.equal(categoriesReplaced.category, 'Puchar Polski');
+
+const categoriesCleared = mergeCompetitorDetails(categoriesReplaced, {
+  id: 'replace',
+  name: 'Edycja Testowa',
+  category: '',
+  categories: []
+}, { mode: 'preferIncoming', categoriesMode: 'replace' });
+assert.deepEqual(categoriesCleared.categories, []);
+assert.equal(categoriesCleared.category, '');
 
 const values = new Map();
 globalThis.localStorage = {

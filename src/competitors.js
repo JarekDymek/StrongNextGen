@@ -3,10 +3,10 @@ export const DEFAULT_COMPETITORS = [
   {
     "id": "competitor-adam-wadolowski",
     "name": "Adam Wądołowski",
-    "category": "Aktywny Zawodnik",
+    "category": "Inny",
     "categories": [
       "Puchar Polski",
-      "Aktywny Zawodnik"
+      "Inny"
     ],
     "birthDate": "1998-01-21",
     "residence": "Białystok",
@@ -127,10 +127,10 @@ export const DEFAULT_COMPETITORS = [
   {
     "id": "competitor-lukasz-kieliszkowski",
     "name": "Łukasz Kieliszkowski",
-    "category": "Aktywny Zawodnik",
+    "category": "Inny",
     "categories": [
       "Puchar Polski",
-      "Aktywny Zawodnik"
+      "Inny"
     ],
     "birthDate": "1997-02-23",
     "residence": "Krosno Odrzańskie",
@@ -219,10 +219,10 @@ export const DEFAULT_COMPETITORS = [
   {
     "id": "competitor-pawel-kostrzewski",
     "name": "Paweł Kostrzewski",
-    "category": "Aktywny Zawodnik",
+    "category": "Inny",
     "categories": [
       "Puchar Polski",
-      "Aktywny Zawodnik"
+      "Inny"
     ],
     "birthDate": "2001-07-04",
     "residence": "Grudziądz",
@@ -263,10 +263,10 @@ export const DEFAULT_COMPETITORS = [
   {
     "id": "competitor-rafal-sojc",
     "name": "Rafał Sojc",
-    "category": "Aktywny Zawodnik",
+    "category": "Inny",
     "categories": [
       "Puchar Polski",
-      "Aktywny Zawodnik"
+      "Inny"
     ],
     "birthDate": "1997-06-04",
     "residence": "WEJHEROWO",
@@ -278,11 +278,11 @@ export const DEFAULT_COMPETITORS = [
   {
     "id": "competitor-tomasz-lademann",
     "name": "Tomasz Lademann",
-    "category": "Aktywny Zawodnik",
+    "category": "Inny",
     "categories": [
       "Puchar Polski",
       "Legenda",
-      "Aktywny Zawodnik"
+      "Inny"
     ],
     "birthDate": "1986-05-26",
     "residence": "Łebcz k.  Władysławowa",

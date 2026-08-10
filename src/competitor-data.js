@@ -1,9 +1,19 @@
+export const SYSTEM_COMPETITOR_CATEGORIES = Object.freeze([
+  'Puchar Polski',
+  'Legenda',
+  'Tyberian Team',
+  'Inny'
+]);
+
 const KNOWN_CATEGORY_LABELS = new Map([
   ['puchar polski', 'Puchar Polski'],
   ['legenda', 'Legenda'],
   ['tyberian team', 'Tyberian Team'],
-  ['aktywny zawodnik', 'Aktywny Zawodnik']
+  ['inny', 'Inny'],
+  ['aktywny zawodnik', 'Inny']
 ]);
+
+const NON_CATEGORY_KEYS = new Set(['bez kategorii', 'uncategorized', 'all']);
 
 export function normalizeCompetitorKey(value) {
   return String(value || '')
@@ -42,8 +52,11 @@ export function getCompetitorCategories(source) {
   [...categoryValues(source?.category), ...categoryValues(source?.categories)].forEach(value => {
     const trimmed = String(value || '').trim().replace(/\s+/g, ' ');
     const key = normalizeCategoryKey(trimmed);
-    if (!key || byKey.has(key)) return;
-    byKey.set(key, KNOWN_CATEGORY_LABELS.get(key) || trimmed);
+    if (!key || NON_CATEGORY_KEYS.has(key)) return;
+    const label = KNOWN_CATEGORY_LABELS.get(key) || trimmed;
+    const canonicalKey = normalizeCategoryKey(label);
+    if (byKey.has(canonicalKey)) return;
+    byKey.set(canonicalKey, label);
   });
   return [...byKey.values()];
 }
@@ -91,7 +104,10 @@ export function normalizeCompetitorRecords(items) {
   return { records, aliases };
 }
 
-export function mergeCompetitorDetails(existing, incoming, mode = 'fillMissing') {
+export function mergeCompetitorDetails(existing, incoming, options = {}) {
+  const settings = typeof options === 'string' ? { mode: options } : options;
+  const mode = settings.mode || 'fillMissing';
+  const categoriesMode = settings.categoriesMode || 'merge';
   const current = normalizeCompetitorRecord(existing);
   const candidate = normalizeCompetitorRecord(incoming);
   if (!current) return candidate;
@@ -105,20 +121,22 @@ export function mergeCompetitorDetails(existing, incoming, mode = 'fillMissing')
     if (!incomingValue) return;
     if (mode === 'preferIncoming' || !currentValue) merged[field] = candidate[field];
   });
-  merged.categories = uniqueCategories([...getCompetitorCategories(current), ...getCompetitorCategories(candidate)]);
+  merged.categories = categoriesMode === 'replace'
+    ? uniqueCategories(getCompetitorCategories(candidate))
+    : uniqueCategories([...getCompetitorCategories(current), ...getCompetitorCategories(candidate)]);
   merged.category = merged.categories[0] || '';
   merged.dataWarnings = uniqueStrings([...(current.dataWarnings || []), ...(candidate.dataWarnings || [])]);
   return merged;
 }
 
-export function upsertCompetitorRecord(collection, incoming, { mode = 'fillMissing' } = {}) {
+export function upsertCompetitorRecord(collection, incoming, { mode = 'fillMissing', categoriesMode = 'merge', matchByName = true } = {}) {
   const records = [...(collection || [])];
   const candidate = normalizeCompetitorRecord(incoming, records.length);
   const aliases = new Map();
   if (!candidate) return { records, competitor: null, added: false, updated: false, aliases };
 
   let index = records.findIndex(item => String(item.id) === candidate.id);
-  if (index < 0) {
+  if (index < 0 && matchByName) {
     const nameKey = normalizeCompetitorKey(candidate.name);
     index = records.findIndex(item => normalizeCompetitorKey(item.name) === nameKey);
     if (index >= 0 && records[index].id !== candidate.id) aliases.set(candidate.id, records[index].id);
@@ -130,7 +148,7 @@ export function upsertCompetitorRecord(collection, incoming, { mode = 'fillMissi
   }
 
   const previous = records[index];
-  const merged = mergeCompetitorDetails(previous, candidate, mode);
+  const merged = mergeCompetitorDetails(previous, candidate, { mode, categoriesMode });
   records[index] = merged;
   return {
     records,

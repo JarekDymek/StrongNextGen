@@ -11,9 +11,10 @@ import {
   normalizeCompetitorRecord,
   normalizeCompetitorRecords,
   remapCompetitionStateCompetitorIds,
+  SYSTEM_COMPETITOR_CATEGORIES,
   upsertCompetitorRecord
 } from './competitor-data.js';
-import { processCompetitorPhoto } from './image-tools.js';
+import { estimateDataUrlBytes, processCompetitorPhoto } from './image-tools.js';
 import {
   clearSavedState,
   deleteCheckpoints,
@@ -68,6 +69,7 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && state.ui.profileCompetitorId) closeCompetitorProfile();
   if (event.key === 'Escape' && state.ui.seasonEditor) closeSeasonEditor();
   if (event.key === 'Escape' && state.ui.competitorEditor) closeCompetitorEditor();
+  if (event.key === 'Escape' && state.ui.competitorSubmission) closeCompetitorSubmission();
 });
 
 function createInitialState(competitorSource = DEFAULT_COMPETITORS) {
@@ -120,6 +122,7 @@ function createUiState() {
     drawAnimation: null,
     seasonEditor: null,
     competitorEditor: null,
+    competitorSubmission: null,
     competitorSearch: '',
     competitorCategoryFilter: 'all'
   };
@@ -239,6 +242,7 @@ function render() {
     ${renderInstallHelp()}
     ${renderCompetitorProfile()}
     ${renderCompetitorEditor()}
+    ${renderCompetitorSubmission()}
     ${renderStopwatch()}
     ${renderSeasonEditor()}
   `;
@@ -388,6 +392,7 @@ function renderCompetitorCategoryFilters() {
     ['Puchar Polski', 'Puchar Polski'],
     ['Legenda', 'Legenda'],
     ['Tyberian Team', 'Tyberian Team'],
+    ['Inny', 'Inny'],
     ['uncategorized', 'Bez kategorii']
   ];
   const active = normalizeCategoryKey(state.ui.competitorCategoryFilter);
@@ -946,7 +951,7 @@ function renderInstallHelp() {
 function renderCompetitorProfile() {
   const competitor = competitorById(state.ui.profileCompetitorId);
   if (!competitor) return '';
-  const categories = [...new Set([competitor.category, ...(competitor.categories || [])].filter(Boolean))];
+  const categories = getCompetitorCategories(competitor);
   const dataWarnings = Array.isArray(competitor.dataWarnings) ? competitor.dataWarnings.filter(Boolean) : [];
   const age = dataWarnings.length ? null : calculateAge(competitor.birthDate);
   const details = [
@@ -994,7 +999,7 @@ function renderCompetitorEditor() {
   const editor = state.ui.competitorEditor;
   if (!editor) return '';
   const categories = getCompetitorCategories(editor);
-  const knownCategories = ['Puchar Polski', 'Legenda', 'Tyberian Team', 'Aktywny Zawodnik'];
+  const knownCategories = SYSTEM_COMPETITOR_CATEGORIES;
   const knownKeys = new Set(knownCategories.map(normalizeCategoryKey));
   const customCategories = categories.filter(category => !knownKeys.has(normalizeCategoryKey(category))).join(', ');
   const isEdit = Boolean(editor.id);
@@ -1073,6 +1078,46 @@ function renderCompetitorEditor() {
   `;
 }
 
+function renderCompetitorSubmission() {
+  const preview = state.ui.competitorSubmission;
+  if (!preview) return '';
+  const competitor = preview.competitor;
+  const existing = competitorById(preview.matchId);
+  const details = [
+    ['Data urodzenia', competitor.birthDate],
+    ['Miejscowość', competitor.residence],
+    ['Wzrost', `${competitor.height} cm`],
+    ['Waga', `${competitor.weight} kg`],
+    ['Kategorie', getCompetitorCategories(competitor).join(', ') || 'Bez kategorii']
+  ];
+  return `
+    <div class="modal-backdrop submission-backdrop" role="presentation">
+      <section class="modal submission-modal" role="dialog" aria-modal="true" aria-labelledby="submission-title">
+        <button type="button" class="profile-close" data-action="close-competitor-submission" aria-label="Anuluj import">&times;</button>
+        <header class="submission-header">
+          <span class="submission-photo">${competitor.photo ? `<img src="${escapeAttr(competitor.photo)}" alt="">` : escapeHtml(initials(competitor.name))}</span>
+          <div>
+            <span class="eyebrow">Zgłoszenie zawodnika</span>
+            <h2 id="submission-title">${escapeHtml(competitor.name)}</h2>
+            <p>${existing ? `Znaleziono rekord: ${escapeHtml(existing.name)}` : 'Nowy zawodnik w bazie'}</p>
+          </div>
+        </header>
+        <dl class="profile-details">
+          ${details.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join('')}
+        </dl>
+        ${competitor.notes ? `<section class="profile-notes-section"><h3>Osiągnięcia i informacje</h3><p class="profile-notes">${escapeHtml(competitor.notes)}</p></section>` : ''}
+        <p class="submission-safety">Import zmieni wyłącznie rekord zawodnika. Wyniki i kolejność zawodów pozostaną bez zmian.</p>
+        <div class="editor-actions">
+          <button type="button" class="secondary-button" data-action="close-competitor-submission">Anuluj</button>
+          <button type="button" class="success-button" data-action="confirm-competitor-submission">
+            ${existing ? 'Aktualizuj istniejącego' : 'Dodaj nowego zawodnika'}
+          </button>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
 function renderStopwatch() {
   const stopwatch = state.ui.stopwatch;
   if (!stopwatch) return '';
@@ -1120,6 +1165,8 @@ async function handleClick(event) {
   if (action === 'edit-competitor') return editCompetitor(id);
   if (action === 'close-competitor-editor') return closeCompetitorEditor();
   if (action === 'remove-competitor-photo') return removeCompetitorPhoto();
+  if (action === 'close-competitor-submission') return closeCompetitorSubmission();
+  if (action === 'confirm-competitor-submission') return confirmCompetitorSubmission();
   if (action === 'set-competitor-category-filter') return setCompetitorCategoryFilter(trigger.dataset.category);
   if (action === 'delete-competitor') return deleteCompetitor(id);
   if (action === 'open-competitor-profile') return openCompetitorProfile(id);
@@ -1369,9 +1416,25 @@ function syncCompetitorEditorFromForm(form) {
   ['name', 'birthDate', 'residence', 'height', 'weight', 'notes'].forEach(field => {
     editor[field] = String(data.get(field) || '').trim();
   });
-  const custom = String(data.get('categoriesCustom') || '').split(/[;,|]/g);
-  editor.categories = [...data.getAll('categories'), ...custom].map(String).map(value => value.trim()).filter(Boolean);
+  editor.categories = competitorEditorCategories(data);
   editor.category = editor.categories[0] || '';
+}
+
+function competitorEditorCategories(data) {
+  const systemByKey = new Map(SYSTEM_COMPETITOR_CATEGORIES.map(category => [normalizeCategoryKey(category), category]));
+  const categories = new Map();
+  data.getAll('categories').forEach(value => {
+    const key = normalizeCategoryKey(value);
+    const label = systemByKey.get(key);
+    if (label) categories.set(key, label);
+  });
+  String(data.get('categoriesCustom') || '').split(/[;,|]/g).forEach(value => {
+    const label = String(value || '').trim().replace(/\s+/g, ' ');
+    const key = normalizeCategoryKey(label);
+    if (!key || key === 'bez kategorii' || key === 'aktywny zawodnik' || systemByKey.has(key) || categories.has(key)) return;
+    categories.set(key, label);
+  });
+  return [...categories.values()];
 }
 
 async function changeCompetitorPhoto(file, form) {
@@ -1419,9 +1482,14 @@ function saveCompetitorEditor(data) {
   const id = String(data.get('id') || editor.id || '');
   const duplicate = state.competitors.find(item => item.id !== id && normalizeCompetitorKey(item.name) === normalizeCompetitorKey(name));
   if (id && duplicate) return flash('Inny zawodnik o tym imieniu i nazwisku ju\u017c istnieje.');
+  if (!id && duplicate) {
+    if (!state.selectedCompetitorIds.includes(duplicate.id)) state.selectedCompetitorIds.push(duplicate.id);
+    state.ui.competitorEditor = null;
+    persistAndRender('Zawodnik ju\u017c istnieje w bazie i zosta\u0142 zaznaczony.');
+    return;
+  }
 
-  const customCategories = String(data.get('categoriesCustom') || '').split(/[;,|]/g);
-  const categories = [...data.getAll('categories'), ...customCategories].map(String).map(value => value.trim()).filter(Boolean);
+  const categories = competitorEditorCategories(data);
   const source = {
     id: id || makeId('competitor', name),
     name,
@@ -1436,7 +1504,7 @@ function saveCompetitorEditor(data) {
     dataWarnings: editor.dataWarnings || []
   };
   const previousName = id ? competitorById(id)?.name : '';
-  const result = upsertCompetitorRecord(state.competitors, source, { mode: 'preferIncoming' });
+  const result = upsertCompetitorRecord(state.competitors, source, { mode: 'preferIncoming', categoriesMode: 'replace' });
   if (editor.photoRemoved) result.competitor.photo = '';
   state.competitors = sortCompetitors(result.records);
   const competitorId = result.competitor.id;
@@ -1728,10 +1796,131 @@ async function importCompetitors() {
   const file = await pickJsonFile();
   if (!file) return;
   const json = await readJsonFile(file);
-  const imported = normalizeCompetitors(Array.isArray(json) ? json : json.competitors || []);
+  if (json?.type === 'competitor-submission') {
+    openCompetitorSubmission(json, file.name);
+    return;
+  }
+  const rawItems = Array.isArray(json) ? json : json.competitors || [];
+  const imported = normalizeCompetitors(rawItems);
   if (!imported.length) return flash('Nie znaleziono zawodników w pliku.');
-  const result = mergeCompetitors(imported);
+  const categoryPayload = collectCategoryPayload(rawItems);
+  const result = mergeCompetitors(imported, categoryPayload);
   persistAndRender(`Import zawodników: ${result.added} dodano, ${result.updated} zaktualizowano, ${result.unchanged} bez zmian.`);
+}
+
+function collectCategoryPayload(rawItems) {
+  const ids = new Set();
+  const names = new Set();
+  (Array.isArray(rawItems) ? rawItems : []).forEach(item => {
+    if (!item || typeof item !== 'object') return;
+    const hasCategories = Object.prototype.hasOwnProperty.call(item, 'categories') || Object.prototype.hasOwnProperty.call(item, 'category');
+    if (!hasCategories) return;
+    if (item.id) ids.add(String(item.id));
+    if (item.name) names.add(normalizeCompetitorKey(item.name));
+  });
+  return { ids, names };
+}
+
+function openCompetitorSubmission(json, fileName = '') {
+  const normalized = normalizeSubmissionFile(json);
+  if (!normalized.ok) {
+    flash(normalized.error);
+    return;
+  }
+  const competitor = normalized.competitor;
+  const idMatch = competitor.id ? competitorById(competitor.id) : null;
+  const identityMatch = state.competitors.find(item =>
+    normalizeCompetitorKey(item.name) === normalizeCompetitorKey(competitor.name) &&
+    String(item.birthDate || '') === competitor.birthDate
+  );
+  state.ui.competitorSubmission = {
+    competitor,
+    matchId: idMatch?.id || identityMatch?.id || '',
+    createdAt: normalized.createdAt,
+    fileName
+  };
+  render();
+}
+
+function normalizeSubmissionFile(json) {
+  if (!json || json.schemaVersion !== 1 || json.type !== 'competitor-submission' || !json.competitor || typeof json.competitor !== 'object') {
+    return { ok: false, error: 'To nie jest prawidłowy plik zgłoszenia zawodnika.' };
+  }
+  const source = json.competitor;
+  const name = normalizeSubmissionText(source.name);
+  const birthDate = String(source.birthDate || '').trim();
+  const residence = normalizeSubmissionText(source.residence);
+  const height = normalizePositiveNumber(source.height);
+  const weight = normalizePositiveNumber(source.weight);
+  const photo = String(source.photo || '').trim();
+  if (!name) return { ok: false, error: 'Zgłoszenie nie zawiera imienia i nazwiska.' };
+  if (!isValidIsoDate(birthDate)) return { ok: false, error: 'Zgłoszenie zawiera nieprawidłową datę urodzenia.' };
+  if (!residence) return { ok: false, error: 'Zgłoszenie nie zawiera miejscowości.' };
+  if (!height || !weight) return { ok: false, error: 'Wzrost i waga muszą być dodatnimi wartościami.' };
+  if (!photo.startsWith('data:image/jpeg;base64,') || estimateDataUrlBytes(photo) > 20 * 1024) {
+    return { ok: false, error: 'Zdjęcie w zgłoszeniu ma nieprawidłowy format albo jest zbyt duże.' };
+  }
+
+  const systemByKey = new Map(SYSTEM_COMPETITOR_CATEGORIES.map(category => [normalizeCategoryKey(category), category]));
+  const categories = getCompetitorCategories(source).map(category =>
+    systemByKey.get(normalizeCategoryKey(category)) || normalizeSubmissionText(category)
+  );
+  const competitor = normalizeCompetitorRecord({
+    ...source,
+    id: source.id ? String(source.id) : 'submission-preview',
+    name,
+    birthDate,
+    residence,
+    height,
+    weight,
+    notes: normalizeSubmissionText(source.notes),
+    category: categories[0] || '',
+    categories,
+    photo
+  });
+  competitor.id = source.id ? String(source.id) : '';
+  return { ok: true, competitor, createdAt: String(json.createdAt || '') };
+}
+
+function closeCompetitorSubmission() {
+  state.ui.competitorSubmission = null;
+  render();
+}
+
+function confirmCompetitorSubmission() {
+  const preview = state.ui.competitorSubmission;
+  if (!preview) return;
+  const existing = competitorById(preview.matchId);
+  const source = {
+    ...preview.competitor,
+    id: existing?.id || makeId('competitor', preview.competitor.name),
+    category: preview.competitor.categories[0] || ''
+  };
+  const previousName = existing?.name || '';
+  const result = upsertCompetitorRecord(state.competitors, source, {
+    mode: 'preferIncoming',
+    categoriesMode: 'replace',
+    matchByName: Boolean(existing)
+  });
+  state.competitors = sortCompetitors(result.records);
+  if (existing && previousName !== result.competitor.name) renameCompetitorInHistory(existing.id, result.competitor.name);
+  state.ui.competitorSubmission = null;
+  persistAndRender(existing ? 'Zaktualizowano istniejącego zawodnika.' : 'Dodano nowego zawodnika do trwałej bazy.');
+}
+
+function normalizeSubmissionText(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ').toLocaleUpperCase('pl-PL');
+}
+
+function normalizePositiveNumber(value) {
+  const parsed = Number.parseFloat(String(value || '').trim().replace(',', '.'));
+  return Number.isFinite(parsed) && parsed > 0 ? String(parsed) : '';
+}
+
+function isValidIsoDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T12:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
 function exportCompetitors() {
@@ -2317,10 +2506,14 @@ function renameCompetitorInHistory(id, name) {
   }));
 }
 
-function mergeCompetitors(imported) {
+function mergeCompetitors(imported, categoryPayload = { ids: new Set(), names: new Set() }) {
   const result = { added: 0, updated: 0, unchanged: 0 };
   imported.forEach(item => {
-    const upserted = upsertCompetitorRecord(state.competitors, item, { mode: 'preferIncoming' });
+    const replaceCategories = categoryPayload.ids.has(String(item.id)) || categoryPayload.names.has(normalizeCompetitorKey(item.name));
+    const upserted = upsertCompetitorRecord(state.competitors, item, {
+      mode: 'preferIncoming',
+      categoriesMode: replaceCategories ? 'replace' : 'merge'
+    });
     state.competitors = upserted.records;
     if (upserted.added) result.added++;
     else if (upserted.updated) result.updated++;

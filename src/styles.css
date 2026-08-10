@@ -1633,6 +1633,58 @@ body.outdoor-mode .sticky-actions {
   gap: 10px;
 }
 
+.submission-modal {
+  position: relative;
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-top: 24px;
+}
+
+.submission-header {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding-right: 46px;
+}
+
+.submission-header h2,
+.submission-header p {
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.submission-photo {
+  display: grid;
+  width: 96px;
+  height: 120px;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid var(--orange);
+  border-radius: var(--radius-small);
+  color: #fff;
+  background: var(--navy);
+  font-weight: 1000;
+}
+
+.submission-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #fff;
+}
+
+.submission-safety {
+  border-left: 5px solid var(--green);
+  margin: 0;
+  padding: 10px 12px;
+  color: var(--navy);
+  background: #eefbf4;
+  font-weight: 850;
+  line-height: 1.4;
+}
+
 body.outdoor-mode .category-filter,
 body.outdoor-mode .category-option,
 body.outdoor-mode .photo-editor {

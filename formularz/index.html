@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0b1f36">
+    <title>Zgłoszenie zawodnika Strongman</title>
+    <link rel="icon" href="../assets/icon-192.png">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="page-header">
+      <img src="../assets/logo-strong-man.png" alt="Strong Man">
+      <div>
+        <span>Strongman Next</span>
+        <h1>Zgłoszenie zawodnika</h1>
+        <p>Uzupełnij dane i pobierz jeden plik JSON dla organizatora.</p>
+      </div>
+    </header>
+
+    <main>
+      <form class="submission-form" data-submission-form>
+        <section class="form-section">
+          <h2>Dane zawodnika</h2>
+          <div class="field-grid">
+            <label class="field-full">
+              <span>Imię i nazwisko</span>
+              <input name="name" data-uppercase autocomplete="name" required>
+            </label>
+            <label>
+              <span>Data urodzenia</span>
+              <input type="date" name="birthDate" required>
+            </label>
+            <label>
+              <span>Miejscowość</span>
+              <input name="residence" data-uppercase autocomplete="address-level2" required>
+            </label>
+            <label>
+              <span>Wzrost (cm)</span>
+              <input type="number" name="height" min="1" step="0.1" inputmode="decimal" required>
+            </label>
+            <label>
+              <span>Waga (kg)</span>
+              <input type="number" name="weight" min="1" step="0.1" inputmode="decimal" required>
+            </label>
+            <label class="field-full">
+              <span>Osiągnięcia i informacje</span>
+              <textarea name="notes" rows="4" data-uppercase></textarea>
+            </label>
+          </div>
+        </section>
+
+        <fieldset class="form-section">
+          <legend>Kategorie</legend>
+          <div class="category-grid">
+            <label><input type="checkbox" name="categories" value="Puchar Polski"><span>Puchar Polski</span></label>
+            <label><input type="checkbox" name="categories" value="Legenda"><span>Legenda</span></label>
+            <label><input type="checkbox" name="categories" value="Tyberian Team"><span>Tyberian Team</span></label>
+            <label><input type="checkbox" name="categories" value="Inny"><span>Inny</span></label>
+          </div>
+          <label>
+            <span>Inne kategorie, oddzielone przecinkami</span>
+            <input name="customCategories" data-uppercase autocomplete="off">
+          </label>
+        </fieldset>
+
+        <section class="form-section photo-section">
+          <div class="photo-preview" data-photo-preview><span>Brak zdjęcia</span></div>
+          <div class="photo-controls">
+            <h2>Zdjęcie</h2>
+            <p>Zostanie lokalnie zmniejszone do maksymalnie 120 px i około 10 KB. Oryginał nie trafi do pliku.</p>
+            <label class="file-button">
+              <span>Wybierz zdjęcie</span>
+              <input type="file" accept="image/*" data-photo-input required>
+            </label>
+            <button type="button" class="danger-button" data-remove-photo hidden>Usuń zdjęcie</button>
+            <p class="status" data-photo-status role="status"></p>
+          </div>
+        </section>
+
+        <label class="consent">
+          <input type="checkbox" name="consent" required>
+          <span>Potwierdzam poprawność danych oraz prawo do przekazania organizatorowi dołączonego zdjęcia.</span>
+        </label>
+        <p class="status" data-form-status role="alert"></p>
+        <button type="submit" class="primary-button">Sprawdź i przygotuj plik</button>
+      </form>
+
+      <section class="result-panel" data-result-panel hidden>
+        <span>Plik gotowy</span>
+        <h2 data-result-name></h2>
+        <p data-result-details></p>
+        <button type="button" class="download-button" data-download>Pobierz plik zgłoszenia JSON</button>
+        <p>Wyślij pobrany plik organizatorowi przez e-mail lub wybrany komunikator.</p>
+      </section>
+    </main>
+
+    <footer>Dane i zdjęcie są przetwarzane wyłącznie na tym urządzeniu. Formularz niczego nie wysyła do internetu.</footer>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

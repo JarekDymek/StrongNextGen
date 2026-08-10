@@ -1,6 +1,6 @@
 # Strongman Next
 
-## Wersja testowa 0.4.0
+## Wersja testowa 0.4.1
 
 Ta wersja jest przygotowana jako instalowalna aplikacja PWA dla telefonu, iPada i PC. Po wejściu na stronę z GitHub Pages można ją dodać do ekranu głównego lub zainstalować w przeglądarce na komputerze.
 
@@ -42,7 +42,10 @@ Nowa aplikacja do prowadzenia zawodów Strong Man, zbudowana od zera jako osobne
 - Baza zawodników jest wbudowana na start, z importem JSON i ręcznym dodawaniem.
 - Zawodnicy są zapisywani w osobnej trwałej bazie; import starszych zawodów odzyskuje brakujące rekordy bez zmiany identyfikatorów i wyników.
 - Formularz zawodnika obsługuje podgląd, zmianę i usuwanie zdjęcia oraz automatyczny JPEG do 120 px i około 10 KB.
-- Wyszukiwanie można łączyć z filtrami `Puchar Polski`, `Legenda`, `Tyberian Team` i `Bez kategorii`.
+- Wyszukiwanie można łączyć z filtrami `Puchar Polski`, `Legenda`, `Tyberian Team`, `Inny` i `Bez kategorii`.
+- Edycja kategorii zastępuje poprzedni zestaw, dlatego odznaczone i usunięte kategorie własne nie wracają.
+- Starsza kategoria `Aktywny Zawodnik` jest automatycznie migrowana do `Inny` przy uruchomieniu i imporcie.
+- Oddzielny formularz zgłoszeniowy tworzy niewielki plik pojedynczego zawodnika bez dostępu do bazy aplikacji.
 - Wybór zawodników działa kolejnością kliknięć: pierwszy wybrany startuje pierwszy, chyba że sędzia użyje losowania.
 - Wybór konkurencji działa kolejnością kliknięć, z możliwością przesuwania wybranych konkurencji.
 - Osobny etap ustawiania kolejności startowej przed zawodami.
@@ -110,13 +113,23 @@ node tests/scoring.test.js
 ]
 ```
 
-Ponowny import uzupełnia i aktualizuje istniejące profile, nie usuwając danych, gdy odpowiadające im pole w pliku jest puste.
+Ponowny import uzupełnia i aktualizuje istniejące profile. Jeżeli pełny rekord jawnie zawiera `category` lub `categories`, ten zestaw zastępuje poprzednie kategorie; dzięki temu import respektuje także ich usunięcie.
 
 Obsługiwane są też tablice samych nazw:
 
 ```json
 ["Adam Nowak", "Bartek Kowalski"]
 ```
+
+## Formularz zgłoszenia zawodnika
+
+Publiczny formularz statyczny działa niezależnie od aplikacji zawodów:
+
+```text
+https://jarekdymek.github.io/StrongNextGen/formularz/
+```
+
+Formularz przetwarza dane i zdjęcie wyłącznie w przeglądarce zawodnika. Generuje jeden plik `zawodnik_IMIE_NAZWISKO.json` typu `competitor-submission`. Organizator dodaje go zwykłym przyciskiem importu bazy zawodników. Aplikacja pokazuje podgląd i pozwala dodać nowy rekord albo zaktualizować istniejący bez zmiany jego identyfikatora.
 
 ## Format importu konkurencji
 
