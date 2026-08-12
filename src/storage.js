@@ -1,7 +1,6 @@
 const STATE_KEY = 'strongman-next.state.v1';
 const CHECKPOINTS_KEY = 'strongman-next.checkpoints.v1';
 const COMPETITOR_DATABASE_KEY = 'strongman-next.competitor-database.v1';
-const SEASON_DATABASE_KEY = 'strongman-next.season-database.v1';
 const MAX_IMPORT_BYTES = 15 * 1024 * 1024;
 const storageWarnings = new Map();
 
@@ -65,28 +64,6 @@ export function loadCompetitorDatabase() {
 
 export function saveCompetitorDatabase(competitors) {
   localStorage.setItem(COMPETITOR_DATABASE_KEY, JSON.stringify(Array.isArray(competitors) ? competitors : []));
-}
-
-export function loadSeasonDatabase() {
-  try {
-    const raw = localStorage.getItem(SEASON_DATABASE_KEY);
-    if (raw === null) return null;
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed;
-    return Array.isArray(parsed?.events) ? parsed.events : [];
-  } catch (error) {
-    rememberStorageWarning('klasyfikacji sezonu', error);
-    return null;
-  }
-}
-
-export function saveSeasonDatabase(events) {
-  localStorage.setItem(SEASON_DATABASE_KEY, JSON.stringify({
-    schemaVersion: 1,
-    season: 2026,
-    savedAt: new Date().toISOString(),
-    events: Array.isArray(events) ? events : []
-  }));
 }
 
 export function loadCheckpoints() {

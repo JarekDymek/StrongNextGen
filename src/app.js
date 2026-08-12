@@ -24,7 +24,6 @@ import {
   hasStorageWarning,
   loadCompetitorDatabase,
   loadCheckpoints,
-  loadSeasonDatabase,
   loadSavedState,
   pickImageFile,
   pickJsonFile,
@@ -33,7 +32,6 @@ import {
   readTextFile,
   saveCheckpoint,
   saveCompetitorDatabase,
-  saveSeasonDatabase,
   saveState
 } from './storage.js';
 
@@ -74,22 +72,13 @@ const STAGE_SHORT_LABELS = {
 
 const savedStateAtStartup = loadSavedState();
 const competitorDatabaseAtStartup = loadCompetitorDatabase();
-const seasonDatabaseAtStartup = loadSeasonDatabase();
 const competitorDatabaseReadFailed = hasStorageWarning('bazy zawodników');
-const seasonDatabaseReadFailed = hasStorageWarning('klasyfikacji sezonu');
-let state = hydrateState(savedStateAtStartup, competitorDatabaseAtStartup, seasonDatabaseAtStartup);
+let state = hydrateState(savedStateAtStartup, competitorDatabaseAtStartup);
 state.ui = createUiState();
 let persistenceFailureReported = false;
 if (!competitorDatabaseReadFailed) {
   try {
     saveCompetitorDatabase(state.competitors);
-  } catch (error) {
-    reportPersistenceFailure(error);
-  }
-}
-if (!seasonDatabaseReadFailed) {
-  try {
-    saveSeasonDatabase(state.seasonEvents);
   } catch (error) {
     reportPersistenceFailure(error);
   }
@@ -188,10 +177,9 @@ function createUiState() {
   };
 }
 
-function hydrateState(saved, durableDatabase = null, durableSeason = null) {
+function hydrateState(saved, durableDatabase = null) {
   const databaseSeed = Array.isArray(durableDatabase) ? durableDatabase : DEFAULT_COMPETITORS;
   const base = createInitialState(databaseSeed);
-  base.seasonEvents = mergeSeasonEventCollections(base.seasonEvents, durableSeason);
   if (!saved || typeof saved !== 'object') return base;
 
   const recovered = mergeCompetitorCollections(base.competitors, saved.competitors || [], {
@@ -222,7 +210,7 @@ function hydrateState(saved, durableDatabase = null, durableSeason = null) {
     drafts: normalizeDrafts(migratedSaved.drafts),
     eventOrderOverrides: normalizeEventOrderOverrides(migratedSaved.eventOrderOverrides),
     scores: {},
-    seasonEvents: mergeSeasonEventCollections(base.seasonEvents, durableSeason, migratedSaved.seasonEvents),
+    seasonEvents: normalizeSeasonEvents(migratedSaved.seasonEvents?.length ? migratedSaved.seasonEvents : base.seasonEvents),
     seasonMaxCountedStarts: Math.max(1, Number.parseInt(migratedSaved.seasonMaxCountedStarts, 10) || base.seasonMaxCountedStarts),
     baseRevision: BASE_REVISION,
     schemaVersion: 3
@@ -2053,7 +2041,7 @@ function restoreHelpCheckpoint(session, showTopics) {
   }
   const snapshot = { ...checkpoint.snapshot };
   if (!Object.prototype.hasOwnProperty.call(snapshot, 'logoData')) snapshot.logoData = state.logoData;
-  state = hydrateState(snapshot, loadCompetitorDatabase(), loadSeasonDatabase());
+  state = hydrateState(snapshot, loadCompetitorDatabase());
   state.ui = createUiState();
   if (showTopics) state.ui.emergencyHelp = { open: true, topicId: '', phase: 'topics', checkpointId: '', origin: null };
   persistAndRender(showTopics ? 'Przywrócono stan sprzed procedury. Wybierz inny temat.' : 'Procedura anulowana. Przywrócono punkt bezpieczeństwa.', { competitorsChanged: true });
@@ -2517,7 +2505,7 @@ async function importState() {
     return;
   }
   if (!window.confirm('Wczytać stan z pliku i zastąpić aktualny stan aplikacji?')) return;
-  state = hydrateState(json, loadCompetitorDatabase(), loadSeasonDatabase());
+  state = hydrateState(json, loadCompetitorDatabase());
   state.ui = createUiState();
   persistAndRender('Stan został wczytany.', { competitorsChanged: true });
 }
@@ -2928,17 +2916,6 @@ function mergeSeasonEvents(current, imported) {
   return renumberSeasonEvents([...byKey.values()]);
 }
 
-function mergeSeasonEventCollections(baseEvents = [], durableEvents = null, savedEvents = null) {
-  const byKey = new Map();
-  [baseEvents, durableEvents, savedEvents].forEach(collection => {
-    if (!Array.isArray(collection) || !collection.length) return;
-    normalizeSeasonEvents(collection).forEach(event => {
-      byKey.set(`${event.date}:${normalizeKey(event.location)}`, event);
-    });
-  });
-  return renumberSeasonEvents([...byKey.values()]);
-}
-
 function renumberSeasonEvents(items) {
   return normalizeSeasonEvents(items).map((event, index) => ({ ...event, number: index + 1 }));
 }
@@ -3004,7 +2981,7 @@ function confirmReset() {
   const input = app.querySelector('[data-reset-input]');
   if (input?.value !== 'RESET') return;
   clearSavedState();
-  state = hydrateState(null, loadCompetitorDatabase(), loadSeasonDatabase());
+  state = hydrateState(null, loadCompetitorDatabase());
   state.ui = createUiState();
   persistAndRender('Aplikacja została zresetowana.');
 }
@@ -3015,7 +2992,7 @@ function loadCheckpointById(id) {
   if (!window.confirm('Wczytać punkt kontrolny i zastąpić aktualny stan?')) return;
   const snapshot = { ...checkpoint.snapshot };
   if (!Object.prototype.hasOwnProperty.call(snapshot, 'logoData')) snapshot.logoData = state.logoData;
-  state = hydrateState(snapshot, loadCompetitorDatabase(), loadSeasonDatabase());
+  state = hydrateState(snapshot, loadCompetitorDatabase());
   state.ui = createUiState();
   persistAndRender('Punkt kontrolny został wczytany.', { competitorsChanged: true });
 }
@@ -3358,7 +3335,6 @@ function persist({ competitorsChanged = false } = {}) {
   state.schemaVersion = 3;
   try {
     if (competitorsChanged) saveCompetitorDatabase(state.competitors);
-    saveSeasonDatabase(state.seasonEvents);
     saveState(state);
     persistenceFailureReported = false;
     return true;
