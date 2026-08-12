@@ -32,6 +32,7 @@ const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="600" hei
 await form.locator('[data-competitor-photo]').setInputFiles({ name: 'portret.svg', mimeType: 'image/svg+xml', buffer: svg });
 await page.locator('[data-photo-status]').filter({ hasText: 'Gotowe:' }).waitFor();
 await form.getByRole('button', { name: 'Zapisz zawodnika' }).click();
+await page.locator('[data-form="competitor-editor"]').waitFor({ state: 'detached' });
 await page.getByText('JAN TESTOWY', { exact: true }).first().waitFor();
 
 const saved = await page.evaluate(() => {
@@ -80,6 +81,7 @@ await editor.getByLabel('Legenda').uncheck();
 await editor.locator('[name="categoriesCustom"]').fill('POKAZY, pokazy, legenda');
 await page.getByRole('button', { name: 'Usuń zdjęcie' }).click();
 await page.getByRole('button', { name: 'Zapisz zawodnika' }).click();
+await page.locator('[data-form="competitor-editor"]').waitFor({ state: 'detached' });
 let editedRecord = await page.evaluate(id => JSON.parse(localStorage.getItem('strongman-next.competitor-database.v1')).find(item => item.id === id), saved.competitor.id);
 assert.equal(editedRecord.photo, '');
 assert.deepEqual(editedRecord.categories, ['Puchar Polski', 'POKAZY']);
@@ -91,13 +93,24 @@ assert.equal(await editor.locator('[name="categoriesCustom"]').inputValue(), 'PO
 await editor.getByLabel('Puchar Polski').uncheck();
 await editor.locator('[name="categoriesCustom"]').fill('NOWA GRUPA');
 await editor.getByRole('button', { name: 'Zapisz zawodnika' }).click();
+await page.locator('[data-form="competitor-editor"]').waitFor({ state: 'detached' });
 editedRecord = await page.evaluate(id => JSON.parse(localStorage.getItem('strongman-next.competitor-database.v1')).find(item => item.id === id), saved.competitor.id);
 assert.deepEqual(editedRecord.categories, ['NOWA GRUPA']);
 
 await testRow.getByRole('button', { name: 'Edytuj' }).click();
 editor = page.locator('[data-form="competitor-editor"]');
-await editor.locator('[name="categoriesCustom"]').fill('');
+await editor.waitFor();
+const customCategoriesInput = editor.locator('[name="categoriesCustom"]');
+await customCategoriesInput.waitFor();
+await customCategoriesInput.fill('');
+await page.waitForFunction(() => document.querySelector('[name="categoriesCustom"]')?.value === '');
+assert.equal(await editor.locator('[name="categoriesCustom"]').inputValue(), '');
 await editor.getByRole('button', { name: 'Zapisz zawodnika' }).click();
+await page.locator('[data-form="competitor-editor"]').waitFor({ state: 'detached' });
+await page.waitForFunction(id => {
+  const record = JSON.parse(localStorage.getItem('strongman-next.competitor-database.v1')).find(item => item.id === id);
+  return record?.categories?.length === 0;
+}, saved.competitor.id);
 editedRecord = await page.evaluate(id => JSON.parse(localStorage.getItem('strongman-next.competitor-database.v1')).find(item => item.id === id), saved.competitor.id);
 assert.deepEqual(editedRecord.categories, []);
 assert.equal(editedRecord.category, '');
@@ -113,6 +126,7 @@ assert.deepEqual(clearedExport.find(item => item.id === saved.competitor.id).cat
 await testRow.getByRole('button', { name: 'Edytuj' }).click();
 await page.locator('[data-form="competitor-editor"]').getByLabel('Legenda').check();
 await page.getByRole('button', { name: 'Zapisz zawodnika' }).click();
+await page.locator('[data-form="competitor-editor"]').waitFor({ state: 'detached' });
 const clearedImportChooser = page.waitForEvent('filechooser');
 await page.getByRole('button', { name: 'Import zawodników' }).click();
 await (await clearedImportChooser).setFiles(clearedExportPath);
@@ -148,6 +162,7 @@ assert.equal(await page.locator(`[data-competitor-id="${saved.competitor.id}"]`)
 await page.getByRole('button', { name: 'Dodaj zawodnika', exact: true }).click();
 await page.locator('[data-form="competitor-editor"] [name="name"]').fill('  jan   testowy  ');
 await page.getByRole('button', { name: 'Zapisz zawodnika' }).click();
+await page.locator('[data-form="competitor-editor"]').waitFor({ state: 'detached' });
 const duplicateCount = await page.evaluate(() => JSON.parse(localStorage.getItem('strongman-next.competitor-database.v1')).filter(item => item.name.toLocaleLowerCase('pl').replace(/\s+/g, ' ') === 'jan testowy').length);
 assert.equal(duplicateCount, 1);
 

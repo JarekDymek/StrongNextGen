@@ -9,8 +9,14 @@ assert.ok(DEFAULT_COMPETITORS.some(competitor => competitor.name === 'Przemysła
 
 assert.equal(parseResult('1:10.50', 'low').val, 70.5);
 assert.equal(parseResult('018.5', 'low').isDist, true);
+assert.equal(parseResult('DNF+18.5m', 'low').distance, 18.5);
 assert.equal(parseResult('0', 'high').dnf, true);
 assert.equal(parseResult('abc', 'high').error, true);
+assert.equal(parseResult('10abc', 'high').error, true);
+assert.equal(parseResult('10abc', 'low').error, true);
+assert.equal(parseResult('1:10abc', 'low').error, true);
+assert.equal(parseResult('-1', 'high').error, true);
+assert.equal(parseResult('1e3', 'high').error, true);
 
 const lowEvent = calculateEventPoints([
   { id: 'a', name: 'Adam', result: '55' },
@@ -32,6 +38,16 @@ const tiedHigh = calculateEventPoints([
 assert.equal(tiedHigh.results[0].points, '2.50');
 assert.equal(tiedHigh.results[1].points, '2.50');
 assert.equal(tiedHigh.results[2].points, '1.00');
+
+const largeField = calculateEventPoints(
+  Array.from({ length: 100 }, (_, index) => ({ id: `large-${index}`, name: `Zawodnik ${index}`, result: String(index + 1) })),
+  100,
+  'high'
+);
+assert.equal(largeField.error, false);
+assert.equal(largeField.results.length, 100);
+assert.equal(largeField.results[0].points, '100.00');
+assert.deepEqual(calculateEventPoints([], 0, 'high'), { results: [], error: false });
 
 const nextOrderAfterTie = buildNextStartOrder(
   ['a', 'b', 'c', 'd'],

@@ -2,11 +2,16 @@ import assert from 'node:assert/strict';
 import {
   createSubmission,
   normalizeSubmissionCategories,
+  normalizePositiveNumber,
   normalizeUpperText,
   submissionFilename
 } from '../formularz/submission-data.js';
 
 assert.equal(normalizeUpperText('  michał   żółć '), 'MICHAŁ ŻÓŁĆ');
+assert.equal(normalizePositiveNumber('123,5'), '123.5');
+assert.equal(normalizePositiveNumber('123abc'), '');
+assert.equal(normalizePositiveNumber('-10'), '');
+assert.equal(normalizePositiveNumber('1e3'), '');
 assert.deepEqual(
   normalizeSubmissionCategories(['Puchar Polski', 'Inny'], ' pokazy, POKAZY, legenda, inny, , '),
   ['Puchar Polski', 'Inny', 'POKAZY']
@@ -34,5 +39,13 @@ assert.equal(submission.competitor.notes, 'MISTRZ POLSKI');
 assert.deepEqual(submission.competitor.categories, ['Puchar Polski', 'POKAZY']);
 assert.equal('id' in submission.competitor, false);
 assert.equal(submissionFilename('Michał Żółć'), 'zawodnik_MICHAL_ZOLC.json');
+assert.throws(() => createSubmission({
+  name: 'Jan Testowy',
+  birthDate: '2026-02-30',
+  residence: 'Łódź',
+  height: '185',
+  weight: '120',
+  categories: []
+}, photo));
 
 console.log('Submission data tests passed');

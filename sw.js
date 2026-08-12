@@ -1,11 +1,11 @@
-const CACHE_NAME = 'strongman-next-v0.4.1';
+const CACHE_NAME = 'strongman-next-v1.0.0';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
   './version.json',
   './src/app.js',
-  './src/app.js?v=0.4.1',
+  './src/app.js?v=1.0.0',
   './src/competitor-data.js',
   './src/competitors.js',
   './src/data.js',
@@ -17,7 +17,7 @@ const APP_SHELL = [
   './src/season-data.js',
   './src/storage.js',
   './src/styles.css',
-  './src/styles.css?v=0.4.1',
+  './src/styles.css?v=1.0.0',
   './assets/icon-192.png',
   './assets/icon-512.png',
   './assets/logo-strong-man.png'

@@ -31,6 +31,7 @@ const tieEvent = normalizeSeasonEvent({
 });
 assert.equal(tieEvent.date, '2026-08-15');
 assert.deepEqual(tieEvent.ranking.map(row => row.seasonPoints), [5, 4, 4, 2, 1]);
+assert.equal(normalizeSeasonEvent({ date: '2026-02-30', location: 'Testowo', ranking: [] }), null);
 
 const publicHtml = buildSeasonHtml({
   season: 2026,

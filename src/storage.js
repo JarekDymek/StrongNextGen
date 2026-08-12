@@ -1,19 +1,47 @@
 const STATE_KEY = 'strongman-next.state.v1';
 const CHECKPOINTS_KEY = 'strongman-next.checkpoints.v1';
 const COMPETITOR_DATABASE_KEY = 'strongman-next.competitor-database.v1';
+const MAX_IMPORT_BYTES = 15 * 1024 * 1024;
+const storageWarnings = new Map();
+
+function rememberStorageWarning(key, error) {
+  if (storageWarnings.has(key)) return;
+  storageWarnings.set(key, `Nie udało się odczytać ${key}. Aplikacja pominęła uszkodzony zapis.`);
+  console.error(`[Strongman Next] Błąd odczytu ${key}:`, error);
+}
+
+export function consumeStorageWarnings() {
+  const warnings = [...storageWarnings.values()];
+  storageWarnings.clear();
+  return warnings;
+}
+
+export function hasStorageWarning(key) {
+  return storageWarnings.has(key);
+}
+
+export function createStorageSnapshot(state, { includeLogo = true } = {}) {
+  const copy = structuredClone(state);
+  delete copy.ui;
+  if (Array.isArray(copy.competitors)) {
+    copy.competitors = copy.competitors.map(competitor => ({ ...competitor, photo: '' }));
+  }
+  if (!includeLogo) delete copy.logoData;
+  return copy;
+}
 
 export function loadSavedState() {
   try {
     const raw = localStorage.getItem(STATE_KEY);
     return raw ? JSON.parse(raw) : null;
-  } catch {
+  } catch (error) {
+    rememberStorageWarning('zapisu zawodów', error);
     return null;
   }
 }
 
 export function saveState(state) {
-  const copy = structuredClone(state);
-  delete copy.ui;
+  const copy = createStorageSnapshot(state);
   copy.savedAt = new Date().toISOString();
   localStorage.setItem(STATE_KEY, JSON.stringify(copy));
 }
@@ -28,7 +56,8 @@ export function loadCompetitorDatabase() {
     if (raw === null) return null;
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : Array.isArray(parsed?.competitors) ? parsed.competitors : [];
-  } catch {
+  } catch (error) {
+    rememberStorageWarning('bazy zawodników', error);
     return null;
   }
 }
@@ -41,14 +70,14 @@ export function loadCheckpoints() {
   try {
     const raw = localStorage.getItem(CHECKPOINTS_KEY);
     return raw ? JSON.parse(raw) : [];
-  } catch {
+  } catch (error) {
+    rememberStorageWarning('punktów kontrolnych', error);
     return [];
   }
 }
 
 export function saveCheckpoint(state, label = 'Punkt kontrolny') {
-  const copy = structuredClone(state);
-  delete copy.ui;
+  const copy = createStorageSnapshot(state, { includeLogo: false });
   const checkpoints = loadCheckpoints();
   checkpoints.unshift({
     id: `checkpoint-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -81,6 +110,10 @@ export function downloadJson(filename, data) {
 
 export function readJsonFile(file) {
   return new Promise((resolve, reject) => {
+    if (!file || file.size > MAX_IMPORT_BYTES) {
+      reject(new Error('Plik jest pusty albo przekracza bezpieczny limit 15 MB.'));
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       try {
@@ -96,6 +129,10 @@ export function readJsonFile(file) {
 
 export function readTextFile(file) {
   return new Promise((resolve, reject) => {
+    if (!file || file.size > MAX_IMPORT_BYTES) {
+      reject(new Error('Plik jest pusty albo przekracza bezpieczny limit 15 MB.'));
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ''));
     reader.onerror = () => reject(reader.error);

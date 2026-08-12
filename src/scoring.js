@@ -7,10 +7,19 @@ export function parseResult(rawValue, eventType) {
   }
 
   if (eventType === 'low') {
+    const legacyDistance = valStr.match(/^dnf\s*\+\s*(\d+(?:\.\d+)?)\s*m?$/);
+    if (legacyDistance) {
+      const distance = Number(legacyDistance[1]);
+      if (distance > 0) {
+        return { val: 99000 - distance, raw: rawValue, zero: false, isDist: true, distance };
+      }
+    }
+
     if (valStr.includes(':')) {
       const parts = valStr.split(':');
-      const minutes = Number.parseFloat(parts[0]);
-      const seconds = Number.parseFloat(parts[1]);
+      const validTime = parts.length === 2 && /^\d+$/.test(parts[0]) && /^\d+(?:\.\d+)?$/.test(parts[1]);
+      const minutes = validTime ? Number(parts[0]) : NaN;
+      const seconds = validTime ? Number(parts[1]) : NaN;
       if (Number.isFinite(minutes) && Number.isFinite(seconds) && seconds >= 0 && seconds < 60) {
         return { val: minutes * 60 + seconds, raw: rawValue, zero: false, isTime: true };
       }
@@ -18,14 +27,15 @@ export function parseResult(rawValue, eventType) {
     }
 
     if (valStr.startsWith('0') && valStr.length > 1) {
-      const distance = Number.parseFloat(valStr.slice(1));
+      const distanceText = valStr.slice(1);
+      const distance = /^\d+(?:\.\d+)?$/.test(distanceText) ? Number(distanceText) : NaN;
       if (Number.isFinite(distance) && distance > 0) {
         return { val: 99000 - distance, raw: rawValue, zero: false, isDist: true, distance };
       }
       return { val: worstVal, raw: rawValue, zero: true, error: true };
     }
 
-    const time = Number.parseFloat(valStr);
+    const time = /^\d+(?:\.\d+)?$/.test(valStr) ? Number(valStr) : NaN;
     if (Number.isFinite(time) && time > 0) {
       return { val: time, raw: rawValue, zero: false, isTime: true };
     }
@@ -34,7 +44,7 @@ export function parseResult(rawValue, eventType) {
   }
 
   if (eventType === 'high') {
-    const score = Number.parseFloat(valStr);
+    const score = /^\d+(?:\.\d+)?$/.test(valStr) ? Number(valStr) : NaN;
     if (Number.isFinite(score) && score > 0) {
       return { val: score, raw: rawValue, zero: false };
     }

@@ -18,7 +18,8 @@ export function normalizeUpperText(value) {
 }
 
 export function normalizePositiveNumber(value) {
-  const parsed = Number.parseFloat(String(value || '').trim().replace(',', '.'));
+  const normalized = String(value || '').trim().replace(',', '.');
+  const parsed = /^\d+(?:\.\d+)?$/.test(normalized) ? Number(normalized) : NaN;
   return Number.isFinite(parsed) && parsed > 0 ? String(parsed) : '';
 }
 
@@ -48,7 +49,7 @@ export function createSubmission(values, photo, now = new Date()) {
   const residence = normalizeUpperText(values.residence);
   const height = normalizePositiveNumber(values.height);
   const weight = normalizePositiveNumber(values.weight);
-  if (!name || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate) || !residence || !height || !weight) {
+  if (!name || !isValidIsoDate(birthDate) || !residence || !height || !weight) {
     throw new Error('Uzupełnij prawidłowo wszystkie wymagane dane.');
   }
   if (!String(photo || '').startsWith('data:image/jpeg;base64,')) {
@@ -89,4 +90,10 @@ function categoryKey(value) {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/\s+/g, ' ');
+}
+
+function isValidIsoDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }

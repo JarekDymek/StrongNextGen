@@ -29,6 +29,8 @@ assert.equal(michal.id, 'competitor-michal-sajdak-1786279130885-bf0b79');
 assert.deepEqual(michal.categories, ['Puchar Polski']);
 assert.deepEqual(normalizeCompetitorRecord({ id: 'legacy', name: 'Legacy', dataWarnings: '[]' }).dataWarnings, []);
 assert.equal(normalizeCompetitorKey('  MICHAŁ   SAJDAK '), normalizeCompetitorKey('michał sajdak'));
+assert.equal(normalizeCompetitorRecord({ id: 'huge-photo', name: 'Duże Zdjęcie', photo: `data:image/jpeg;base64,${'A'.repeat(700000)}` }).photo, '');
+assert.equal(normalizeCompetitorRecord({ id: 'svg-photo', name: 'Aktywny Obraz', photo: 'data:image/svg+xml;base64,PHN2Zy8+' }).photo, '');
 
 const added = upsertCompetitorRecord([], michal, { mode: 'preferIncoming' });
 assert.equal(added.added, true);
@@ -57,6 +59,17 @@ assert.equal(recovered.records[0].notes, 'Pełny opis');
 const missingRecovered = mergeCompetitorCollections([], [michal], { mode: 'fillMissing' });
 assert.equal(missingRecovered.records[0].id, michal.id);
 assert.equal(missingRecovered.records[0].residence, 'TARNÓW');
+
+const staleStateCategories = mergeCompetitorCollections([{
+  ...michal,
+  category: 'Puchar Polski',
+  categories: ['Puchar Polski']
+}], [{
+  ...michal,
+  category: 'Puchar Polski',
+  categories: ['Puchar Polski', 'Legenda']
+}], { mode: 'fillMissing', categoriesMode: 'fillMissing' });
+assert.deepEqual(staleStateCategories.records[0].categories, ['Puchar Polski']);
 
 const remapped = remapCompetitionStateCompetitorIds({
   selectedCompetitorIds: ['temporary-other-id'],

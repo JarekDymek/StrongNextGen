@@ -121,9 +121,13 @@ export function mergeCompetitorDetails(existing, incoming, options = {}) {
     if (!incomingValue) return;
     if (mode === 'preferIncoming' || !currentValue) merged[field] = candidate[field];
   });
+  const currentCategories = getCompetitorCategories(current);
+  const candidateCategories = getCompetitorCategories(candidate);
   merged.categories = categoriesMode === 'replace'
-    ? uniqueCategories(getCompetitorCategories(candidate))
-    : uniqueCategories([...getCompetitorCategories(current), ...getCompetitorCategories(candidate)]);
+    ? uniqueCategories(candidateCategories)
+    : categoriesMode === 'fillMissing'
+      ? uniqueCategories(currentCategories.length ? currentCategories : candidateCategories)
+      : uniqueCategories([...currentCategories, ...candidateCategories]);
   merged.category = merged.categories[0] || '';
   merged.dataWarnings = uniqueStrings([...(current.dataWarnings || []), ...(candidate.dataWarnings || [])]);
   return merged;
@@ -159,14 +163,14 @@ export function upsertCompetitorRecord(collection, incoming, { mode = 'fillMissi
   };
 }
 
-export function mergeCompetitorCollections(seed, incoming, { mode = 'fillMissing' } = {}) {
+export function mergeCompetitorCollections(seed, incoming, { mode = 'fillMissing', categoriesMode = 'merge' } = {}) {
   const normalizedSeed = normalizeCompetitorRecords(seed).records;
   let records = normalizedSeed;
   const aliases = new Map();
   (Array.isArray(incoming) ? incoming : []).forEach((item, index) => {
     const candidate = normalizeCompetitorRecord(item, records.length + index);
     if (!candidate) return;
-    const result = upsertCompetitorRecord(records, candidate, { mode });
+    const result = upsertCompetitorRecord(records, candidate, { mode, categoriesMode });
     records = result.records;
     result.aliases.forEach((value, key) => aliases.set(key, value));
   });
@@ -253,7 +257,8 @@ function stringValue(value) {
 
 function validPhoto(value) {
   const photo = stringValue(value);
-  return photo.startsWith('data:image/') || /^https?:\/\//i.test(photo) ? photo : '';
+  if (/^data:image\/(?:jpe?g|png|webp|gif);base64,/i.test(photo)) return photo.length <= 700_000 ? photo : '';
+  return /^https?:\/\//i.test(photo) && photo.length <= 2048 ? photo : '';
 }
 
 function slug(value) {

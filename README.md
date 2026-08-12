@@ -1,10 +1,10 @@
 # Strongman Next
 
-## Wersja testowa 0.4.1
+## Wersja stabilna 1.0.0
 
 Ta wersja jest przygotowana jako instalowalna aplikacja PWA dla telefonu, iPada i PC. Po wejściu na stronę z GitHub Pages można ją dodać do ekranu głównego lub zainstalować w przeglądarce na komputerze.
 
-Najważniejsze do testów:
+Najważniejsze funkcje:
 
 - wbudowana baza zawodników z pliku `Baza Zawodników 26.json`,
 - zdjęcia zawodników w wyborze i podczas wpisywania wyników,
@@ -20,7 +20,7 @@ Najważniejsze do testów:
 - samodzielny eksport klasyfikacji sezonu do responsywnego pliku HTML do wysyłania i publikacji,
 - ujednolicona baza 20 zawodników i 37 konkurencji z audytem normalizacji.
 
-Adres testowy po publikacji:
+Adres aplikacji:
 
 ```text
 https://jarekdymek.github.io/StrongNextGen/
@@ -80,6 +80,8 @@ Pliki wymiany i arkusz znajdują się w katalogu `data`:
 ```bash
 npm.cmd test
 npm.cmd run test:ui
+npm.cmd run test:regression
+npm.cmd run test:pwa
 npm.cmd run serve
 ```
 
@@ -142,10 +144,6 @@ Formularz przetwarza dane i zdjęcie wyłącznie w przeglądarce zawodnika. Gene
 
 `high` oznacza więcej = lepiej. `low` oznacza mniej = lepiej.
 
-## Kierunek dalszego rozwoju
+## Status wydania
 
-- Tryb sędziego pomocniczego jako osobny moduł, najlepiej po stabilnym wyborze backendu.
-- Synchronizacja chmurowa punktów kontrolnych między telefonem i iPadem.
-- Widok publiczny/live scoring.
-- Edycja zakończonych zawodów z pełnym dziennikiem zmian.
-- Profil zawodnika ze zdjęciem, kategoriami i historią startów.
+Wersja 1.0.0 przeszła testy reguł punktacji, importu i eksportu, trwałej bazy zawodników, pełnego przebiegu zawodów, widoków telefonu i iPada oraz uruchomienia PWA offline. Projekt nie wymaga procesu bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.

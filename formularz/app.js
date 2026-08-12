@@ -10,6 +10,10 @@ const resultPanel = document.querySelector('[data-result-panel]');
 let processedPhoto = '';
 let preparedSubmission = null;
 
+form.addEventListener('input', () => {
+  invalidatePreparedSubmission();
+});
+
 form.addEventListener('focusout', event => {
   if (!event.target.matches('[data-uppercase]')) return;
   event.target.value = normalizeUpperText(event.target.value);
@@ -18,6 +22,10 @@ form.addEventListener('focusout', event => {
 photoInput.addEventListener('change', async () => {
   const file = photoInput.files?.[0];
   if (!file) return;
+  invalidatePreparedSubmission();
+  processedPhoto = '';
+  photoPreview.innerHTML = '<span>Przetwarzanie...</span>';
+  removePhotoButton.hidden = true;
   setPhotoBusy(true, 'Przetwarzam zdjęcie...');
   try {
     const result = await processPhoto(file);
@@ -27,11 +35,13 @@ photoInput.addEventListener('change', async () => {
     setPhotoBusy(false, `Gotowe: ${result.width} x ${result.height} px, ${(result.bytes / 1024).toFixed(1)} KB.`);
   } catch (error) {
     photoInput.value = '';
+    photoPreview.innerHTML = '<span>Brak zdjęcia</span>';
     setPhotoBusy(false, error?.message || 'Nie udało się przetworzyć zdjęcia.', true);
   }
 });
 
 removePhotoButton.addEventListener('click', () => {
+  invalidatePreparedSubmission();
   processedPhoto = '';
   photoInput.value = '';
   photoPreview.innerHTML = '<span>Brak zdjęcia</span>';
@@ -56,9 +66,15 @@ form.addEventListener('submit', event => {
       customCategories: data.get('customCategories')
     }, processedPhoto);
   } catch (error) {
+    preparedSubmission = null;
+    resultPanel.hidden = true;
     showFormError(error?.message || 'Sprawdź dane formularza.');
     return;
   }
+
+  const formStatus = document.querySelector('[data-form-status]');
+  formStatus.textContent = '';
+  formStatus.classList.remove('is-error');
 
   form.elements.name.value = preparedSubmission.competitor.name;
   form.elements.residence.value = preparedSubmission.competitor.residence;
@@ -102,4 +118,12 @@ function showFormError(message) {
   status.textContent = message;
   status.classList.add('is-error');
   status.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function invalidatePreparedSubmission() {
+  preparedSubmission = null;
+  resultPanel.hidden = true;
+  const status = document.querySelector('[data-form-status]');
+  status.textContent = '';
+  status.classList.remove('is-error');
 }
