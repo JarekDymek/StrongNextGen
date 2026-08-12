@@ -1,6 +1,10 @@
 # Strongman Next
 
-## Wersja stabilna 1.1.0
+## Wersja stabilna 1.1.1
+
+### Trwała klasyfikacja sezonu
+
+Klasyfikacja sezonu jest przechowywana dodatkowo w osobnym zapisie urządzenia. Reset bieżącego stanu zawodów nie usuwa imprez sezonu. Przy uruchomieniu aplikacja łączy wbudowaną bazę, trwały zapis sezonu oraz zapis bieżący, dzięki czemu kolejna dodana impreza pozostaje widoczna po resecie i ponownym uruchomieniu.
 
 ### Pomoc podczas zawodów
 
@@ -157,4 +161,4 @@ Formularz przetwarza dane i zdjęcie wyłącznie w przeglądarce zawodnika. Gene
 
 ## Status wydania
 
-Wersja 1.1.0 przeszła testy reguł punktacji, importu i eksportu, trwałej bazy zawodników, pełnego przebiegu zawodów, procedur Pomocy, widoków telefonu i iPada oraz uruchomienia PWA offline. Projekt nie wymaga procesu bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.
+Wersja 1.1.1 przeszła testy reguł punktacji, importu i eksportu, trwałej bazy zawodników, trwałości klasyfikacji sezonu po resecie, pełnego przebiegu zawodów, procedur Pomocy, widoków telefonu i iPada oraz uruchomienia PWA offline. Projekt nie wymaga procesu bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.

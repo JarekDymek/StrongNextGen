@@ -4,9 +4,11 @@ import {
   createStorageSnapshot,
   hasStorageWarning,
   loadCompetitorDatabase,
+  loadSeasonDatabase,
   loadSavedState,
   saveCheckpoint,
   saveCompetitorDatabase,
+  saveSeasonDatabase,
   saveState
 } from '../src/storage.js';
 
@@ -27,10 +29,12 @@ const state = {
 };
 
 saveCompetitorDatabase(state.competitors);
+saveSeasonDatabase(state.seasonEvents);
 saveState(state);
 saveCheckpoint(state, 'Test');
 
 assert.equal(loadCompetitorDatabase()[0].photo, photo, 'Trwała baza zachowuje pełne zdjęcie');
+assert.equal(loadSeasonDatabase()[0].id, 'season-1', 'Trwała klasyfikacja sezonu zachowuje imprezy');
 const savedState = loadSavedState();
 assert.equal(savedState.competitors[0].photo, '', 'Stan roboczy nie powiela zdjęć z trwałej bazy');
 assert.equal(savedState.logoData, state.logoData, 'Bieżący stan zachowuje niestandardowe logo');
@@ -48,6 +52,13 @@ const originalConsoleError = console.error;
 console.error = () => {};
 assert.equal(loadSavedState(), null);
 console.error = originalConsoleError;
+assert.equal(consumeStorageWarnings().length, 1);
+
+values.set('strongman-next.season-database.v1', '{uszkodzona-klasyfikacja');
+console.error = () => {};
+assert.equal(loadSeasonDatabase(), null);
+console.error = originalConsoleError;
+assert.equal(hasStorageWarning('klasyfikacji sezonu'), true);
 assert.equal(consumeStorageWarnings().length, 1);
 
 values.set('strongman-next.competitor-database.v1', '{uszkodzona');
