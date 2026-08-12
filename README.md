@@ -1,6 +1,17 @@
 # Strongman Next
 
-## Wersja stabilna 1.0.0
+## Wersja stabilna 1.1.0
+
+### Pomoc podczas zawodów
+
+Menu aplikacji zawiera kontekstową funkcję **Pomoc awaryjna**. Przed rozpoczęciem procedury aplikacja automatycznie tworzy punkt bezpieczeństwa, pokazuje co zostanie zachowane i przeliczone oraz prowadzi sędziego po jednym kroku. Procedury obejmują między innymi:
+
+- korektę wyniku poprzedniej konkurencji z zachowaniem szkicu i faktycznej kolejności konkurencji już rozpoczętej;
+- zmianę kolejności wyłącznie przyszłych konkurencji, z blokadą etapów zakończonych i rozpoczętych;
+- cofnięcie przypadkowego podsumowania;
+- odzyskiwanie danych, przeniesienie zawodów na inne urządzenie oraz tryb awaryjny offline.
+
+Anulowanie aktywnej procedury przywraca automatyczny punkt bezpieczeństwa.
 
 Ta wersja jest przygotowana jako instalowalna aplikacja PWA dla telefonu, iPada i PC. Po wejściu na stronę z GitHub Pages można ją dodać do ekranu głównego lub zainstalować w przeglądarce na komputerze.
 
@@ -146,4 +157,4 @@ Formularz przetwarza dane i zdjęcie wyłącznie w przeglądarce zawodnika. Gene
 
 ## Status wydania
 
-Wersja 1.0.0 przeszła testy reguł punktacji, importu i eksportu, trwałej bazy zawodników, pełnego przebiegu zawodów, widoków telefonu i iPada oraz uruchomienia PWA offline. Projekt nie wymaga procesu bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.
+Wersja 1.1.0 przeszła testy reguł punktacji, importu i eksportu, trwałej bazy zawodników, pełnego przebiegu zawodów, procedur Pomocy, widoków telefonu i iPada oraz uruchomienia PWA offline. Projekt nie wymaga procesu bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.

@@ -15,6 +15,7 @@ import {
   upsertCompetitorRecord
 } from './competitor-data.js';
 import { estimateDataUrlBytes, processCompetitorPhoto } from './image-tools.js';
+import { EMERGENCY_HELP_TOPICS, getEmergencyHelpTopics } from './help.js';
 import {
   clearSavedState,
   consumeStorageWarnings,
@@ -47,6 +48,10 @@ const RAPID_ACTION_COOLDOWNS = new Map([
   ['next-event', 800],
   ['undo-event', 800],
   ['save-checkpoint', 800],
+  ['help-start-correction', 800],
+  ['help-resume-current', 800],
+  ['help-start-reorder', 800],
+  ['help-finish-reorder', 800],
   ['confirm-competitor-submission', 800]
 ]);
 const STAGES = ['setup', 'draw', 'scoring', 'summary', 'season'];
@@ -110,6 +115,7 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && state.ui.seasonEditor) closeSeasonEditor();
   if (event.key === 'Escape' && state.ui.competitorEditor) closeCompetitorEditor();
   if (event.key === 'Escape' && state.ui.competitorSubmission) closeCompetitorSubmission();
+  if (event.key === 'Escape' && state.ui.emergencyHelp?.open) closeEmergencyHelp();
 });
 
 function createInitialState(competitorSource = DEFAULT_COMPETITORS) {
@@ -139,6 +145,7 @@ function createInitialState(competitorSource = DEFAULT_COMPETITORS) {
     currentEventIndex: 0,
     eventHistory: [],
     drafts: {},
+    eventOrderOverrides: {},
     scores: {},
     seasonEvents: normalizeSeasonEvents(DEFAULT_SEASON.events),
     seasonMaxCountedStarts: DEFAULT_SEASON.maxCountedStarts || 4
@@ -164,7 +171,9 @@ function createUiState() {
     competitorEditor: null,
     competitorSubmission: null,
     competitorSearch: '',
-    competitorCategoryFilter: 'all'
+    competitorCategoryFilter: 'all',
+    helpSearch: '',
+    emergencyHelp: null
   };
 }
 
@@ -199,6 +208,7 @@ function hydrateState(saved, durableDatabase = null) {
     startOrderIds: normalizeIdList(migratedSaved.startOrderIds),
     eventHistory: normalizeEventHistory(migratedSaved.eventHistory, selectedEventIds, recovered.records),
     drafts: normalizeDrafts(migratedSaved.drafts),
+    eventOrderOverrides: normalizeEventOrderOverrides(migratedSaved.eventOrderOverrides),
     scores: {},
     seasonEvents: normalizeSeasonEvents(migratedSaved.seasonEvents?.length ? migratedSaved.seasonEvents : base.seasonEvents),
     seasonMaxCountedStarts: Math.max(1, Number.parseInt(migratedSaved.seasonMaxCountedStarts, 10) || base.seasonMaxCountedStarts),
@@ -211,6 +221,17 @@ function hydrateState(saved, durableDatabase = null) {
   next.selectedCompetitorIds = next.selectedCompetitorIds.filter(id => competitorIds.has(id));
   next.selectedEventIds = next.selectedEventIds.filter(id => eventIds.has(id));
   next.startOrderIds = next.startOrderIds.filter(id => competitorIds.has(id));
+  next.eventOrderOverrides = Object.fromEntries(
+    Object.entries(next.eventOrderOverrides)
+      .filter(([eventId]) => eventIds.has(eventId))
+      .map(([eventId, order]) => {
+        const selectedOrder = order.filter(id => competitorIds.has(id) && next.selectedCompetitorIds.includes(id));
+        const eventIndex = next.selectedEventIds.indexOf(eventId);
+        const isFinal = next.selectedEventIds.length > 1 && eventIndex === next.selectedEventIds.length - 1;
+        return [eventId, isFinal ? selectedOrder : reconcileOrder(selectedOrder, next.selectedCompetitorIds)];
+      })
+      .filter(([, order]) => order.length)
+  );
   next.stage = STAGES.includes(next.stage) ? next.stage : 'setup';
   const importedEventIndex = Number.parseInt(next.currentEventIndex, 10);
   next.currentEventIndex = Math.max(0, Math.min(Number.isFinite(importedEventIndex) ? importedEventIndex : 0, Math.max(next.selectedEventIds.length - 1, 0)));
@@ -237,6 +258,15 @@ function normalizeDrafts(value) {
     );
   });
   return drafts;
+}
+
+function normalizeEventOrderOverrides(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([eventId, order]) => [stateString(eventId), normalizeIdList(order)])
+      .filter(([eventId, order]) => eventId && order.length)
+  );
 }
 
 function normalizeEventHistory(value, selectedEventIds, competitors) {
@@ -332,6 +362,7 @@ function render() {
   document.documentElement.dataset.stage = state.stage;
   const eventTitle = state.eventName?.trim() || 'Nowe zawody';
   const showInstallAction = shouldShowInstallAction();
+  const helpLocksNavigation = isHelpWorkflowActive();
   app.innerHTML = `
     <header class="topbar">
       <div class="brand">
@@ -346,10 +377,11 @@ function render() {
     </header>
 
     ${renderQuickSettings(showInstallAction)}
+    ${renderHelpGuidance()}
 
     <nav class="stepper" aria-label="Etapy zawodów">
       ${STAGES.map(stage => `
-        <button type="button" class="step ${stage === state.stage ? 'is-active' : ''}" data-action="go-stage" data-stage="${stage}">
+        <button type="button" class="step ${stage === state.stage ? 'is-active' : ''}" data-action="go-stage" data-stage="${stage}" ${helpLocksNavigation && stage !== state.stage ? 'disabled' : ''}>
           <span>${STAGES.indexOf(stage) + 1}</span>
           <b class="step-label-full">${STAGE_LABELS[stage]}</b>
           <b class="step-label-short">${STAGE_SHORT_LABELS[stage]}</b>
@@ -368,6 +400,7 @@ function render() {
     ${renderCompetitorSubmission()}
     ${renderStopwatch()}
     ${renderSeasonEditor()}
+    ${renderEmergencyHelp()}
   `;
   syncStopwatchTicker();
   applyCompetitorFilters();
@@ -385,6 +418,7 @@ function renderQuickSettings(showInstallAction) {
   if (!state.ui.settingsOpen) return '';
   return `
     <section class="quick-settings" aria-label="Menu aplikacji">
+      <button class="utility-button help-button" type="button" data-action="open-help">? Pomoc awaryjna</button>
       ${showInstallAction ? '<button class="utility-button install-button" type="button" data-action="install-app">Instaluj</button>' : ''}
       <button class="utility-button sun-button ${state.outdoorMode ? 'is-active' : ''}" type="button" data-action="toggle-outdoor">
         ${state.outdoorMode ? 'Słońce: włączone' : 'Słońce: wyłączone'}
@@ -392,6 +426,222 @@ function renderQuickSettings(showInstallAction) {
       <button class="utility-button update-button-inline" type="button" data-action="check-update">Sprawdź aktualizację</button>
     </section>
   `;
+}
+
+function helpContext() {
+  const event = currentEvent();
+  const draft = event ? state.drafts[event.id] || {} : {};
+  return {
+    stage: state.stage,
+    currentEventIndex: state.currentEventIndex,
+    selectedEventCount: state.selectedEventIds.length,
+    historyCount: state.eventHistory.length,
+    currentFinalized: Boolean(state.eventHistory[state.currentEventIndex]),
+    currentDraftCount: Object.values(draft).filter(value => String(value || '').trim()).length,
+    hasCheckpoints: loadCheckpoints().length > 0,
+    online: navigator.onLine
+  };
+}
+
+function renderHelpGuidance() {
+  const session = state.ui.emergencyHelp;
+  if (!session || session.open || session.phase === 'topics' || session.phase === 'overview' || session.phase === 'complete') return '';
+  const topic = EMERGENCY_HELP_TOPICS.find(item => item.id === session.topicId);
+  if (!topic) return '';
+
+  let instruction = 'Wykonaj wskazany krok, a następnie wróć do Pomocy.';
+  let action = '<button type="button" class="secondary-button" data-action="open-help">Otwórz Pomoc</button>';
+  if (session.phase === 'editing-previous') {
+    instruction = 'Popraw błędny wynik i naciśnij „Podsumuj konkurencję”. Szkic przerwanej konkurencji jest zachowany.';
+  } else if (session.phase === 'ready-to-resume') {
+    instruction = 'Poprzednia konkurencja została przeliczona. Wróć teraz do przerwanej konkurencji.';
+    action = '<button type="button" class="success-button is-guided" data-action="help-resume-current">Wróć do przerwanej konkurencji</button>';
+  } else if (session.phase === 'reordering-events') {
+    instruction = 'Zmień kolejność tylko odblokowanych, przyszłych konkurencji. Zakończone i rozpoczęte są chronione.';
+    action = '<button type="button" class="success-button is-guided" data-action="help-finish-reorder">Zatwierdź nowy plan i wróć</button>';
+  }
+
+  return `
+    <aside class="help-guidance" aria-live="polite">
+      <span class="help-guidance__symbol">${escapeHtml(topic.symbol)}</span>
+      <div>
+        <strong>Pomoc: ${escapeHtml(topic.title)}</strong>
+        <p>${escapeHtml(instruction)}</p>
+      </div>
+      <div class="help-guidance__actions">
+        ${action}
+        <button type="button" class="secondary-button" data-action="help-cancel">Anuluj procedurę</button>
+      </div>
+    </aside>
+  `;
+}
+
+function renderEmergencyHelp() {
+  const session = state.ui.emergencyHelp;
+  if (!session?.open) return '';
+  const topic = EMERGENCY_HELP_TOPICS.find(item => item.id === session.topicId);
+  const title = topic?.title || 'Pomoc podczas zawodów';
+  return `
+    <div class="modal-backdrop help-backdrop" role="presentation">
+      <section class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="emergency-help-title">
+        <header class="help-modal__header">
+          <div>
+            <span class="eyebrow">Tryb bezpiecznej pomocy</span>
+            <h2 id="emergency-help-title">${escapeHtml(title)}</h2>
+          </div>
+          <button type="button" class="profile-close" data-action="close-help" aria-label="Zamknij okno Pomocy">×</button>
+        </header>
+        ${session.topicId ? renderHelpTopic(session, topic) : renderHelpTopics()}
+      </section>
+    </div>
+  `;
+}
+
+function renderHelpTopics() {
+  const context = helpContext();
+  const topics = getEmergencyHelpTopics(context, state.ui.helpSearch);
+  return `
+    <div class="help-context">
+      <strong>${escapeHtml(helpStageLabel())}</strong>
+      <small>${escapeHtml(currentEvent()?.name || 'Brak aktywnej konkurencji')} · ${context.currentDraftCount} wpisanych wyników · ${context.historyCount} podsumowań</small>
+    </div>
+    <label class="help-search">
+      <span>Co się stało?</span>
+      <input data-help-search value="${escapeAttr(state.ui.helpSearch)}" placeholder="Np. zły wynik, pogoda, inne urządzenie" autocomplete="off">
+    </label>
+    <div class="help-topic-list">
+      ${topics.length ? topics.map(topic => `
+        <button type="button" class="help-topic ${topic.recommended ? 'is-recommended' : ''}" data-action="help-select-topic" data-id="${escapeAttr(topic.id)}" ${topic.available ? '' : 'disabled'}>
+          <span class="help-topic__symbol">${escapeHtml(topic.symbol)}</span>
+          <span class="help-topic__copy">
+            <strong>${escapeHtml(topic.title)}</strong>
+            <small>${escapeHtml(topic.summary)}</small>
+            <em>${escapeHtml(topic.reason)}</em>
+          </span>
+          ${topic.recommended ? '<span class="help-topic__badge">Zalecane teraz</span>' : ''}
+        </button>
+      `).join('') : '<div class="empty-state">Nie znaleziono pasującego tematu. Wyczyść wyszukiwanie.</div>'}
+    </div>
+  `;
+}
+
+function renderHelpTopic(session, topic) {
+  if (!topic) return '<div class="empty-state">Nie znaleziono procedury.</div>';
+  const content = helpTopicContent(session, topic.id);
+  const checkpoint = session.checkpointId
+    ? '<div class="help-safety is-safe"><strong>Punkt bezpieczeństwa zapisany</strong><small>Możesz anulować procedurę i wrócić do stanu sprzed zmian.</small></div>'
+    : '<div class="help-safety"><strong>Punkt bezpieczeństwa powstanie automatycznie</strong><small>Zostanie zapisany przed wykonaniem pierwszej zmiany.</small></div>';
+  return `
+    ${checkpoint}
+    <div class="help-step" aria-live="polite">
+      <span class="help-step__number">${content.step}</span>
+      <div>
+        <strong>${escapeHtml(content.heading)}</strong>
+        <p>${escapeHtml(content.text)}</p>
+      </div>
+    </div>
+    <div class="help-impact">
+      <div><span>Zostaje</span><strong>${escapeHtml(content.preserved)}</strong></div>
+      <div><span>Przeliczane</span><strong>${escapeHtml(content.recalculated)}</strong></div>
+      <div class="${content.riskLevel === 'high' ? 'is-warning' : ''}"><span>Uwaga</span><strong>${escapeHtml(content.risk)}</strong></div>
+    </div>
+    <div class="help-primary-action">${content.action}</div>
+    <div class="help-secondary-actions">
+      <button type="button" class="secondary-button" data-action="help-show-topics">Inny problem</button>
+      ${session.phase === 'complete'
+        ? '<button type="button" class="primary-button" data-action="help-finish">Zakończ Pomoc</button>'
+        : '<button type="button" class="secondary-button" data-action="help-cancel">Anuluj procedurę</button>'}
+    </div>
+  `;
+}
+
+function helpTopicContent(session, topicId) {
+  if (session.phase === 'complete') {
+    return {
+      step: 'Gotowe',
+      heading: 'Procedura zakończona',
+      text: session.completionMessage || 'Aplikacja wróciła do bezpiecznego stanu pracy.',
+      preserved: session.preservedMessage || 'Zapisane dane zawodów',
+      recalculated: session.recalculatedMessage || 'Tylko dane wskazane w procedurze',
+      risk: 'Sprawdź aktywną konkurencję przed kolejnym wpisem.',
+      riskLevel: 'low',
+      action: ''
+    };
+  }
+
+  if (topicId === 'correct-previous-result') {
+    if (session.phase === 'editing-previous') {
+      return {
+        step: '1 z 2', heading: 'Popraw wynik i podsumuj konkurencję',
+        text: 'Zmień błędny wpis na ekranie wyników. Następnie naciśnij „Podsumuj konkurencję”.',
+        preserved: `${session.origin?.draftCount || 0} wpisanych wyników przerwanej konkurencji`,
+        recalculated: 'Poprzednia konkurencja po podsumowaniu',
+        risk: 'Nie przechodź ręcznie do innego etapu; Pomoc wskaże powrót.', riskLevel: 'low',
+        action: '<button type="button" class="primary-button action-large" data-action="close-help">Wróć do edycji wyniku</button>'
+      };
+    }
+    if (session.phase === 'ready-to-resume') {
+      return {
+        step: '2 z 2', heading: 'Wróć do przerwanej konkurencji',
+        text: 'Poprawione podsumowanie jest zapisane. Szkic bieżącej konkurencji czeka na swoim miejscu.',
+        preserved: 'Wpisane już wyniki i faktyczna kolejność bieżącej konkurencji',
+        recalculated: 'Poprzednia konkurencja i klasyfikacja łączna',
+        risk: 'Jeżeli bieżąca konkurencja już ruszyła, jej kolejność pozostaje bez zmian.',
+        riskLevel: 'low',
+        action: '<button type="button" class="success-button action-large is-guided" data-action="help-resume-current">Wróć do przerwanej konkurencji</button>'
+      };
+    }
+    return {
+      step: '1 z 2', heading: 'Cofnij poprzednie podsumowanie do edycji',
+      text: `Wrócisz do konkurencji „${session.origin?.previousEventName || 'poprzedniej'}”. Po poprawieniu wyniku podsumuj ją ponownie.`,
+      preserved: `${session.origin?.draftCount || 0} wpisanych wyników przerwanej konkurencji`,
+      recalculated: 'Punkty poprzedniej konkurencji i klasyfikacja łączna',
+      risk: session.origin?.draftCount ? 'Rozpoczęta kolejność zostanie zamrożona, aby nie zmieniła się po korekcie.' : 'Kolejność nie rozpoczętej jeszcze konkurencji może zostać przeliczona.',
+      riskLevel: 'low',
+      action: '<button type="button" class="primary-button action-large is-guided" data-action="help-start-correction">Przejdź do poprawy wyniku</button>'
+    };
+  }
+
+  if (topicId === 'reorder-events') {
+    if (session.phase === 'reordering-events') {
+      return {
+        step: '1 z 1', heading: 'Przesuń przyszłe konkurencje',
+        text: 'Użyj strzałek przy odblokowanych pozycjach. Chronionych konkurencji nie można edytować, usuwać ani odznaczać.',
+        preserved: 'Rozegrane wyniki, szkice oraz aktywna konkurencja',
+        recalculated: 'Kolejność przyszłych konkurencji i oznaczenie finału',
+        risk: 'Ostatnia pozycja programu zawsze staje się finałem.', riskLevel: 'high',
+        action: '<button type="button" class="success-button action-large is-guided" data-action="help-finish-reorder">Zatwierdź nowy plan i wróć</button>'
+      };
+    }
+    return {
+      step: '1 z 1', heading: 'Zmień wyłącznie przyszłe konkurencje',
+      text: `${session.origin?.lockedCount || 0} pierwszych pozycji planu zostanie zablokowanych. Przesuwać można tylko pozostałe konkurencje.`,
+      preserved: 'Rozegrane wyniki, szkice oraz aktywna konkurencja',
+      recalculated: 'Kolejność przyszłych konkurencji i oznaczenie finału',
+      risk: 'Ostatnia pozycja programu zawsze staje się finałem.',
+      riskLevel: 'high',
+      action: '<button type="button" class="primary-button action-large is-guided" data-action="help-start-reorder">Otwórz bezpieczną zmianę planu</button>'
+    };
+  }
+
+  const generic = {
+    'undo-summary': ['Cofnij ostatnie podsumowanie', 'Wpisy pozostaną w formularzu i będzie można je poprawić.', 'Wszystkie wcześniejsze konkurencje', 'Bieżąca konkurencja po ponownym podsumowaniu', 'Sprawdź nazwę konkurencji przed edycją.', '<button type="button" class="primary-button action-large" data-action="help-undo-summary">Cofnij ostatnie podsumowanie</button>'],
+    'results-problem': ['Sprawdź punkty kontrolne', 'Otwórz sekcję bezpieczeństwa i porównaj daty zapisów przed wczytaniem.', 'Aktualny stan, dopóki nie potwierdzisz wczytania', 'Po wczytaniu aplikacja odbuduje punktację', 'Wczytanie punktu zastępuje bieżący stan.', '<button type="button" class="primary-button action-large" data-action="help-open-checkpoints">Pokaż punkty kontrolne</button>'],
+    'add-competitor': ['Otwórz bazę zawodników', 'Dodaj zawodnika do trwałej bazy. Istniejące wyniki nie zostaną zmienione.', 'Wyniki i historia rozegranych konkurencji', 'Lista dostępnych zawodników', 'Dodanie zawodnika do trwającej punktacji wymaga świadomej decyzji sędziego.', '<button type="button" class="primary-button action-large" data-action="help-open-competitors">Otwórz bazę zawodników</button>'],
+    'refresh-recovery': ['Odzyskaj bezpieczny zapis', 'Najpierw sprawdź autosave. Jeśli stan jest niepełny, wybierz najnowszy właściwy punkt kontrolny.', 'Punkty kontrolne i trwała baza zawodników', 'Stan zawodów po wybranym zapisie', 'Nie wybieraj starszego punktu wyłącznie po nazwie; sprawdź datę.', '<button type="button" class="primary-button action-large" data-action="help-open-checkpoints">Pokaż zapisy bezpieczeństwa</button>'],
+    'switch-device': ['Przygotuj pełny plik stanu', 'Pobierz plik i zaimportuj go na drugim urządzeniu. Nie rozpoczynaj wpisywania równolegle na obu.', 'Wyniki, szkice, kolejności i dane zawodów', 'Stan zostanie odtworzony podczas importu', 'Po przeniesieniu wybierz jedno urządzenie jako główne.', '<button type="button" class="primary-button action-large" data-action="help-export-state">Eksportuj pełny stan</button>'],
+    'offline-stopwatch': ['Przejdź na tryb awaryjny', 'Prowadzenie zawodów działa offline. Gdy stoper zawiedzie, zmierz czas urządzeniem zapasowym i wpisz wynik ręcznie.', 'Wszystkie dotychczasowe dane', 'Nic bez potwierdzenia sędziego', 'Nie odświeżaj strony podczas pracującego stopera.', '<button type="button" class="primary-button action-large" data-action="help-return-scoring">Wróć do wyników</button>']
+  }[topicId];
+  return {
+    step: '1 z 1', heading: generic?.[0] || 'Postępuj bezpiecznie', text: generic?.[1] || '',
+    preserved: generic?.[2] || 'Aktualny zapis', recalculated: generic?.[3] || 'Brak', risk: generic?.[4] || 'Sprawdź stan przed dalszą pracą.',
+    riskLevel: ['results-problem', 'refresh-recovery'].includes(topicId) ? 'high' : 'low', action: generic?.[5] || ''
+  };
+}
+
+function helpStageLabel() {
+  if (state.stage === 'scoring') return `Wyniki · konkurencja ${state.currentEventIndex + 1} z ${state.selectedEventIds.length}`;
+  return STAGE_LABELS[state.stage] || 'Stan zawodów';
 }
 
 function stageSubtitle() {
@@ -570,29 +820,37 @@ function renderEventSelection() {
   if (!state.events.length) {
     return `<div class="empty-state">Brak konkurencji w bazie. Dodaj ręcznie albo zaimportuj plik JSON.</div>`;
   }
+  const reorderSession = activeEventReorderSession();
+  const lockedCount = reorderSession?.origin?.lockedCount || 0;
   const ordered = orderSelectedFirst(state.events, state.selectedEventIds);
   return ordered.map(event => {
     const selectedIndex = state.selectedEventIds.indexOf(event.id);
     const selected = selectedIndex >= 0;
     const isFinal = selected && selectedIndex === state.selectedEventIds.length - 1 && state.selectedEventIds.length > 1;
+    const locked = Boolean(reorderSession && selected && selectedIndex < lockedCount);
+    const moveUpDisabled = selectedIndex <= 0 || Boolean(reorderSession && selectedIndex <= lockedCount);
+    const moveDownDisabled = selectedIndex === state.selectedEventIds.length - 1 || locked;
+    const workflowStatus = locked
+      ? selectedIndex < state.eventHistory.length ? 'Zakończona · zablokowana' : 'Rozpoczęta · zablokowana'
+      : reorderSession && selected ? 'Przyszła · można przesunąć' : '';
     return `
-      <div class="event-row selection-item ${selected ? 'is-selected' : ''}" data-filter-text="${escapeAttr(event.name)}">
-        <button type="button" class="select-card event-select" data-action="toggle-event" data-id="${escapeAttr(event.id)}">
+      <div class="event-row selection-item ${selected ? 'is-selected' : ''} ${locked ? 'is-workflow-locked' : ''}" data-filter-text="${escapeAttr(event.name)}">
+        <button type="button" class="select-card event-select" data-action="toggle-event" data-id="${escapeAttr(event.id)}" ${reorderSession ? 'disabled' : ''}>
           <span class="order-pill">${selected ? selectedIndex + 1 : '+'}</span>
           <span class="select-card__main">
             <strong>${escapeHtml(event.name)}</strong>
-            <small>${EVENT_TYPE_LABEL[event.type]}${isFinal ? ' · Finał' : ''}</small>
+            <small>${EVENT_TYPE_LABEL[event.type]}${isFinal ? ' · Finał' : ''}${workflowStatus ? ` · ${escapeHtml(workflowStatus)}` : ''}</small>
           </span>
           <span class="check-pill ${selected ? 'is-checked' : ''}">${selected ? '✓' : ''}</span>
         </button>
         <div class="item-actions">
-          <button type="button" class="mini-button" data-action="edit-event" data-id="${escapeAttr(event.id)}">Edytuj</button>
-          <button type="button" class="mini-button danger-mini" data-action="delete-event" data-id="${escapeAttr(event.id)}">Usuń</button>
+          <button type="button" class="mini-button" data-action="edit-event" data-id="${escapeAttr(event.id)}" ${reorderSession ? 'disabled' : ''}>Edytuj</button>
+          <button type="button" class="mini-button danger-mini" data-action="delete-event" data-id="${escapeAttr(event.id)}" ${reorderSession ? 'disabled' : ''}>Usuń</button>
         </div>
         ${selected ? `
           <div class="reorder-actions selection-reorder-actions">
-            <button type="button" class="icon-button" data-action="move-event" data-id="${escapeAttr(event.id)}" data-direction="-1" ${selectedIndex === 0 ? 'disabled' : ''} aria-label="Przesuń konkurencję wyżej">↑</button>
-            <button type="button" class="icon-button" data-action="move-event" data-id="${escapeAttr(event.id)}" data-direction="1" ${selectedIndex === state.selectedEventIds.length - 1 ? 'disabled' : ''} aria-label="Przesuń konkurencję niżej">↓</button>
+            <button type="button" class="icon-button" data-action="move-event" data-id="${escapeAttr(event.id)}" data-direction="-1" ${moveUpDisabled ? 'disabled' : ''} aria-label="Przesuń konkurencję wyżej">↑</button>
+            <button type="button" class="icon-button" data-action="move-event" data-id="${escapeAttr(event.id)}" data-direction="1" ${moveDownDisabled ? 'disabled' : ''} aria-label="Przesuń konkurencję niżej">↓</button>
           </div>
         ` : ''}
       </div>
@@ -1282,8 +1540,8 @@ async function handleClick(event) {
   if (action === 'go-draw') return goDraw();
   if (action === 'go-scoring') return goScoring();
   if (action === 'toggle-competitor') return toggleSelected(state.selectedCompetitorIds, id);
-  if (action === 'toggle-event') return toggleSelected(state.selectedEventIds, id);
-  if (action === 'move-event') return moveInArray(state.selectedEventIds, id, Number(trigger.dataset.direction));
+  if (action === 'toggle-event') return toggleEventSelection(id);
+  if (action === 'move-event') return moveEventSelection(id, Number(trigger.dataset.direction));
   if (action === 'move-start-order') return moveInArray(state.startOrderIds, id, Number(trigger.dataset.direction));
   if (action === 'open-competitor-editor') return openCompetitorEditor();
   if (action === 'edit-competitor') return editCompetitor(id);
@@ -1339,6 +1597,21 @@ async function handleClick(event) {
   if (action === 'stopwatch-save') return saveStopwatchResult();
   if (action === 'stopwatch-close') return closeStopwatch();
   if (action === 'export-results-html') return exportResultsHtml();
+  if (action === 'open-help') return openEmergencyHelp();
+  if (action === 'close-help') return closeEmergencyHelp();
+  if (action === 'help-show-topics') return showHelpTopics();
+  if (action === 'help-select-topic') return selectHelpTopic(id);
+  if (action === 'help-start-correction') return startHelpCorrection();
+  if (action === 'help-resume-current') return resumeHelpCurrentEvent();
+  if (action === 'help-start-reorder') return startHelpEventReorder();
+  if (action === 'help-finish-reorder') return finishHelpEventReorder();
+  if (action === 'help-undo-summary') return helpUndoSummary();
+  if (action === 'help-open-checkpoints') return openHelpWorkspace('safety');
+  if (action === 'help-open-competitors') return openHelpWorkspace('competitors');
+  if (action === 'help-export-state') return helpExportState();
+  if (action === 'help-return-scoring') return helpReturnScoring();
+  if (action === 'help-cancel') return cancelEmergencyHelp();
+  if (action === 'help-finish') return finishEmergencyHelp();
 }
 
 function isRapidDuplicateAction(action, id = '') {
@@ -1398,6 +1671,17 @@ function handleInput(event) {
     return;
   }
 
+  if (target.matches('[data-help-search]')) {
+    state.ui.helpSearch = target.value;
+    render();
+    window.setTimeout(() => {
+      const input = app.querySelector('[data-help-search]');
+      input?.focus({ preventScroll: true });
+      if (input) input.setSelectionRange(input.value.length, input.value.length);
+    });
+    return;
+  }
+
   if (target.matches('[data-reset-input]')) {
     const button = app.querySelector('[data-action="confirm-reset"]');
     if (button) button.disabled = target.value !== 'RESET';
@@ -1410,6 +1694,7 @@ async function handleChange(event) {
   if (target.matches('[data-competitor-photo]')) {
     await changeCompetitorPhoto(target.files?.[0], target.closest('form'));
   }
+
 }
 
 function handleSubmit(event) {
@@ -1454,6 +1739,7 @@ function handleToggle(event) {
 
 function goStage(stage) {
   if (stage === state.stage) return;
+  if (isHelpWorkflowActive()) return flash('Najpierw zakończ albo anuluj aktywną procedurę Pomocy.');
   if (stage === 'setup') return guardedGoSetup();
   if (stage === 'draw') return goDraw();
   if (stage === 'scoring') return goScoring();
@@ -1470,6 +1756,7 @@ function goStage(stage) {
 }
 
 function guardedGoSetup() {
+  if (isHelpWorkflowActive() && state.stage !== 'setup') return flash('Najpierw zakończ albo anuluj aktywną procedurę Pomocy.');
   if (state.eventHistory.length && !window.confirm('Wrócić do przygotowania? Wyniki zostaną zachowane, ale zmiany list mogą wpłynąć na dalszą pracę.')) {
     return;
   }
@@ -1478,6 +1765,7 @@ function guardedGoSetup() {
 }
 
 function goDraw() {
+  if (isHelpWorkflowActive() && state.stage !== 'draw') return flash('Najpierw zakończ albo anuluj aktywną procedurę Pomocy.');
   if (state.selectedCompetitorIds.length < 2) return flash('Wybierz co najmniej 2 zawodników.');
   if (state.selectedEventIds.length < 1) return flash('Wybierz co najmniej 1 konkurencję.');
   state.startOrderIds = reconcileOrder(state.startOrderIds, state.selectedCompetitorIds);
@@ -1487,6 +1775,7 @@ function goDraw() {
 }
 
 function goScoring() {
+  if (isHelpWorkflowActive() && state.stage !== 'scoring') return flash('Najpierw zakończ albo anuluj aktywną procedurę Pomocy.');
   if (!state.selectedCompetitorIds.length || !state.selectedEventIds.length) return goDraw();
   state.stage = 'scoring';
   persistAndRender();
@@ -1507,6 +1796,256 @@ function moveInArray(list, id, direction) {
   const [item] = list.splice(index, 1);
   list.splice(nextIndex, 0, item);
   persistAndRender();
+}
+
+function activeEventReorderSession() {
+  const session = state.ui?.emergencyHelp;
+  return session?.topicId === 'reorder-events' && session.phase === 'reordering-events' ? session : null;
+}
+
+function isHelpWorkflowActive() {
+  return ['editing-previous', 'ready-to-resume', 'reordering-events'].includes(state.ui?.emergencyHelp?.phase);
+}
+
+function toggleEventSelection(id) {
+  if (activeEventReorderSession()) {
+    flash('W trybie bezpiecznej zmiany planu można tylko przesuwać przyszłe konkurencje.');
+    return;
+  }
+  if (state.selectedEventIds.includes(id)) delete state.eventOrderOverrides[id];
+  toggleSelected(state.selectedEventIds, id);
+}
+
+function moveEventSelection(id, direction) {
+  const session = activeEventReorderSession();
+  if (session) {
+    const index = state.selectedEventIds.indexOf(id);
+    const nextIndex = index + direction;
+    const lockedCount = session.origin?.lockedCount || 0;
+    if (index < lockedCount || nextIndex < lockedCount) {
+      flash('Ta konkurencja jest zakończona albo rozpoczęta i pozostaje zablokowana.');
+      return;
+    }
+  }
+  moveInArray(state.selectedEventIds, id, direction);
+}
+
+function openEmergencyHelp() {
+  state.ui.settingsOpen = false;
+  if (state.ui.emergencyHelp) {
+    state.ui.emergencyHelp.open = true;
+  } else {
+    state.ui.emergencyHelp = { open: true, topicId: '', phase: 'topics', checkpointId: '', origin: null };
+  }
+  render();
+  window.setTimeout(() => app.querySelector('[data-help-search], .help-primary-action button')?.focus(), 60);
+}
+
+function closeEmergencyHelp() {
+  if (!state.ui.emergencyHelp) return;
+  state.ui.emergencyHelp.open = false;
+  render();
+}
+
+function showHelpTopics() {
+  const session = state.ui.emergencyHelp;
+  if (session && ['editing-previous', 'ready-to-resume', 'reordering-events'].includes(session.phase)) {
+    if (!window.confirm('Przerwać bieżącą procedurę i przywrócić automatyczny punkt bezpieczeństwa?')) return;
+    restoreHelpCheckpoint(session, true);
+    return;
+  }
+  state.ui.emergencyHelp = { open: true, topicId: '', phase: 'topics', checkpointId: '', origin: null };
+  render();
+}
+
+function selectHelpTopic(topicId) {
+  const topic = getEmergencyHelpTopics(helpContext()).find(item => item.id === topicId);
+  if (!topic?.available) return flash(topic?.reason || 'Ta procedura nie jest dostępna w aktualnym stanie.');
+
+  let checkpoint;
+  try {
+    checkpoint = saveCheckpoint(state, `POMOC · ${topic.title} · ${new Date().toLocaleString('pl-PL')}`);
+  } catch (error) {
+    reportPersistenceFailure(error);
+    flash('Nie udało się utworzyć punktu bezpieczeństwa. Procedura nie została rozpoczęta.');
+    return;
+  }
+
+  const event = currentEvent();
+  const draft = event ? state.drafts[event.id] || {} : {};
+  const draftCount = Object.values(draft).filter(value => String(value || '').trim()).length;
+  const currentOrderIds = event ? getOrderForEvent(state.currentEventIndex) : [];
+  const currentStarted = state.stage === 'scoring' && !state.eventHistory[state.currentEventIndex] && state.currentEventIndex === state.eventHistory.length;
+  const lockedCount = Math.min(
+    state.selectedEventIds.length,
+    Math.max(state.eventHistory.length, currentStarted ? state.currentEventIndex + 1 : state.eventHistory.length)
+  );
+  const previousEvent = eventById(state.selectedEventIds[Math.max(0, state.currentEventIndex - 1)]);
+  state.ui.emergencyHelp = {
+    open: true,
+    topicId,
+    phase: 'overview',
+    checkpointId: checkpoint.id,
+    origin: {
+      stage: state.stage,
+      currentEventIndex: state.currentEventIndex,
+      currentEventId: event?.id || '',
+      currentEventName: event?.name || '',
+      previousEventName: previousEvent?.name || '',
+      orderIds: [...currentOrderIds],
+      draftCount,
+      currentStarted,
+      lockedCount,
+      lockedEventIds: state.selectedEventIds.slice(0, lockedCount),
+      selectedEventIds: [...state.selectedEventIds]
+    }
+  };
+  render();
+}
+
+function startHelpCorrection() {
+  const session = state.ui.emergencyHelp;
+  if (session?.topicId !== 'correct-previous-result' || state.currentEventIndex < 1) return;
+  const origin = session.origin;
+  const previousIndex = origin.currentEventIndex - 1;
+  if (origin.currentStarted && origin.currentEventId) {
+    state.eventOrderOverrides[origin.currentEventId] = [...origin.orderIds];
+  }
+  state.eventHistory = state.eventHistory.slice(0, previousIndex);
+  state.currentEventIndex = previousIndex;
+  state.scores = buildScores(state.selectedCompetitorIds, state.eventHistory);
+  state.stage = 'scoring';
+  releaseRapidAction('finalize-event', String(previousIndex));
+  session.phase = 'editing-previous';
+  session.open = false;
+  persistAndRender('Poprzednia konkurencja jest otwarta do poprawy. Po zmianie podsumuj ją ponownie.');
+}
+
+function resumeHelpCurrentEvent() {
+  const session = state.ui.emergencyHelp;
+  if (session?.topicId !== 'correct-previous-result' || session.phase !== 'ready-to-resume') return;
+  const targetIndex = state.selectedEventIds.indexOf(session.origin.currentEventId);
+  if (targetIndex < 0) return flash('Nie znaleziono przerwanej konkurencji w aktualnym programie.');
+  state.currentEventIndex = targetIndex;
+  state.stage = 'scoring';
+  session.phase = 'complete';
+  session.open = true;
+  session.completionMessage = `Wrócono do konkurencji „${session.origin.currentEventName}”. ${session.origin.draftCount} wcześniej wpisanych wyników pozostało w formularzu.`;
+  session.preservedMessage = 'Szkic oraz kolejność przerwanej konkurencji';
+  session.recalculatedMessage = 'Poprzednia konkurencja i klasyfikacja łączna';
+  persistAndRender();
+}
+
+function startHelpEventReorder() {
+  const session = state.ui.emergencyHelp;
+  if (session?.topicId !== 'reorder-events') return;
+  session.phase = 'reordering-events';
+  session.open = false;
+  state.stage = 'setup';
+  state.ui.sections = { ...state.ui.sections, competition: false, competitors: false, events: true, safety: false };
+  persistAndRender('Zmieniaj tylko odblokowane, przyszłe konkurencje.');
+}
+
+function finishHelpEventReorder() {
+  const session = activeEventReorderSession();
+  if (!session) return;
+  const lockedCount = session.origin.lockedCount || 0;
+  const lockedStillValid = session.origin.lockedEventIds.every((id, index) => state.selectedEventIds[index] === id);
+  if (!lockedStillValid) {
+    flash('Chroniona część programu zmieniła się. Anuluj procedurę i przywróć punkt bezpieczeństwa.');
+    return;
+  }
+  const targetIndex = session.origin.currentStarted
+    ? state.selectedEventIds.indexOf(session.origin.currentEventId)
+    : Math.min(state.eventHistory.length, Math.max(state.selectedEventIds.length - 1, 0));
+  if (targetIndex < 0 || targetIndex < Math.max(0, lockedCount - (session.origin.currentStarted ? 1 : 0))) {
+    flash('Nie można ustalić bezpiecznej konkurencji do wznowienia.');
+    return;
+  }
+  state.currentEventIndex = targetIndex;
+  state.stage = 'scoring';
+  session.phase = 'complete';
+  session.open = true;
+  session.completionMessage = `Nowy plan zapisany. Aktywna konkurencja: „${currentEvent()?.name || 'brak'}”. Finał: „${eventById(state.selectedEventIds.at(-1))?.name || 'brak'}”.`;
+  session.preservedMessage = `${lockedCount} chronionych pozycji programu oraz wszystkie wyniki`;
+  session.recalculatedMessage = 'Tylko kolejność przyszłych konkurencji';
+  persistAndRender();
+}
+
+function helpUndoSummary() {
+  const session = state.ui.emergencyHelp;
+  if (!session || !state.eventHistory.length) return;
+  state.eventHistory.pop();
+  state.currentEventIndex = Math.max(0, state.eventHistory.length);
+  state.scores = buildScores(state.selectedCompetitorIds, state.eventHistory);
+  state.stage = 'scoring';
+  session.phase = 'complete';
+  session.open = true;
+  session.completionMessage = 'Ostatnie podsumowanie cofnięto. Wpisane wyniki pozostały w formularzu do kontroli.';
+  persistAndRender();
+}
+
+function openHelpWorkspace(section) {
+  const session = state.ui.emergencyHelp;
+  if (!session) return;
+  state.stage = 'setup';
+  state.ui.sections = { ...state.ui.sections, [section]: true };
+  session.phase = 'complete';
+  session.open = false;
+  persistAndRender(section === 'safety' ? 'Sprawdź datę punktu kontrolnego przed wczytaniem.' : 'Baza zawodników została otwarta.');
+  window.setTimeout(() => app.querySelector(`details[data-section="${cssEscape(section)}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+}
+
+function helpExportState() {
+  const session = state.ui.emergencyHelp;
+  exportState();
+  if (!session) return;
+  session.phase = 'complete';
+  session.open = true;
+  session.completionMessage = 'Pełny plik stanu został przygotowany. Zaimportuj go na drugim urządzeniu i kontynuuj pracę tylko tam.';
+  render();
+}
+
+function helpReturnScoring() {
+  const session = state.ui.emergencyHelp;
+  if (!session) return;
+  if (state.selectedCompetitorIds.length && state.selectedEventIds.length) state.stage = 'scoring';
+  session.phase = 'complete';
+  session.open = true;
+  session.completionMessage = 'Możesz kontynuować offline. W razie awarii stopera wpisz ręcznie czas z urządzenia zapasowego.';
+  persistAndRender();
+}
+
+function cancelEmergencyHelp() {
+  const session = state.ui.emergencyHelp;
+  if (!session) return;
+  if (['editing-previous', 'ready-to-resume', 'reordering-events'].includes(session.phase)) {
+    if (!window.confirm('Anulować procedurę i przywrócić automatyczny punkt bezpieczeństwa? Zmiany wykonane w ramach Pomocy zostaną cofnięte.')) return;
+    restoreHelpCheckpoint(session, false);
+    return;
+  }
+  state.ui.emergencyHelp = null;
+  render();
+}
+
+function finishEmergencyHelp() {
+  state.ui.emergencyHelp = null;
+  render();
+}
+
+function restoreHelpCheckpoint(session, showTopics) {
+  const checkpoint = loadCheckpoints().find(item => item.id === session?.checkpointId);
+  if (!checkpoint) {
+    flash('Nie znaleziono automatycznego punktu bezpieczeństwa. Stan nie został zmieniony.');
+    return false;
+  }
+  const snapshot = { ...checkpoint.snapshot };
+  if (!Object.prototype.hasOwnProperty.call(snapshot, 'logoData')) snapshot.logoData = state.logoData;
+  state = hydrateState(snapshot, loadCompetitorDatabase());
+  state.ui = createUiState();
+  if (showTopics) state.ui.emergencyHelp = { open: true, topicId: '', phase: 'topics', checkpointId: '', origin: null };
+  persistAndRender(showTopics ? 'Przywrócono stan sprzed procedury. Wybierz inny temat.' : 'Procedura anulowana. Przywrócono punkt bezpieczeństwa.', { competitorsChanged: true });
+  return true;
 }
 
 function shuffledCopy(items) {
@@ -1702,6 +2241,7 @@ function deleteCompetitor(id) {
 }
 
 function editEvent(id) {
+  if (activeEventReorderSession()) return flash('Podczas bezpiecznej zmiany planu edycja treści konkurencji jest zablokowana.');
   const event = eventById(id);
   if (!event) return;
   const summarized = state.eventHistory.some(item => item.eventId === id);
@@ -1728,6 +2268,7 @@ function editEvent(id) {
 }
 
 function deleteEvent(id) {
+  if (activeEventReorderSession()) return flash('Podczas bezpiecznej zmiany planu usuwanie konkurencji jest zablokowane.');
   const event = eventById(id);
   if (!event) return;
   const selected = state.selectedEventIds.includes(id);
@@ -1742,6 +2283,7 @@ function deleteEvent(id) {
   state.events = state.events.filter(item => item.id !== id);
   state.selectedEventIds = state.selectedEventIds.filter(itemId => itemId !== id);
   delete state.drafts[id];
+  delete state.eventOrderOverrides[id];
   state.eventHistory = state.eventHistory
     .filter(item => item.eventId !== id)
     .map((item, index) => ({ ...item, nr: index + 1 }));
@@ -1790,6 +2332,7 @@ function startCompetition() {
   state.currentEventIndex = 0;
   state.eventHistory = [];
   state.drafts = {};
+  state.eventOrderOverrides = {};
   state.scores = {};
   state.stage = 'scoring';
   persistAndRender('Zawody rozpoczęte.');
@@ -1844,6 +2387,17 @@ function finalizeCurrentEvent() {
     results: calculated.results
   };
   state.scores = buildScores(state.selectedCompetitorIds, state.eventHistory);
+  const helpSession = state.ui.emergencyHelp;
+  if (
+    helpSession?.topicId === 'correct-previous-result' &&
+    helpSession.phase === 'editing-previous' &&
+    helpSession.origin?.currentEventIndex === state.currentEventIndex + 1
+  ) {
+    helpSession.phase = 'ready-to-resume';
+    helpSession.open = true;
+    persistAndRender('Poprawiona konkurencja została podsumowana. Wróć do przerwanej konkurencji.');
+    return;
+  }
   persistAndRender('Podsumowanie konkurencji zapisane.');
 }
 
@@ -2648,6 +3202,12 @@ function getStartOrderIds() {
 }
 
 function getOrderForEvent(index) {
+  const eventId = state.selectedEventIds[index];
+  const override = state.eventOrderOverrides[eventId];
+  if (override?.length) {
+    const selectedOrder = override.filter(id => state.selectedCompetitorIds.includes(id));
+    return isFinalEventIndex(index) ? selectedOrder : reconcileOrder(selectedOrder, state.selectedCompetitorIds);
+  }
   if (index === 0) return getStartOrderIds();
   if (isFinalEventIndex(index)) return getFinalOrderIds();
   const previous = state.eventHistory[index - 1];

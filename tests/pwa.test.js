@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
 import { chromium } from 'playwright';
 
 const baseUrl = process.env.TEST_URL || 'http://127.0.0.1:4174/';
 const edgePath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+const expectedVersion = JSON.parse(await fs.readFile(new URL('../package.json', import.meta.url), 'utf8')).version;
 const browser = await chromium.launch({ headless: true, executablePath: edgePath });
 const context = await browser.newContext({ viewport: { width: 320, height: 568 } });
 const page = await context.newPage();
@@ -25,7 +27,7 @@ try {
   assert.equal(manifest.icons.some(icon => icon.sizes === '192x192'), true);
   assert.equal(manifest.icons.some(icon => icon.sizes === '512x512'), true);
   const release = await page.evaluate(async () => (await fetch(new URL('version.json', document.baseURI))).json());
-  assert.equal(release.version, '1.0.0');
+  assert.equal(release.version, expectedVersion);
 
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
