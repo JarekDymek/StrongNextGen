@@ -1,22 +1,64 @@
 import assert from 'node:assert/strict';
 import { DEFAULT_SEASON } from '../src/season-data.js';
 import { buildSeasonHtml } from '../src/season-export.js';
-import { calculateSeasonStandings, normalizeSeasonEvent, seasonPointsForPosition } from '../src/season.js';
+import { calculateSeasonStandings, mergeSeasonEvents, normalizeSeasonEvent, seasonPointsForPosition } from '../src/season.js';
 
-assert.equal(DEFAULT_SEASON.events.length, 10);
+assert.equal(DEFAULT_SEASON.updatedThrough, '2026-08-09');
+assert.equal(DEFAULT_SEASON.events.length, 11);
+const skalbmierzEvents = DEFAULT_SEASON.events.filter(event => event.date === '2026-08-09' && event.location === 'Skalbmierz');
+assert.equal(skalbmierzEvents.length, 1);
+const skalbmierz = skalbmierzEvents[0];
+assert.equal(skalbmierz.id, 'season-2026-11');
+assert.deepEqual(skalbmierz.ranking.map(row => [row.position, row.name, row.competitionPoints]), [
+  [1, 'Marcin Stankiewicz', 25],
+  [2, 'Tomasz Lademann', 23.5],
+  [3, 'Bartosz Postój', 19.5],
+  [4, 'Michał Sajdak', 15],
+  [5, 'Michał Maruszewski', 7],
+]);
+assert.equal(skalbmierz.competitions.length, 6);
+assert.equal(skalbmierz.competitions.flatMap(event => event.results).length, 30);
+assert.equal(skalbmierz.competitions[1].results[0].result, '41.');
+assert.equal(skalbmierz.competitions[4].results[4].result, '212.54');
 assert.deepEqual([1, 2, 3, 4, 5].map(seasonPointsForPosition), [5, 4, 3, 2, 1]);
 assert.equal(seasonPointsForPosition(6), 0);
 
 const standings = calculateSeasonStandings(DEFAULT_SEASON.events, 4);
-assert.equal(standings.length, 15);
-assert.deepEqual(standings.slice(0, 3).map(row => [row.rank, row.name, row.countedPoints]), [
+assert.equal(standings.length, 16);
+assert.deepEqual(standings.slice(0, 5).map(row => [row.rank, row.name, row.countedPoints]), [
   [1, 'Paweł Piskorz', 19],
   [2, 'Łukasz Kieliszkowski', 18],
   [2, 'Rafał Sojc', 18],
+  [4, 'Marcin Stankiewicz', 17],
+  [5, 'Jakub Szczechowski', 14],
 ]);
 assert.equal(standings[0].starts, 6);
 assert.equal(standings[0].allPoints, 23);
 assert.equal(standings[0].rejectedPoints, 4);
+assert.deepEqual(
+  standings.find(row => row.name === 'Michał Sajdak'),
+  {
+    competitorId: 'competitor-michal-sajdak-1786279130885-bf0b79',
+    name: 'Michał Sajdak',
+    results: [{
+      eventId: 'season-2026-11', eventNumber: 11, date: '2026-08-09', location: 'Skalbmierz', position: 4, points: 2,
+    }],
+    starts: 1,
+    countedEventIds: ['season-2026-11'],
+    allPoints: 2,
+    countedPoints: 2,
+    rejectedPoints: 0,
+    rank: 14,
+  },
+);
+
+const migratedEvents = mergeSeasonEvents(DEFAULT_SEASON.events, DEFAULT_SEASON.events.slice(0, 10));
+assert.equal(migratedEvents.length, 11);
+assert.equal(migratedEvents.filter(event => event.id === 'season-2026-11').length, 1);
+const importedSkalbmierz = { ...skalbmierz, sourceFile: 'Nowszy plik podsumowania' };
+const mergedDuplicate = mergeSeasonEvents(DEFAULT_SEASON.events, [importedSkalbmierz]);
+assert.equal(mergedDuplicate.length, 11);
+assert.equal(mergedDuplicate.at(-1).sourceFile, 'Nowszy plik podsumowania');
 
 const tieEvent = normalizeSeasonEvent({
   date: '15.08.2026',

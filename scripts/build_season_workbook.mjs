@@ -9,6 +9,25 @@ if (!seasonPath || !competitorsPath || !outputPath || !previewDir) {
 
 const season = JSON.parse(await fs.readFile(seasonPath, "utf8"));
 const competitors = JSON.parse(await fs.readFile(competitorsPath, "utf8"));
+const competitorNames = new Set(competitors.map(competitor => competitor.name.toLocaleLowerCase("pl-PL")));
+const seasonOnlyCompetitors = season.events
+  .flatMap(event => event.ranking)
+  .filter(result => {
+    const key = result.name.toLocaleLowerCase("pl-PL");
+    if (competitorNames.has(key)) return false;
+    competitorNames.add(key);
+    return true;
+  })
+  .map(result => ({
+    id: result.competitorId,
+    name: result.name,
+    categories: ["Puchar Polski"],
+    residence: "",
+    height: "",
+    weight: "",
+    dataWarnings: ["Dane profilu do uzupełnienia."],
+  }));
+const workbookCompetitors = [...competitors, ...seasonOnlyCompetitors];
 const workbook = Workbook.create();
 const MAX_EVENTS = 20;
 const MAX_COMPETITORS = 50;
@@ -115,7 +134,7 @@ const eventsSheet = baseSheet(
   "Zawody",
   "F",
   "REJESTR ZAWODÓW - SEZON 2026",
-  "Dziesięć imprez jest już wpisanych chronologicznie. Wiersze 16-25 pozostają gotowe na kolejne zawody sezonu 2026.",
+  `Wpisano chronologicznie ${season.events.length} imprez. Pozostałe wiersze są gotowe na kolejne zawody sezonu 2026.`,
 );
 const competitorsSheet = baseSheet(
   "Zawodnicy",
@@ -147,7 +166,7 @@ eventsSheet.getRange("C:C").format.columnWidth = 20;
 eventsSheet.getRange("D:D").format.columnWidth = 30;
 eventsSheet.getRange("E:E").format.columnWidth = 14;
 eventsSheet.getRange("F:F").format.columnWidth = 34;
-eventsSheet.getRange("A6:F15").format.fill = colors.paleGold;
+eventsSheet.getRange(`A6:F${FIRST_DATA_ROW + season.events.length - 1}`).format.fill = colors.paleGold;
 eventsSheet.freezePanes.freezeRows(5);
 
 results.getRange("A5:I5").values = [[
@@ -205,7 +224,7 @@ results.dataValidations.add({ range: `D6:D${MAX_RESULTS}`, rule: { type: "whole"
 competitorsSheet.getRange("A5:F5").values = [["Zawodnik", "Puchar Polski", "Miejscowość", "Wzrost", "Waga", "Status danych"]];
 styleHeader(competitorsSheet.getRange("A5:F5"));
 const competitorRows = Array.from({ length: MAX_COMPETITORS }, (_, index) => {
-  const competitor = competitors[index];
+  const competitor = workbookCompetitors[index];
   if (!competitor) return ["", "", "", "", "", ""];
   const warnings = competitor.dataWarnings?.join(" ") || "Zweryfikowane ze źródła";
   return [
@@ -224,7 +243,7 @@ competitorsSheet.getRange("B:B").format.columnWidth = 15;
 competitorsSheet.getRange("C:C").format.columnWidth = 26;
 competitorsSheet.getRange("D:E").format.columnWidth = 11;
 competitorsSheet.getRange("F:F").format.columnWidth = 35;
-competitorsSheet.getRange("A6:F25").format.fill = colors.paleGold;
+competitorsSheet.getRange(`A6:F${FIRST_DATA_ROW + workbookCompetitors.length - 1}`).format.fill = colors.paleGold;
 competitorsSheet.freezePanes.freezeRows(5);
 
 const eventHeaderValues = Array.from({ length: MAX_EVENTS }, (_, index) => index + 1);

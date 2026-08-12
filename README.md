@@ -1,6 +1,10 @@
 # Strongman Next
 
-## Wersja stabilna 1.1.0
+## Wersja stabilna 1.1.2
+
+### Klasyfikacja sezonu po 11 imprezach
+
+Wbudowana baza sezonu 2026 obejmuje zawody w Skalbmierzu z 9 sierpnia 2026. Aktualizacja jednorazowo uzupełnia brakujący rekord na urządzeniach ze starszym zapisem 10 imprez, nie duplikuje zawodów o tej samej dacie i miejscu oraz zachowuje późniejsze świadome edycje użytkownika. Pełne wyniki sześciu konkurencji Skalbmierza są zachowane w kanonicznym pliku sezonu, a klasyfikacja generalna nadal liczy cztery najlepsze starty według punktacji 5-4-3-2-1.
 
 ### Pomoc podczas zawodów
 
@@ -157,4 +161,4 @@ Formularz przetwarza dane i zdjęcie wyłącznie w przeglądarce zawodnika. Gene
 
 ## Status wydania
 
-Wersja 1.1.0 przeszła testy reguł punktacji, importu i eksportu, trwałej bazy zawodników, pełnego przebiegu zawodów, procedur Pomocy, widoków telefonu i iPada oraz uruchomienia PWA offline. Projekt nie wymaga procesu bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.
+Wersja 1.1.2 przeszła testy reguł punktacji, klasyfikacji sezonu po 11 imprezach, importu i eksportu, trwałej bazy zawodników, pełnego przebiegu zawodów, procedur Pomocy, widoków telefonu i iPada oraz uruchomienia PWA offline. Projekt nie wymaga procesu bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.

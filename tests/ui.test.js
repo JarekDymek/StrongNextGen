@@ -358,6 +358,27 @@ assert.ok(modalBox && modalBox.x >= 0 && modalBox.x + modalBox.width <= 810);
 await tabletPage.screenshot({ path: path.join(artifacts, 'ipad-editor.png'), fullPage: true });
 await tabletPage.screenshot({ path: path.join(artifacts, 'ipad-editor-viewport.png') });
 await tablet.close();
+
+const seasonMigration = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
+const seasonPage = await seasonMigration.newPage();
+await seasonPage.goto(baseUrl, { waitUntil: 'networkidle' });
+await seasonPage.locator('[data-action="go-stage"][data-stage="season"]').click();
+await seasonPage.waitForFunction(() => Boolean(localStorage.getItem('strongman-next.state.v1')));
+await seasonPage.evaluate(() => {
+  const state = JSON.parse(localStorage.getItem('strongman-next.state.v1'));
+  state.baseRevision = 'help-workflows-v1-2026-08-12';
+  state.seasonEvents = state.seasonEvents.filter(event => event.id !== 'season-2026-11');
+  localStorage.setItem('strongman-next.state.v1', JSON.stringify(state));
+});
+await seasonPage.reload({ waitUntil: 'networkidle' });
+const migratedSeason = await seasonPage.evaluate(() => JSON.parse(localStorage.getItem('strongman-next.state.v1')));
+assert.equal(migratedSeason.seasonEvents.length, 11);
+assert.equal(migratedSeason.seasonEvents.filter(event => event.id === 'season-2026-11').length, 1);
+await seasonPage.locator('[data-action="go-stage"][data-stage="season"]').click();
+await seasonPage.getByText('11. Skalbmierz · 09.08.2026', { exact: false }).waitFor();
+assert.equal(await seasonPage.locator('.season-event-card').count(), 11);
+await seasonMigration.close();
+
 await browser.close();
 
 console.log('UI tests passed');

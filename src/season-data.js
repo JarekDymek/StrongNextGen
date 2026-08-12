@@ -11,7 +11,7 @@ export const DEFAULT_SEASON = {
     "4": 2,
     "5": 1
   },
-  "updatedThrough": "2026-08-02",
+  "updatedThrough": "2026-08-09",
   "events": [
     {
       "id": "season-2026-01",
@@ -27,7 +27,7 @@ export const DEFAULT_SEASON = {
           "name": "Łukasz Kieliszkowski",
           "sourceName": "ŁUKASZ KIELISZKOWSKI",
           "seasonPoints": 5,
-          "competitionPoints": 23.0
+          "competitionPoints": 23
         },
         {
           "position": 2,
@@ -35,7 +35,7 @@ export const DEFAULT_SEASON = {
           "name": "Marcin Stankiewicz",
           "sourceName": "MARCIN STANKIEWICZ",
           "seasonPoints": 4,
-          "competitionPoints": 20.0
+          "competitionPoints": 20
         },
         {
           "position": 3,
@@ -43,7 +43,7 @@ export const DEFAULT_SEASON = {
           "name": "Bartłomiej Bąbol",
           "sourceName": "BARTŁOMIEJ BĄBOL",
           "seasonPoints": 3,
-          "competitionPoints": 19.0
+          "competitionPoints": 19
         },
         {
           "position": 4,
@@ -51,7 +51,7 @@ export const DEFAULT_SEASON = {
           "name": "Bartosz Postój",
           "sourceName": "BARTŁOMIEJ POSYÓJ (i) Wygrana przez: więcej 2. miejsc",
           "seasonPoints": 2,
-          "competitionPoints": 11.0
+          "competitionPoints": 11
         },
         {
           "position": 5,
@@ -59,7 +59,7 @@ export const DEFAULT_SEASON = {
           "name": "Krzysztof Kacnerski",
           "sourceName": "KRZYSZTOF KACNERSKI",
           "seasonPoints": 1,
-          "competitionPoints": 11.0
+          "competitionPoints": 11
         }
       ],
       "competitions": [
@@ -121,7 +121,7 @@ export const DEFAULT_SEASON = {
           "name": "Jakub Szczechowski",
           "sourceName": "JAKUB SZCZECHOWSKI",
           "seasonPoints": 5,
-          "competitionPoints": 24.0
+          "competitionPoints": 24
         },
         {
           "position": 2,
@@ -129,7 +129,7 @@ export const DEFAULT_SEASON = {
           "name": "Marcin Schabowski",
           "sourceName": "MARCIN SCHABOWSKI",
           "seasonPoints": 4,
-          "competitionPoints": 22.0
+          "competitionPoints": 22
         },
         {
           "position": 3,
@@ -137,7 +137,7 @@ export const DEFAULT_SEASON = {
           "name": "Tomasz Lademann",
           "sourceName": "TOMASZ LADEMANN",
           "seasonPoints": 3,
-          "competitionPoints": 20.0
+          "competitionPoints": 20
         },
         {
           "position": 4,
@@ -145,7 +145,7 @@ export const DEFAULT_SEASON = {
           "name": "Paweł Kostrzewski",
           "sourceName": "PAWEL KOSTRZEWSKI",
           "seasonPoints": 2,
-          "competitionPoints": 13.0
+          "competitionPoints": 13
         },
         {
           "position": 5,
@@ -153,7 +153,7 @@ export const DEFAULT_SEASON = {
           "name": "Mariusz Pachut",
           "sourceName": "MARIUSZ PACHUT",
           "seasonPoints": 1,
-          "competitionPoints": 11.0
+          "competitionPoints": 11
         }
       ],
       "competitions": [
@@ -247,7 +247,7 @@ export const DEFAULT_SEASON = {
           "name": "Paweł Piskorz",
           "sourceName": "PAWEL PISKORZ",
           "seasonPoints": 1,
-          "competitionPoints": 12.0
+          "competitionPoints": 12
         }
       ],
       "competitions": [
@@ -309,7 +309,7 @@ export const DEFAULT_SEASON = {
           "name": "Rafał Sojc",
           "sourceName": "RAFAL SOJC",
           "seasonPoints": 5,
-          "competitionPoints": 25.0
+          "competitionPoints": 25
         },
         {
           "position": 2,
@@ -317,7 +317,7 @@ export const DEFAULT_SEASON = {
           "name": "Paweł Piskorz",
           "sourceName": "PAWEL PISKORZ",
           "seasonPoints": 4,
-          "competitionPoints": 21.0
+          "competitionPoints": 21
         },
         {
           "position": 3,
@@ -325,7 +325,7 @@ export const DEFAULT_SEASON = {
           "name": "Marcin Stankiewicz",
           "sourceName": "MARCIN STANKIEWICZ",
           "seasonPoints": 3,
-          "competitionPoints": 19.0
+          "competitionPoints": 19
         },
         {
           "position": 4,
@@ -333,7 +333,7 @@ export const DEFAULT_SEASON = {
           "name": "Przemysław Marczewski",
           "sourceName": "PRZEMYSLAW MARCZEWSKI",
           "seasonPoints": 2,
-          "competitionPoints": 15.0
+          "competitionPoints": 15
         },
         {
           "position": 5,
@@ -341,7 +341,7 @@ export const DEFAULT_SEASON = {
           "name": "Mariusz Pachut",
           "sourceName": "MARIUSZ PACHUT",
           "seasonPoints": 1,
-          "competitionPoints": 6.0
+          "competitionPoints": 6
         }
       ],
       "competitions": [
@@ -403,7 +403,7 @@ export const DEFAULT_SEASON = {
           "name": "Łukasz Kieliszkowski",
           "sourceName": "LUKASZ KIELISZKOWSKI",
           "seasonPoints": 5,
-          "competitionPoints": 25.0
+          "competitionPoints": 25
         },
         {
           "position": 2,
@@ -411,7 +411,7 @@ export const DEFAULT_SEASON = {
           "name": "Jakub Szczechowski",
           "sourceName": "JAKUB SZCZECHOWSKI",
           "seasonPoints": 4,
-          "competitionPoints": 23.0
+          "competitionPoints": 23
         },
         {
           "position": 3,
@@ -427,7 +427,7 @@ export const DEFAULT_SEASON = {
           "name": "Paweł Kostrzewski",
           "sourceName": "PAWEL KOSTRZEWSKI",
           "seasonPoints": 2,
-          "competitionPoints": 15.0
+          "competitionPoints": 15
         },
         {
           "position": 5,
@@ -497,7 +497,7 @@ export const DEFAULT_SEASON = {
           "name": "Paweł Piskorz",
           "sourceName": "PAWEL PISKORZ",
           "seasonPoints": 5,
-          "competitionPoints": 21.0
+          "competitionPoints": 21
         },
         {
           "position": 2,
@@ -505,7 +505,7 @@ export const DEFAULT_SEASON = {
           "name": "Bartosz Postój",
           "sourceName": "BARTOSZ POSTOJ",
           "seasonPoints": 4,
-          "competitionPoints": 19.0
+          "competitionPoints": 19
         },
         {
           "position": 3,
@@ -521,7 +521,7 @@ export const DEFAULT_SEASON = {
           "name": "Bartłomiej Bąbol",
           "sourceName": "BARTLOMIEJ BABOL",
           "seasonPoints": 2,
-          "competitionPoints": 17.0
+          "competitionPoints": 17
         },
         {
           "position": 5,
@@ -623,7 +623,7 @@ export const DEFAULT_SEASON = {
           "name": "Michał Maruszewski",
           "sourceName": "MICHAL MARUSZEWSKI",
           "seasonPoints": 1,
-          "competitionPoints": 11.0
+          "competitionPoints": 11
         }
       ],
       "competitions": [
@@ -685,7 +685,7 @@ export const DEFAULT_SEASON = {
           "name": "Paweł Piskorz",
           "sourceName": "PAWEŁ PISKORZ",
           "seasonPoints": 5,
-          "competitionPoints": 23.0
+          "competitionPoints": 23
         },
         {
           "position": 2,
@@ -693,7 +693,7 @@ export const DEFAULT_SEASON = {
           "name": "Marcin Stankiewicz",
           "sourceName": "MARCIN STANKIEWICZ",
           "seasonPoints": 4,
-          "competitionPoints": 19.0
+          "competitionPoints": 19
         },
         {
           "position": 3,
@@ -709,7 +709,7 @@ export const DEFAULT_SEASON = {
           "name": "Adam Wądołowski",
           "sourceName": "ADAM WĄDOŁOWSKI",
           "seasonPoints": 2,
-          "competitionPoints": 16.0
+          "competitionPoints": 16
         },
         {
           "position": 5,
@@ -779,7 +779,7 @@ export const DEFAULT_SEASON = {
           "name": "Paweł Piskorz",
           "sourceName": "PAWEŁ PISKORZ",
           "seasonPoints": 5,
-          "competitionPoints": 26.0
+          "competitionPoints": 26
         },
         {
           "position": 2,
@@ -787,7 +787,7 @@ export const DEFAULT_SEASON = {
           "name": "Rafał Sojc",
           "sourceName": "RAFAŁ SOJC",
           "seasonPoints": 4,
-          "competitionPoints": 21.0
+          "competitionPoints": 21
         },
         {
           "position": 3,
@@ -795,7 +795,7 @@ export const DEFAULT_SEASON = {
           "name": "Paweł Kostrzewski",
           "sourceName": "PAWEŁ KOSTRZEWSKI",
           "seasonPoints": 3,
-          "competitionPoints": 18.0
+          "competitionPoints": 18
         },
         {
           "position": 4,
@@ -803,7 +803,7 @@ export const DEFAULT_SEASON = {
           "name": "Bartosz Postój",
           "sourceName": "BARTOSZ POSTÓJ",
           "seasonPoints": 2,
-          "competitionPoints": 16.0
+          "competitionPoints": 16
         },
         {
           "position": 5,
@@ -811,7 +811,7 @@ export const DEFAULT_SEASON = {
           "name": "Mariusz Pachut",
           "sourceName": "MARIUSZ PACHUT",
           "seasonPoints": 1,
-          "competitionPoints": 9.0
+          "competitionPoints": 9
         }
       ],
       "competitions": [
@@ -873,7 +873,7 @@ export const DEFAULT_SEASON = {
           "name": "Jakub Szczechowski",
           "sourceName": "JAKUB SZCZECHOWSKI",
           "seasonPoints": 5,
-          "competitionPoints": 28.0
+          "competitionPoints": 28
         },
         {
           "position": 2,
@@ -881,7 +881,7 @@ export const DEFAULT_SEASON = {
           "name": "Paweł Kostrzewski",
           "sourceName": "PAWEŁ KOSTRZEWSKI",
           "seasonPoints": 4,
-          "competitionPoints": 21.0
+          "competitionPoints": 21
         },
         {
           "position": 3,
@@ -889,7 +889,7 @@ export const DEFAULT_SEASON = {
           "name": "Paweł Piskorz",
           "sourceName": "PAWEŁ PISKORZ",
           "seasonPoints": 3,
-          "competitionPoints": 16.0
+          "competitionPoints": 16
         },
         {
           "position": 4,
@@ -897,7 +897,7 @@ export const DEFAULT_SEASON = {
           "name": "Krzysztof Kacnerski",
           "sourceName": "KRZYSZTOF KACNERSKI",
           "seasonPoints": 2,
-          "competitionPoints": 15.0
+          "competitionPoints": 15
         },
         {
           "position": 5,
@@ -905,7 +905,7 @@ export const DEFAULT_SEASON = {
           "name": "Mariusz Pachut",
           "sourceName": "MARIUSZ PACHUT",
           "seasonPoints": 1,
-          "competitionPoints": 6.0
+          "competitionPoints": 6
         }
       ],
       "competitions": [
@@ -950,6 +950,352 @@ export const DEFAULT_SEASON = {
           "type": "high",
           "final": true,
           "sourceName": "Martwy ciąg na Platformie"
+        }
+      ]
+    },
+    {
+      "id": "season-2026-11",
+      "number": 11,
+      "date": "2026-08-09",
+      "location": "Skalbmierz",
+      "name": "Skalbmierz · 09.08.2026",
+      "sourceFile": "Podsumowanie Skalbmierz 09.08.2026 (HTML)",
+      "ranking": [
+        {
+          "position": 1,
+          "competitorId": "competitor-marcin-stankiewicz",
+          "name": "Marcin Stankiewicz",
+          "sourceName": "MARCIN STANKIEWICZ",
+          "seasonPoints": 5,
+          "competitionPoints": 25
+        },
+        {
+          "position": 2,
+          "competitorId": "competitor-tomasz-lademann",
+          "name": "Tomasz Lademann",
+          "sourceName": "TOMASZ LADEMANN",
+          "seasonPoints": 4,
+          "competitionPoints": 23.5
+        },
+        {
+          "position": 3,
+          "competitorId": "competitor-bartosz-postoj",
+          "name": "Bartosz Postój",
+          "sourceName": "BARTOSZ POSTÓJ",
+          "seasonPoints": 3,
+          "competitionPoints": 19.5
+        },
+        {
+          "position": 4,
+          "competitorId": "competitor-michal-sajdak-1786279130885-bf0b79",
+          "name": "Michał Sajdak",
+          "sourceName": "MICHAŁ SAJDAK",
+          "seasonPoints": 2,
+          "competitionPoints": 15
+        },
+        {
+          "position": 5,
+          "competitorId": "competitor-michal-maruszewski",
+          "name": "Michał Maruszewski",
+          "sourceName": "MICHAŁ MARUSZEWSKI",
+          "seasonPoints": 1,
+          "competitionPoints": 7
+        }
+      ],
+      "competitions": [
+        {
+          "id": "event-spacer-farmera-140-kg-2-x-20-m",
+          "name": "Spacer Farmera 140 kg - 2 x 20 m",
+          "type": "low",
+          "final": false,
+          "sourceName": "Spacer Farmera na czas 140 kg 2x20m",
+          "results": [
+            {
+              "position": 1,
+              "competitorId": "competitor-marcin-stankiewicz",
+              "name": "Marcin Stankiewicz",
+              "sourceName": "MARCIN STANKIEWICZ",
+              "result": "20.45",
+              "points": 5
+            },
+            {
+              "position": 2,
+              "competitorId": "competitor-tomasz-lademann",
+              "name": "Tomasz Lademann",
+              "sourceName": "TOMASZ LADEMANN",
+              "result": "21.67",
+              "points": 4
+            },
+            {
+              "position": 3,
+              "competitorId": "competitor-michal-sajdak-1786279130885-bf0b79",
+              "name": "Michał Sajdak",
+              "sourceName": "MICHAŁ SAJDAK",
+              "result": "22.59",
+              "points": 3
+            },
+            {
+              "position": 4,
+              "competitorId": "competitor-bartosz-postoj",
+              "name": "Bartosz Postój",
+              "sourceName": "BARTOSZ POSTÓJ",
+              "result": "23.63",
+              "points": 2
+            },
+            {
+              "position": 5,
+              "competitorId": "competitor-michal-maruszewski",
+              "name": "Michał Maruszewski",
+              "sourceName": "MICHAŁ MARUSZEWSKI",
+              "result": "24.32",
+              "points": 1
+            }
+          ]
+        },
+        {
+          "id": "event-spacer-buszmena-360-kg-20-m-zaladunek",
+          "name": "Spacer Buszmena 360 kg - 20 m + załadunek",
+          "type": "low",
+          "final": false,
+          "sourceName": "Spacer Buszmena 360 kg - 20m + załadunek 3 worki",
+          "results": [
+            {
+              "position": 1,
+              "competitorId": "competitor-marcin-stankiewicz",
+              "name": "Marcin Stankiewicz",
+              "sourceName": "MARCIN STANKIEWICZ",
+              "result": "41.",
+              "points": 5
+            },
+            {
+              "position": 2,
+              "competitorId": "competitor-tomasz-lademann",
+              "name": "Tomasz Lademann",
+              "sourceName": "TOMASZ LADEMANN",
+              "result": "54.83",
+              "points": 4
+            },
+            {
+              "position": 3,
+              "competitorId": "competitor-bartosz-postoj",
+              "name": "Bartosz Postój",
+              "sourceName": "BARTOSZ POSTÓJ",
+              "result": "60.26",
+              "points": 3
+            },
+            {
+              "position": 4,
+              "competitorId": "competitor-michal-sajdak-1786279130885-bf0b79",
+              "name": "Michał Sajdak",
+              "sourceName": "MICHAŁ SAJDAK",
+              "result": "83.38",
+              "points": 2
+            },
+            {
+              "position": 5,
+              "competitorId": "competitor-michal-maruszewski",
+              "name": "Michał Maruszewski",
+              "sourceName": "MICHAŁ MARUSZEWSKI",
+              "result": "99",
+              "points": 1
+            }
+          ]
+        },
+        {
+          "id": "event-przeciaganie-auta",
+          "name": "Przeciąganie auta",
+          "type": "low",
+          "final": false,
+          "sourceName": "Przeciąganie auta",
+          "results": [
+            {
+              "position": 1,
+              "competitorId": "competitor-tomasz-lademann",
+              "name": "Tomasz Lademann",
+              "sourceName": "TOMASZ LADEMANN",
+              "result": "13.75",
+              "points": 5
+            },
+            {
+              "position": 2,
+              "competitorId": "competitor-bartosz-postoj",
+              "name": "Bartosz Postój",
+              "sourceName": "BARTOSZ POSTÓJ",
+              "result": "14.38",
+              "points": 4
+            },
+            {
+              "position": 3,
+              "competitorId": "competitor-michal-sajdak-1786279130885-bf0b79",
+              "name": "Michał Sajdak",
+              "sourceName": "MICHAŁ SAJDAK",
+              "result": "15.26",
+              "points": 3
+            },
+            {
+              "position": 4,
+              "competitorId": "competitor-marcin-stankiewicz",
+              "name": "Marcin Stankiewicz",
+              "sourceName": "MARCIN STANKIEWICZ",
+              "result": "15.81",
+              "points": 2
+            },
+            {
+              "position": 5,
+              "competitorId": "competitor-michal-maruszewski",
+              "name": "Michał Maruszewski",
+              "sourceName": "MICHAŁ MARUSZEWSKI",
+              "result": "16.75",
+              "points": 1
+            }
+          ]
+        },
+        {
+          "id": "event-wyciskanie-platformy-na-barki",
+          "name": "Wyciskanie platformy na barki",
+          "type": "high",
+          "final": false,
+          "sourceName": "Wyciskanie platformy na barki - 60 sek.",
+          "results": [
+            {
+              "position": 1,
+              "competitorId": "competitor-bartosz-postoj",
+              "name": "Bartosz Postój",
+              "sourceName": "BARTOSZ POSTÓJ",
+              "result": "9",
+              "points": 4.5
+            },
+            {
+              "position": 1,
+              "competitorId": "competitor-tomasz-lademann",
+              "name": "Tomasz Lademann",
+              "sourceName": "TOMASZ LADEMANN",
+              "result": "9",
+              "points": 4.5
+            },
+            {
+              "position": 3,
+              "competitorId": "competitor-marcin-stankiewicz",
+              "name": "Marcin Stankiewicz",
+              "sourceName": "MARCIN STANKIEWICZ",
+              "result": "5",
+              "points": 3
+            },
+            {
+              "position": 4,
+              "competitorId": "competitor-michal-maruszewski",
+              "name": "Michał Maruszewski",
+              "sourceName": "MICHAŁ MARUSZEWSKI",
+              "result": "3",
+              "points": 2
+            },
+            {
+              "position": 5,
+              "competitorId": "competitor-michal-sajdak-1786279130885-bf0b79",
+              "name": "Michał Sajdak",
+              "sourceName": "MICHAŁ SAJDAK",
+              "result": "1",
+              "points": 1
+            }
+          ]
+        },
+        {
+          "id": "event-przerzucanie-workow-nad-poprzeczka-20-30-kg",
+          "name": "Przerzucanie worków nad poprzeczką - 20-30 kg",
+          "type": "low",
+          "final": false,
+          "sourceName": "Przerzucanie worków nad poprzeczką",
+          "results": [
+            {
+              "position": 1,
+              "competitorId": "competitor-marcin-stankiewicz",
+              "name": "Marcin Stankiewicz",
+              "sourceName": "MARCIN STANKIEWICZ",
+              "result": "14.75",
+              "points": 5
+            },
+            {
+              "position": 2,
+              "competitorId": "competitor-bartosz-postoj",
+              "name": "Bartosz Postój",
+              "sourceName": "BARTOSZ POSTÓJ",
+              "result": "19.78",
+              "points": 4
+            },
+            {
+              "position": 3,
+              "competitorId": "competitor-michal-sajdak-1786279130885-bf0b79",
+              "name": "Michał Sajdak",
+              "sourceName": "MICHAŁ SAJDAK",
+              "result": "30.94",
+              "points": 3
+            },
+            {
+              "position": 4,
+              "competitorId": "competitor-tomasz-lademann",
+              "name": "Tomasz Lademann",
+              "sourceName": "TOMASZ LADEMANN",
+              "result": "38.26",
+              "points": 2
+            },
+            {
+              "position": 5,
+              "competitorId": "competitor-michal-maruszewski",
+              "name": "Michał Maruszewski",
+              "sourceName": "MICHAŁ MARUSZEWSKI",
+              "result": "212.54",
+              "points": 1
+            }
+          ]
+        },
+        {
+          "id": "event-martwy-ciag-powtorzenia",
+          "name": "Martwy ciąg (powtórzenia)",
+          "type": "high",
+          "final": true,
+          "sourceName": "Martwy ciąg (powtórzenia) - boczny chwyt. (FINAŁ)",
+          "results": [
+            {
+              "position": 1,
+              "competitorId": "competitor-marcin-stankiewicz",
+              "name": "Marcin Stankiewicz",
+              "sourceName": "MARCIN STANKIEWICZ",
+              "result": "19",
+              "points": 5
+            },
+            {
+              "position": 2,
+              "competitorId": "competitor-tomasz-lademann",
+              "name": "Tomasz Lademann",
+              "sourceName": "TOMASZ LADEMANN",
+              "result": "18",
+              "points": 4
+            },
+            {
+              "position": 3,
+              "competitorId": "competitor-michal-sajdak-1786279130885-bf0b79",
+              "name": "Michał Sajdak",
+              "sourceName": "MICHAŁ SAJDAK",
+              "result": "16",
+              "points": 3
+            },
+            {
+              "position": 4,
+              "competitorId": "competitor-bartosz-postoj",
+              "name": "Bartosz Postój",
+              "sourceName": "BARTOSZ POSTÓJ",
+              "result": "12",
+              "points": 2
+            },
+            {
+              "position": 5,
+              "competitorId": "competitor-michal-maruszewski",
+              "name": "Michał Maruszewski",
+              "sourceName": "MICHAŁ MARUSZEWSKI",
+              "result": "7",
+              "points": 1
+            }
+          ]
         }
       ]
     }
@@ -1103,7 +1449,7 @@ export const DEFAULT_SEASON = {
     {
       "competitorId": "competitor-marcin-stankiewicz",
       "name": "Marcin Stankiewicz",
-      "starts": 4,
+      "starts": 5,
       "results": [
         {
           "eventId": "season-2026-01",
@@ -1136,11 +1482,19 @@ export const DEFAULT_SEASON = {
           "location": "Kleczew",
           "position": 2,
           "points": 4
+        },
+        {
+          "eventId": "season-2026-11",
+          "eventNumber": 11,
+          "date": "2026-08-09",
+          "location": "Skalbmierz",
+          "position": 1,
+          "points": 5
         }
       ],
-      "allPoints": 15,
-      "countedPoints": 15,
-      "rejectedPoints": 0,
+      "allPoints": 20,
+      "countedPoints": 17,
+      "rejectedPoints": 3,
       "rank": 4
     },
     {
@@ -1283,7 +1637,7 @@ export const DEFAULT_SEASON = {
     {
       "competitorId": "competitor-bartosz-postoj",
       "name": "Bartosz Postój",
-      "starts": 5,
+      "starts": 6,
       "results": [
         {
           "eventId": "season-2026-01",
@@ -1324,12 +1678,47 @@ export const DEFAULT_SEASON = {
           "location": "Lubawka",
           "position": 4,
           "points": 2
+        },
+        {
+          "eventId": "season-2026-11",
+          "eventNumber": 11,
+          "date": "2026-08-09",
+          "location": "Skalbmierz",
+          "position": 3,
+          "points": 3
         }
       ],
-      "allPoints": 12,
-      "countedPoints": 10,
-      "rejectedPoints": 2,
+      "allPoints": 15,
+      "countedPoints": 11,
+      "rejectedPoints": 4,
       "rank": 8
+    },
+    {
+      "competitorId": "competitor-tomasz-lademann",
+      "name": "Tomasz Lademann",
+      "starts": 2,
+      "results": [
+        {
+          "eventId": "season-2026-02",
+          "eventNumber": 2,
+          "date": "2026-05-30",
+          "location": "Czerwonak",
+          "position": 3,
+          "points": 3
+        },
+        {
+          "eventId": "season-2026-11",
+          "eventNumber": 11,
+          "date": "2026-08-09",
+          "location": "Skalbmierz",
+          "position": 2,
+          "points": 4
+        }
+      ],
+      "allPoints": 7,
+      "countedPoints": 7,
+      "rejectedPoints": 0,
+      "rank": 9
     },
     {
       "competitorId": "competitor-krzysztof-kacnerski",
@@ -1372,7 +1761,7 @@ export const DEFAULT_SEASON = {
       "allPoints": 5,
       "countedPoints": 5,
       "rejectedPoints": 0,
-      "rank": 9
+      "rank": 10
     },
     {
       "competitorId": "competitor-marcin-schabowski",
@@ -1391,7 +1780,7 @@ export const DEFAULT_SEASON = {
       "allPoints": 4,
       "countedPoints": 4,
       "rejectedPoints": 0,
-      "rank": 10
+      "rank": 11
     },
     {
       "competitorId": "competitor-mariusz-pachut",
@@ -1434,7 +1823,7 @@ export const DEFAULT_SEASON = {
       "allPoints": 4,
       "countedPoints": 4,
       "rejectedPoints": 0,
-      "rank": 10
+      "rank": 11
     },
     {
       "competitorId": "competitor-adam-wadolowski",
@@ -1461,26 +1850,53 @@ export const DEFAULT_SEASON = {
       "allPoints": 3,
       "countedPoints": 3,
       "rejectedPoints": 0,
-      "rank": 12
+      "rank": 13
     },
     {
-      "competitorId": "competitor-tomasz-lademann",
-      "name": "Tomasz Lademann",
+      "competitorId": "competitor-michal-maruszewski",
+      "name": "Michał Maruszewski",
+      "starts": 2,
+      "results": [
+        {
+          "eventId": "season-2026-07",
+          "eventNumber": 7,
+          "date": "2026-06-27",
+          "location": "Busko-Zdrój",
+          "position": 5,
+          "points": 1
+        },
+        {
+          "eventId": "season-2026-11",
+          "eventNumber": 11,
+          "date": "2026-08-09",
+          "location": "Skalbmierz",
+          "position": 5,
+          "points": 1
+        }
+      ],
+      "allPoints": 2,
+      "countedPoints": 2,
+      "rejectedPoints": 0,
+      "rank": 14
+    },
+    {
+      "competitorId": "competitor-michal-sajdak-1786279130885-bf0b79",
+      "name": "Michał Sajdak",
       "starts": 1,
       "results": [
         {
-          "eventId": "season-2026-02",
-          "eventNumber": 2,
-          "date": "2026-05-30",
-          "location": "Czerwonak",
-          "position": 3,
-          "points": 3
+          "eventId": "season-2026-11",
+          "eventNumber": 11,
+          "date": "2026-08-09",
+          "location": "Skalbmierz",
+          "position": 4,
+          "points": 2
         }
       ],
-      "allPoints": 3,
-      "countedPoints": 3,
+      "allPoints": 2,
+      "countedPoints": 2,
       "rejectedPoints": 0,
-      "rank": 12
+      "rank": 14
     },
     {
       "competitorId": "competitor-przemyslaw-marczewski",
@@ -1500,25 +1916,6 @@ export const DEFAULT_SEASON = {
       "countedPoints": 2,
       "rejectedPoints": 0,
       "rank": 14
-    },
-    {
-      "competitorId": "competitor-michal-maruszewski",
-      "name": "Michał Maruszewski",
-      "starts": 1,
-      "results": [
-        {
-          "eventId": "season-2026-07",
-          "eventNumber": 7,
-          "date": "2026-06-27",
-          "location": "Busko-Zdrój",
-          "position": 5,
-          "points": 1
-        }
-      ],
-      "allPoints": 1,
-      "countedPoints": 1,
-      "rejectedPoints": 0,
-      "rank": 15
     }
   ]
 };

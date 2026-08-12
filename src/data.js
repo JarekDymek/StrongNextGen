@@ -2,8 +2,8 @@ import { DEFAULT_COMPETITORS } from './competitors.js';
 import { DEFAULT_EVENTS } from './events-data.js';
 import { DEFAULT_SEASON } from './season-data.js';
 
-export const APP_VERSION = '1.1.0';
-export const BASE_REVISION = 'help-workflows-v1-2026-08-12';
+export const APP_VERSION = '1.1.2';
+export const BASE_REVISION = 'season-2026-skalbmierz-v1-2026-08-13';
 export { DEFAULT_COMPETITORS, DEFAULT_EVENTS, DEFAULT_SEASON };
 
 export const EVENT_TYPE_LABEL = {

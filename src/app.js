@@ -1,6 +1,6 @@
 import { APP_VERSION, BASE_REVISION, DEFAULT_COMPETITORS, DEFAULT_EVENTS, DEFAULT_SEASON, EVENT_TYPE_LABEL } from './data.js';
 import { buildFinalStartOrder, buildNextStartOrder, buildScores, calculateEventPoints, rankStandings } from './scoring.js';
-import { calculateSeasonStandings, formatSeasonDate, normalizeSeasonEvent, normalizeSeasonEvents, seasonPointsForPosition } from './season.js';
+import { calculateSeasonStandings, formatSeasonDate, mergeSeasonEvents, normalizeSeasonEvent, normalizeSeasonEvents, seasonPointsForPosition } from './season.js';
 import { buildSeasonHtml } from './season-export.js';
 import {
   competitorMatchesCategory,
@@ -73,12 +73,20 @@ const STAGE_SHORT_LABELS = {
 const savedStateAtStartup = loadSavedState();
 const competitorDatabaseAtStartup = loadCompetitorDatabase();
 const competitorDatabaseReadFailed = hasStorageWarning('bazy zawodników');
+const stateMigrationRequired = Boolean(savedStateAtStartup && savedStateAtStartup.baseRevision !== BASE_REVISION);
 let state = hydrateState(savedStateAtStartup, competitorDatabaseAtStartup);
 state.ui = createUiState();
 let persistenceFailureReported = false;
 if (!competitorDatabaseReadFailed) {
   try {
     saveCompetitorDatabase(state.competitors);
+  } catch (error) {
+    reportPersistenceFailure(error);
+  }
+}
+if (stateMigrationRequired) {
+  try {
+    saveState(state);
   } catch (error) {
     reportPersistenceFailure(error);
   }
@@ -189,6 +197,10 @@ function hydrateState(saved, durableDatabase = null) {
   const migratedSaved = remapCompetitionStateCompetitorIds(saved, recovered.aliases);
   const selectedCompetitorIds = normalizeIdList(migratedSaved.selectedCompetitorIds);
   const selectedEventIds = normalizeIdList(migratedSaved.selectedEventIds);
+  const savedSeasonEvents = normalizeSeasonEvents(migratedSaved.seasonEvents || []);
+  const seasonEvents = migratedSaved.baseRevision === BASE_REVISION
+    ? (savedSeasonEvents.length ? savedSeasonEvents : base.seasonEvents)
+    : mergeSeasonEvents(base.seasonEvents, savedSeasonEvents);
 
   const next = {
     ...base,
@@ -210,7 +222,7 @@ function hydrateState(saved, durableDatabase = null) {
     drafts: normalizeDrafts(migratedSaved.drafts),
     eventOrderOverrides: normalizeEventOrderOverrides(migratedSaved.eventOrderOverrides),
     scores: {},
-    seasonEvents: normalizeSeasonEvents(migratedSaved.seasonEvents?.length ? migratedSaved.seasonEvents : base.seasonEvents),
+    seasonEvents,
     seasonMaxCountedStarts: Math.max(1, Number.parseInt(migratedSaved.seasonMaxCountedStarts, 10) || base.seasonMaxCountedStarts),
     baseRevision: BASE_REVISION,
     schemaVersion: 3
@@ -2908,12 +2920,6 @@ function seasonEventFromCompetitionState(payload, sourceFile) {
       competitionPoints: row.points,
     })),
   };
-}
-
-function mergeSeasonEvents(current, imported) {
-  const byKey = new Map(current.map(event => [`${event.date}:${normalizeKey(event.location)}`, event]));
-  imported.forEach(event => byKey.set(`${event.date}:${normalizeKey(event.location)}`, event));
-  return renumberSeasonEvents([...byKey.values()]);
 }
 
 function renumberSeasonEvents(items) {

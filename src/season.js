@@ -19,6 +19,17 @@ export function normalizeSeasonEvents(items) {
     .sort(compareSeasonEvents);
 }
 
+export function mergeSeasonEvents(current, imported) {
+  const byKey = new Map();
+  [current, imported].forEach(collection => {
+    normalizeSeasonEvents(collection).forEach(event => {
+      byKey.set(`${event.date}:${normalizeText(event.location)}`, event);
+    });
+  });
+  return normalizeSeasonEvents([...byKey.values()])
+    .map((event, index) => ({ ...event, number: index + 1 }));
+}
+
 export function normalizeSeasonEvent(item, index = 0) {
   if (!item || typeof item !== 'object') return null;
   const date = normalizeIsoDate(item.date);
