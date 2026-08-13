@@ -1,3 +1,9 @@
+import {
+  normalizeCareer,
+  normalizeCountryCode,
+  normalizeStrengthRecords
+} from './competitor-profile-data.js';
+
 export const SYSTEM_COMPETITOR_CATEGORIES = Object.freeze([
   'Puchar Polski',
   'Legenda',
@@ -86,6 +92,9 @@ export function normalizeCompetitorRecord(item, index = 0) {
     height: stringValue(source.height || source.wzrost),
     weight: stringValue(source.weight || source.waga),
     notes: stringValue(source.notes || source.description || source.opis || source.achievements || source.osiagniecia),
+    countryCode: normalizeCountryCode(source.countryCode),
+    strengthRecords: normalizeStrengthRecords(source.strengthRecords),
+    career: normalizeCareer(source.career),
     photo: validPhoto(source.photo || source.image || source.avatar || source.icon),
     dataWarnings: uniqueStrings(warnings)
   };
@@ -121,6 +130,15 @@ export function mergeCompetitorDetails(existing, incoming, options = {}) {
     if (!incomingValue) return;
     if (mode === 'preferIncoming' || !currentValue) merged[field] = candidate[field];
   });
+  if (candidate.countryCode && (mode === 'preferIncoming' || !current.countryCode)) {
+    merged.countryCode = candidate.countryCode;
+  }
+  merged.strengthRecords = mergeStrengthRecords(current.strengthRecords, candidate.strengthRecords, {
+    preferIncoming: mode === 'preferIncoming' && hasOwn(incoming, 'strengthRecords')
+  });
+  merged.career = mergeCareer(current.career, candidate.career, {
+    preferIncoming: mode === 'preferIncoming' && hasOwn(incoming, 'career')
+  });
   const currentCategories = getCompetitorCategories(current);
   const candidateCategories = getCompetitorCategories(candidate);
   merged.categories = categoriesMode === 'replace'
@@ -131,6 +149,45 @@ export function mergeCompetitorDetails(existing, incoming, options = {}) {
   merged.category = merged.categories[0] || '';
   merged.dataWarnings = uniqueStrings([...(current.dataWarnings || []), ...(candidate.dataWarnings || [])]);
   return merged;
+}
+
+function mergeStrengthRecords(current, incoming, { preferIncoming = false } = {}) {
+  const previous = normalizeStrengthRecords(current);
+  const candidate = normalizeStrengthRecords(incoming);
+  return Object.fromEntries(Object.keys(previous).map(key => [
+    key,
+    preferIncoming && candidate[key] !== null
+      ? candidate[key]
+      : previous[key] !== null
+        ? previous[key]
+        : candidate[key]
+  ]));
+}
+
+function mergeCareer(current, incoming, { preferIncoming = false } = {}) {
+  const previous = normalizeCareer(current);
+  const candidate = normalizeCareer(incoming);
+  const chooseBest = (oldValue, newValue) => {
+    if (preferIncoming && hasCareerBestValue(newValue)) return newValue;
+    return hasCareerBestValue(oldValue) ? oldValue : newValue;
+  };
+  return {
+    nationalBest: chooseBest(previous.nationalBest, candidate.nationalBest),
+    internationalBest: chooseBest(previous.internationalBest, candidate.internationalBest),
+    titleCodes: preferIncoming && candidate.titleCodes.length
+      ? candidate.titleCodes
+      : previous.titleCodes.length
+        ? previous.titleCodes
+        : candidate.titleCodes
+  };
+}
+
+function hasCareerBestValue(value) {
+  return Boolean(value && (value.level || value.place !== null || value.year !== null || value.eventName));
+}
+
+function hasOwn(value, key) {
+  return Boolean(value && typeof value === 'object' && Object.prototype.hasOwnProperty.call(value, key));
 }
 
 export function upsertCompetitorRecord(collection, incoming, { mode = 'fillMissing', categoriesMode = 'merge', matchByName = true } = {}) {

@@ -1,6 +1,6 @@
 import { APP_VERSION, BASE_REVISION, DEFAULT_COMPETITORS, DEFAULT_EVENTS, DEFAULT_SEASON, EVENT_TYPE_LABEL } from './data.js';
 import { buildFinalStartOrder, buildNextStartOrder, buildScores, calculateEventPoints, rankStandings } from './scoring.js';
-import { calculateSeasonStandings, formatSeasonDate, mergeSeasonEvents, normalizeSeasonEvent, normalizeSeasonEvents, seasonPointsForPosition } from './season.js';
+import { calculateSeasonStandings, formatSeasonDate, mergeCanonicalSeasonEvents, mergeSeasonEvents, normalizeSeasonEvent, normalizeSeasonEvents, seasonPointsForPosition } from './season.js';
 import { buildSeasonHtml } from './season-export.js';
 import {
   competitorMatchesCategory,
@@ -15,6 +15,13 @@ import {
   upsertCompetitorRecord
 } from './competitor-data.js';
 import { estimateDataUrlBytes, processCompetitorPhoto } from './image-tools.js';
+import {
+  countryDisplayName,
+  normalizeCareer,
+  normalizeStrengthRecords,
+  SPORT_LABELS
+} from './competitor-profile-data.js';
+import { normalizeSubmissionFile as normalizeSubmissionDocument } from './competitor-submission.js';
 import { EMERGENCY_HELP_TOPICS, getEmergencyHelpTopics } from './help.js';
 import {
   clearSavedState,
@@ -200,7 +207,7 @@ function hydrateState(saved, durableDatabase = null) {
   const savedSeasonEvents = normalizeSeasonEvents(migratedSaved.seasonEvents || []);
   const seasonEvents = migratedSaved.baseRevision === BASE_REVISION
     ? (savedSeasonEvents.length ? savedSeasonEvents : base.seasonEvents)
-    : mergeSeasonEvents(base.seasonEvents, savedSeasonEvents);
+    : mergeCanonicalSeasonEvents(base.seasonEvents, savedSeasonEvents);
 
   const next = {
     ...base,
@@ -1353,6 +1360,7 @@ function renderCompetitorProfile() {
     ['Wzrost', formatMeasurement(competitor.height, 'cm')],
     ['Waga', formatMeasurement(competitor.weight, 'kg')],
     ['Miejsce zamieszkania', competitor.residence],
+    ['Reprezentowany kraj', countryDisplayName(competitor.countryCode, 'pl')],
     ['Kategoria', categories.join(', ')]
   ].filter(([, value]) => value);
 
@@ -1378,6 +1386,7 @@ function renderCompetitorProfile() {
             <p>${escapeHtml(dataWarnings.join(' '))}</p>
           </aside>
         ` : ''}
+        ${renderStructuredCompetitorDetails(competitor)}
         <section class="profile-notes-section">
           <h3>Osiągnięcia i informacje</h3>
           <p class="profile-notes">${escapeHtml(competitor.notes || 'Brak dodatkowego opisu.')}</p>
@@ -1386,6 +1395,49 @@ function renderCompetitorProfile() {
       </section>
     </div>
   `;
+}
+
+function renderStructuredCompetitorDetails(competitor) {
+  const records = normalizeStrengthRecords(competitor.strengthRecords);
+  const recordRows = [
+    ['Przysiad', records.squatKg],
+    ['Wyciskanie leżąc', records.benchPressKg],
+    ['Martwy ciąg', records.deadliftKg]
+  ].filter(([, value]) => value !== null);
+  const career = normalizeCareer(competitor.career);
+  const careerRows = [];
+  if (career.nationalBest) careerRows.push(['Najlepszy wynik krajowy', formatCareerBest(career.nationalBest)]);
+  if (career.internationalBest) careerRows.push(['Najlepszy wynik międzynarodowy', formatCareerBest(career.internationalBest)]);
+  if (career.titleCodes.length) {
+    careerRows.push(['Tytuły', career.titleCodes.map(code => SPORT_LABELS.pl[code] || code).join(', ')]);
+  }
+  if (!recordRows.length && !careerRows.length) return '';
+  return `
+    ${recordRows.length ? `
+      <section class="profile-notes-section">
+        <h3>Rekordy siłowe</h3>
+        <dl class="profile-details">
+          ${recordRows.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(String(value))} kg</dd></div>`).join('')}
+        </dl>
+      </section>
+    ` : ''}
+    ${careerRows.length ? `
+      <section class="profile-notes-section">
+        <h3>Kariera Strongman</h3>
+        <dl class="profile-details">
+          ${careerRows.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join('')}
+        </dl>
+      </section>
+    ` : ''}
+  `;
+}
+
+function formatCareerBest(value) {
+  const parts = [SPORT_LABELS.pl[value.level] || value.level];
+  if (value.place !== null) parts.push(`${value.place}. miejsce`);
+  if (value.year !== null) parts.push(String(value.year));
+  if (value.eventName) parts.push(value.eventName);
+  return parts.filter(Boolean).join(' · ');
 }
 
 function renderCompetitorEditor() {
@@ -1479,6 +1531,7 @@ function renderCompetitorSubmission() {
   const details = [
     ['Data urodzenia', competitor.birthDate],
     ['Miejscowość', competitor.residence],
+    ['Reprezentowany kraj', countryDisplayName(competitor.countryCode, 'pl') || 'Nie podano'],
     ['Wzrost', `${competitor.height} cm`],
     ['Waga', `${competitor.weight} kg`],
     ['Kategorie', getCompetitorCategories(competitor).join(', ') || 'Bez kategorii']
@@ -1498,6 +1551,7 @@ function renderCompetitorSubmission() {
         <dl class="profile-details">
           ${details.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join('')}
         </dl>
+        ${renderStructuredCompetitorDetails(competitor)}
         ${competitor.notes ? `<section class="profile-notes-section"><h3>Osiągnięcia i informacje</h3><p class="profile-notes">${escapeHtml(competitor.notes)}</p></section>` : ''}
         <p class="submission-safety">Import zmieni wyłącznie rekord zawodnika. Wyniki i kolejność zawodów pozostaną bez zmian.</p>
         <div class="editor-actions">
@@ -2564,7 +2618,7 @@ function collectCategoryPayload(rawItems) {
 }
 
 function openCompetitorSubmission(json) {
-  const normalized = normalizeSubmissionFile(json);
+  const normalized = normalizeSubmissionDocument(json);
   if (!normalized.ok) {
     flash(normalized.error);
     return;
@@ -2577,49 +2631,11 @@ function openCompetitorSubmission(json) {
   );
   state.ui.competitorSubmission = {
     competitor,
-    matchId: idMatch?.id || identityMatch?.id || ''
+    matchId: idMatch?.id || identityMatch?.id || '',
+    schemaVersion: normalized.schemaVersion,
+    declarations: normalized.declarations || null
   };
   render();
-}
-
-function normalizeSubmissionFile(json) {
-  if (!json || json.schemaVersion !== 1 || json.type !== 'competitor-submission' || !json.competitor || typeof json.competitor !== 'object') {
-    return { ok: false, error: 'To nie jest prawidłowy plik zgłoszenia zawodnika.' };
-  }
-  const source = json.competitor;
-  const name = normalizeSubmissionText(source.name);
-  const birthDate = String(source.birthDate || '').trim();
-  const residence = normalizeSubmissionText(source.residence);
-  const height = normalizePositiveNumber(source.height);
-  const weight = normalizePositiveNumber(source.weight);
-  const photo = String(source.photo || '').trim();
-  if (!name) return { ok: false, error: 'Zgłoszenie nie zawiera imienia i nazwiska.' };
-  if (!isValidIsoDate(birthDate)) return { ok: false, error: 'Zgłoszenie zawiera nieprawidłową datę urodzenia.' };
-  if (!residence) return { ok: false, error: 'Zgłoszenie nie zawiera miejscowości.' };
-  if (!height || !weight) return { ok: false, error: 'Wzrost i waga muszą być dodatnimi wartościami.' };
-  if (!photo.startsWith('data:image/jpeg;base64,') || estimateDataUrlBytes(photo) > 20 * 1024) {
-    return { ok: false, error: 'Zdjęcie w zgłoszeniu ma nieprawidłowy format albo jest zbyt duże.' };
-  }
-
-  const systemByKey = new Map(SYSTEM_COMPETITOR_CATEGORIES.map(category => [normalizeCategoryKey(category), category]));
-  const categories = getCompetitorCategories(source).map(category =>
-    systemByKey.get(normalizeCategoryKey(category)) || normalizeSubmissionText(category)
-  );
-  const competitor = normalizeCompetitorRecord({
-    ...source,
-    id: source.id ? String(source.id) : 'submission-preview',
-    name,
-    birthDate,
-    residence,
-    height,
-    weight,
-    notes: normalizeSubmissionText(source.notes),
-    category: categories[0] || '',
-    categories,
-    photo
-  });
-  competitor.id = source.id ? String(source.id) : '';
-  return { ok: true, competitor };
 }
 
 function closeCompetitorSubmission() {
@@ -2646,16 +2662,6 @@ function confirmCompetitorSubmission() {
   if (existing && previousName !== result.competitor.name) renameCompetitorInHistory(existing.id, result.competitor.name);
   state.ui.competitorSubmission = null;
   persistAndRender(existing ? 'Zaktualizowano istniejącego zawodnika.' : 'Dodano nowego zawodnika do trwałej bazy.', { competitorsChanged: true });
-}
-
-function normalizeSubmissionText(value) {
-  return String(value || '').trim().replace(/\s+/g, ' ').toLocaleUpperCase('pl-PL');
-}
-
-function normalizePositiveNumber(value) {
-  const normalized = String(value || '').trim().replace(',', '.');
-  const parsed = /^\d+(?:\.\d+)?$/.test(normalized) ? Number(normalized) : NaN;
-  return Number.isFinite(parsed) && parsed > 0 ? String(parsed) : '';
 }
 
 function isValidIsoDate(value) {

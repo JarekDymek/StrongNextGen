@@ -594,18 +594,18 @@
         },
         {
           "position": 2,
-          "competitorId": "competitor-marcin-stankiewicz",
-          "name": "Marcin Stankiewicz",
-          "sourceName": "MARCIN STANKIEWICZ",
-          "seasonPoints": 4,
-          "competitionPoints": 19.5
-        },
-        {
-          "position": 2,
           "competitorId": "competitor-bartlomiej-babol",
           "name": "Bartłomiej Bąbol",
           "sourceName": "BARTLOMIEJ BABOL",
           "seasonPoints": 4,
+          "competitionPoints": 19.5
+        },
+        {
+          "position": 3,
+          "competitorId": "competitor-marcin-stankiewicz",
+          "name": "Marcin Stankiewicz",
+          "sourceName": "MARCIN STANKIEWICZ",
+          "seasonPoints": 3,
           "competitionPoints": 19.5
         },
         {
@@ -673,9 +673,9 @@
     {
       "id": "season-2026-08",
       "number": 8,
-      "date": "2026-07-26",
+      "date": "2026-07-25",
       "location": "Kleczew",
-      "name": "Kleczew · 26.07.2026",
+      "name": "Kleczew · 25.07.2026",
       "sourceFile": "KLECZEW · 26.07.2026",
       "ranking": [
         {
@@ -1303,7 +1303,6 @@
     {
       "competitorId": "competitor-pawel-piskorz",
       "name": "Paweł Piskorz",
-      "starts": 6,
       "results": [
         {
           "eventId": "season-2026-03",
@@ -1332,7 +1331,7 @@
         {
           "eventId": "season-2026-08",
           "eventNumber": 8,
-          "date": "2026-07-26",
+          "date": "2026-07-25",
           "location": "Kleczew",
           "position": 1,
           "points": 5
@@ -1353,6 +1352,13 @@
           "position": 3,
           "points": 3
         }
+      ],
+      "starts": 6,
+      "countedEventIds": [
+        "season-2026-06",
+        "season-2026-08",
+        "season-2026-09",
+        "season-2026-04"
       ],
       "allPoints": 23,
       "countedPoints": 19,
@@ -1362,7 +1368,6 @@
     {
       "competitorId": "competitor-lukasz-kieliszkowski",
       "name": "Łukasz Kieliszkowski",
-      "starts": 4,
       "results": [
         {
           "eventId": "season-2026-01",
@@ -1396,6 +1401,13 @@
           "position": 3,
           "points": 3
         }
+      ],
+      "starts": 4,
+      "countedEventIds": [
+        "season-2026-01",
+        "season-2026-03",
+        "season-2026-05",
+        "season-2026-06"
       ],
       "allPoints": 18,
       "countedPoints": 18,
@@ -1405,7 +1417,6 @@
     {
       "competitorId": "competitor-rafal-sojc",
       "name": "Rafał Sojc",
-      "starts": 4,
       "results": [
         {
           "eventId": "season-2026-03",
@@ -1439,6 +1450,13 @@
           "position": 2,
           "points": 4
         }
+      ],
+      "starts": 4,
+      "countedEventIds": [
+        "season-2026-04",
+        "season-2026-07",
+        "season-2026-03",
+        "season-2026-09"
       ],
       "allPoints": 18,
       "countedPoints": 18,
@@ -1448,7 +1466,6 @@
     {
       "competitorId": "competitor-marcin-stankiewicz",
       "name": "Marcin Stankiewicz",
-      "starts": 5,
       "results": [
         {
           "eventId": "season-2026-01",
@@ -1471,13 +1488,13 @@
           "eventNumber": 7,
           "date": "2026-06-27",
           "location": "Busko-Zdrój",
-          "position": 2,
-          "points": 4
+          "position": 3,
+          "points": 3
         },
         {
           "eventId": "season-2026-08",
           "eventNumber": 8,
-          "date": "2026-07-26",
+          "date": "2026-07-25",
           "location": "Kleczew",
           "position": 2,
           "points": 4
@@ -1491,15 +1508,21 @@
           "points": 5
         }
       ],
-      "allPoints": 20,
-      "countedPoints": 17,
+      "starts": 5,
+      "countedEventIds": [
+        "season-2026-11",
+        "season-2026-01",
+        "season-2026-08",
+        "season-2026-04"
+      ],
+      "allPoints": 19,
+      "countedPoints": 16,
       "rejectedPoints": 3,
       "rank": 4
     },
     {
       "competitorId": "competitor-jakub-szczechowski",
       "name": "Jakub Szczechowski",
-      "starts": 3,
       "results": [
         {
           "eventId": "season-2026-02",
@@ -1525,6 +1548,12 @@
           "position": 1,
           "points": 5
         }
+      ],
+      "starts": 3,
+      "countedEventIds": [
+        "season-2026-02",
+        "season-2026-10",
+        "season-2026-05"
       ],
       "allPoints": 14,
       "countedPoints": 14,
@@ -1534,7 +1563,6 @@
     {
       "competitorId": "competitor-bartlomiej-babol",
       "name": "Bartłomiej Bąbol",
-      "starts": 5,
       "results": [
         {
           "eventId": "season-2026-01",
@@ -1576,6 +1604,13 @@
           "position": 2,
           "points": 4
         }
+      ],
+      "starts": 5,
+      "countedEventIds": [
+        "season-2026-07",
+        "season-2026-01",
+        "season-2026-03",
+        "season-2026-05"
       ],
       "allPoints": 15,
       "countedPoints": 13,
@@ -1585,7 +1620,6 @@
     {
       "competitorId": "competitor-pawel-kostrzewski",
       "name": "Paweł Kostrzewski",
-      "starts": 5,
       "results": [
         {
           "eventId": "season-2026-02",
@@ -1606,7 +1640,7 @@
         {
           "eventId": "season-2026-08",
           "eventNumber": 8,
-          "date": "2026-07-26",
+          "date": "2026-07-25",
           "location": "Kleczew",
           "position": 3,
           "points": 3
@@ -1628,6 +1662,13 @@
           "points": 4
         }
       ],
+      "starts": 5,
+      "countedEventIds": [
+        "season-2026-10",
+        "season-2026-08",
+        "season-2026-09",
+        "season-2026-02"
+      ],
       "allPoints": 14,
       "countedPoints": 12,
       "rejectedPoints": 2,
@@ -1636,7 +1677,6 @@
     {
       "competitorId": "competitor-bartosz-postoj",
       "name": "Bartosz Postój",
-      "starts": 6,
       "results": [
         {
           "eventId": "season-2026-01",
@@ -1687,6 +1727,13 @@
           "points": 3
         }
       ],
+      "starts": 6,
+      "countedEventIds": [
+        "season-2026-06",
+        "season-2026-11",
+        "season-2026-01",
+        "season-2026-03"
+      ],
       "allPoints": 15,
       "countedPoints": 11,
       "rejectedPoints": 4,
@@ -1695,7 +1742,6 @@
     {
       "competitorId": "competitor-tomasz-lademann",
       "name": "Tomasz Lademann",
-      "starts": 2,
       "results": [
         {
           "eventId": "season-2026-02",
@@ -1714,6 +1760,11 @@
           "points": 4
         }
       ],
+      "starts": 2,
+      "countedEventIds": [
+        "season-2026-11",
+        "season-2026-02"
+      ],
       "allPoints": 7,
       "countedPoints": 7,
       "rejectedPoints": 0,
@@ -1722,7 +1773,6 @@
     {
       "competitorId": "competitor-krzysztof-kacnerski",
       "name": "Krzysztof Kacnerski",
-      "starts": 4,
       "results": [
         {
           "eventId": "season-2026-01",
@@ -1743,7 +1793,7 @@
         {
           "eventId": "season-2026-08",
           "eventNumber": 8,
-          "date": "2026-07-26",
+          "date": "2026-07-25",
           "location": "Kleczew",
           "position": 5,
           "points": 1
@@ -1757,6 +1807,13 @@
           "points": 2
         }
       ],
+      "starts": 4,
+      "countedEventIds": [
+        "season-2026-10",
+        "season-2026-01",
+        "season-2026-05",
+        "season-2026-08"
+      ],
       "allPoints": 5,
       "countedPoints": 5,
       "rejectedPoints": 0,
@@ -1765,7 +1822,6 @@
     {
       "competitorId": "competitor-marcin-schabowski",
       "name": "Marcin Schabowski",
-      "starts": 1,
       "results": [
         {
           "eventId": "season-2026-02",
@@ -1776,6 +1832,10 @@
           "points": 4
         }
       ],
+      "starts": 1,
+      "countedEventIds": [
+        "season-2026-02"
+      ],
       "allPoints": 4,
       "countedPoints": 4,
       "rejectedPoints": 0,
@@ -1784,7 +1844,6 @@
     {
       "competitorId": "competitor-mariusz-pachut",
       "name": "Mariusz Pachut",
-      "starts": 4,
       "results": [
         {
           "eventId": "season-2026-02",
@@ -1819,6 +1878,13 @@
           "points": 1
         }
       ],
+      "starts": 4,
+      "countedEventIds": [
+        "season-2026-02",
+        "season-2026-04",
+        "season-2026-09",
+        "season-2026-10"
+      ],
       "allPoints": 4,
       "countedPoints": 4,
       "rejectedPoints": 0,
@@ -1827,7 +1893,6 @@
     {
       "competitorId": "competitor-adam-wadolowski",
       "name": "Adam Wądołowski",
-      "starts": 2,
       "results": [
         {
           "eventId": "season-2026-06",
@@ -1840,11 +1905,16 @@
         {
           "eventId": "season-2026-08",
           "eventNumber": 8,
-          "date": "2026-07-26",
+          "date": "2026-07-25",
           "location": "Kleczew",
           "position": 4,
           "points": 2
         }
+      ],
+      "starts": 2,
+      "countedEventIds": [
+        "season-2026-08",
+        "season-2026-06"
       ],
       "allPoints": 3,
       "countedPoints": 3,
@@ -1854,7 +1924,6 @@
     {
       "competitorId": "competitor-michal-maruszewski",
       "name": "Michał Maruszewski",
-      "starts": 2,
       "results": [
         {
           "eventId": "season-2026-07",
@@ -1873,6 +1942,11 @@
           "points": 1
         }
       ],
+      "starts": 2,
+      "countedEventIds": [
+        "season-2026-07",
+        "season-2026-11"
+      ],
       "allPoints": 2,
       "countedPoints": 2,
       "rejectedPoints": 0,
@@ -1881,7 +1955,6 @@
     {
       "competitorId": "competitor-michal-sajdak-1786279130885-bf0b79",
       "name": "Michał Sajdak",
-      "starts": 1,
       "results": [
         {
           "eventId": "season-2026-11",
@@ -1892,6 +1965,10 @@
           "points": 2
         }
       ],
+      "starts": 1,
+      "countedEventIds": [
+        "season-2026-11"
+      ],
       "allPoints": 2,
       "countedPoints": 2,
       "rejectedPoints": 0,
@@ -1900,7 +1977,6 @@
     {
       "competitorId": "competitor-przemyslaw-marczewski",
       "name": "Przemysław Marczewski",
-      "starts": 1,
       "results": [
         {
           "eventId": "season-2026-04",
@@ -1910,6 +1986,10 @@
           "position": 4,
           "points": 2
         }
+      ],
+      "starts": 1,
+      "countedEventIds": [
+        "season-2026-04"
       ],
       "allPoints": 2,
       "countedPoints": 2,

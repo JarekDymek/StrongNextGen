@@ -447,7 +447,7 @@ def main():
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     outputs = {
-        "sezon_2026.json": season_payload,
+        "season_rebuild_candidate.json": season_payload,
         "zawodnicy_2026_ujednoliceni.json": profiles,
         "zawodnicy_puchar_polski_2026.json": cup_profiles,
         "konkurencje_2026_ujednolicone.json": canonical_events,

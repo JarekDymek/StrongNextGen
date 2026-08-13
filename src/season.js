@@ -30,6 +30,18 @@ export function mergeSeasonEvents(current, imported) {
     .map((event, index) => ({ ...event, number: index + 1 }));
 }
 
+export function mergeCanonicalSeasonEvents(canonical, local) {
+  const baseEvents = normalizeSeasonEvents(canonical);
+  const highestBaseNumber = baseEvents.reduce((maximum, event) => Math.max(maximum, event.number || 0), 0);
+  const baseIds = new Set(baseEvents.map(event => event.id).filter(Boolean));
+  const baseKeys = new Set(baseEvents.map(seasonEventKey));
+  const localOnly = normalizeSeasonEvents(local).filter(event => {
+    if (baseIds.has(event.id) || baseKeys.has(seasonEventKey(event))) return false;
+    return Number(event.number || 0) > highestBaseNumber;
+  });
+  return normalizeSeasonEvents([...baseEvents, ...localOnly]);
+}
+
 export function normalizeSeasonEvent(item, index = 0) {
   if (!item || typeof item !== 'object') return null;
   const date = normalizeIsoDate(item.date);
@@ -130,6 +142,10 @@ export function formatSeasonDate(value) {
 
 function compareSeasonEvents(a, b) {
   return a.date.localeCompare(b.date) || polishCollator.compare(a.location, b.location);
+}
+
+function seasonEventKey(event) {
+  return `${event.date}:${normalizeText(event.location)}`;
 }
 
 function normalizeIsoDate(value) {

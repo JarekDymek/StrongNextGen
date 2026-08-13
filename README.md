@@ -1,10 +1,14 @@
 # Strongman Next
 
-## Wersja stabilna 1.1.2
+## Wersja stabilna 1.2.0
 
 ### Klasyfikacja sezonu po 11 imprezach
 
-Wbudowana baza sezonu 2026 obejmuje zawody w Skalbmierzu z 9 sierpnia 2026. Aktualizacja jednorazowo uzupełnia brakujący rekord na urządzeniach ze starszym zapisem 10 imprez, nie duplikuje zawodów o tej samej dacie i miejscu oraz zachowuje późniejsze świadome edycje użytkownika. Pełne wyniki sześciu konkurencji Skalbmierza są zachowane w kanonicznym pliku sezonu, a klasyfikacja generalna nadal liczy cztery najlepsze starty według punktacji 5-4-3-2-1.
+Wbudowana baza sezonu 2026 obejmuje 11 imprez do Skalbmierza z 9 sierpnia 2026. Kanonicznym źródłem jest `data/KGpo11.json`; baza uwzględnia 3. miejsce Marcina Stankiewicza w Busku-Zdroju oraz datę Kleczewa 25 lipca. Migracja zastępuje wcześniejsze błędne imprezy 1–11, zachowując prawidłowe lokalne imprezy od numeru 12. Klasyfikacja nadal liczy cztery najlepsze starty według punktacji 5-4-3-2-1.
+
+### Zewnętrzny formularz zawodnika
+
+Formularz pod adresem `/formularz/` działa po polsku i angielsku. Generuje lokalnie plik zgłoszenia schema v2 z kodem reprezentowanego kraju, rekordami siłowymi, danymi kariery, kodami tytułów, wersjonowanymi oświadczeniami i wykadrowanym zdjęciem JPEG 120 × 120 px. Import starszych plików schema v1 pozostaje obsługiwany.
 
 ### Pomoc podczas zawodów
 
@@ -83,7 +87,8 @@ Zakładka `Sezon` jest niezależna od aktualnie prowadzonych zawodów. Pokazuje 
 
 Pliki wymiany i arkusz znajdują się w katalogu `data`:
 
-- `sezon_2026.json` - dziesięć zweryfikowanych imprez i klasyfikacje 1-5,
+- `KGpo11.json` - kanoniczna baza sezonu po 11 imprezach; jedyne źródło danych runtime,
+- `KGpo11.html` - czytelny raport referencyjny odpowiadający bazie po 11 imprezach,
 - `zawodnicy_2026_ujednoliceni.json` - pełna baza zawodników,
 - `zawodnicy_puchar_polski_2026.json` - zawodnicy wydzieleni do Pucharu Polski,
 - `konkurencje_2026_ujednolicone.json` - baza konkurencji bez duplikatów,
@@ -161,4 +166,4 @@ Formularz przetwarza dane i zdjęcie wyłącznie w przeglądarce zawodnika. Gene
 
 ## Status wydania
 
-Wersja 1.1.2 przeszła testy reguł punktacji, klasyfikacji sezonu po 11 imprezach, importu i eksportu, trwałej bazy zawodników, pełnego przebiegu zawodów, procedur Pomocy, widoków telefonu i iPada oraz uruchomienia PWA offline. Projekt nie wymaga procesu bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.
+Wersja 1.2.0 przeszła testy reguł punktacji, klasyfikacji sezonu po 11 imprezach, formularza PL/EN i croppera, importu schema v1/v2, trwałej bazy zawodników, pełnego przebiegu zawodów, procedur Pomocy, widoków telefonu i iPada oraz uruchomienia PWA offline. Projekt nie wymaga procesu bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.

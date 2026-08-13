@@ -56,6 +56,43 @@ const recovered = mergeCompetitorCollections([fullDatabaseRecord], [{
 assert.equal(recovered.records[0].photo, fullDatabaseRecord.photo);
 assert.equal(recovered.records[0].notes, 'Pełny opis');
 
+const structuredRecord = normalizeCompetitorRecord({
+  ...michal,
+  id: 'competitor-structured',
+  name: 'ZAWODNIK STRUKTURALNY',
+  countryCode: 'DE',
+  strengthRecords: { squatKg: 330, benchPressKg: 220, deadliftKg: 390 },
+  career: {
+    nationalBest: { level: 'NATIONAL_CHAMPIONSHIP', place: 1, year: 2025 },
+    internationalBest: null,
+    titleCodes: ['NATIONAL_CHAMPION']
+  }
+});
+assert.equal(structuredRecord.countryCode, 'DE');
+assert.equal(structuredRecord.strengthRecords.deadliftKg, 390);
+assert.deepEqual(structuredRecord.career.titleCodes, ['NATIONAL_CHAMPION']);
+
+const v1UpdatePreservesStructuredData = mergeCompetitorDetails(structuredRecord, {
+  id: structuredRecord.id,
+  name: structuredRecord.name,
+  residence: 'BERLIN'
+}, { mode: 'preferIncoming', categoriesMode: 'replace' });
+assert.equal(v1UpdatePreservesStructuredData.countryCode, 'DE');
+assert.equal(v1UpdatePreservesStructuredData.strengthRecords.squatKg, 330);
+assert.deepEqual(v1UpdatePreservesStructuredData.career.titleCodes, ['NATIONAL_CHAMPION']);
+
+const v2UpdateChangesStructuredData = mergeCompetitorDetails(structuredRecord, {
+  id: structuredRecord.id,
+  name: structuredRecord.name,
+  countryCode: 'PL',
+  strengthRecords: { deadliftKg: 400 },
+  career: { titleCodes: ['EUROPEAN_CHAMPION'] }
+}, { mode: 'preferIncoming', categoriesMode: 'replace' });
+assert.equal(v2UpdateChangesStructuredData.countryCode, 'PL');
+assert.equal(v2UpdateChangesStructuredData.strengthRecords.squatKg, 330);
+assert.equal(v2UpdateChangesStructuredData.strengthRecords.deadliftKg, 400);
+assert.deepEqual(v2UpdateChangesStructuredData.career.titleCodes, ['EUROPEAN_CHAMPION']);
+
 const missingRecovered = mergeCompetitorCollections([], [michal], { mode: 'fillMissing' });
 assert.equal(missingRecovered.records[0].id, michal.id);
 assert.equal(missingRecovered.records[0].residence, 'TARNÓW');
@@ -137,9 +174,13 @@ globalThis.localStorage = {
   setItem: (key, value) => values.set(key, String(value)),
   removeItem: key => values.delete(key)
 };
-saveCompetitorDatabase([michal]);
+saveCompetitorDatabase([michal, structuredRecord]);
 saveState({ schemaVersion: 3, competitors: [michal] });
 clearSavedState();
 assert.equal(loadCompetitorDatabase()[0].id, michal.id, 'Reset stanu zawodów nie może usuwać trwałej bazy');
+const storedStructured = loadCompetitorDatabase().find(item => item.id === structuredRecord.id);
+assert.equal(storedStructured.countryCode, 'DE');
+assert.equal(storedStructured.strengthRecords.deadliftKg, 390);
+assert.deepEqual(storedStructured.career.titleCodes, ['NATIONAL_CHAMPION']);
 
 console.log('Competitor data tests passed');

@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Klasyfikacja generalna Puchar Polski Strongman Tyberian Team 2026">
+  <title>Klasyfikacja generalna Puchar Polski Strongman Tyberian Team 2026</title>
+  <style>
+    :root{color-scheme:light;--navy:#0b2545;--orange:#f04a23;--green:#087a43;--gold:#f3b700;--ink:#111827;--muted:#425466;--line:#b7c4d1;--pale:#eef3f8}
+    *{box-sizing:border-box}
+    body{margin:0;color:var(--ink);background:#f5f8fb;font-family:Arial,Helvetica,sans-serif;letter-spacing:0}
+    .page{width:min(1120px,100%);margin:auto;padding:22px}
+    .hero{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:18px;border:3px solid var(--navy);border-radius:8px;padding:20px;background:#fff}
+    .logo{width:120px;max-height:82px;object-fit:contain}
+    .eyebrow{margin:0 0 5px;color:var(--orange);font-size:14px;font-weight:900;text-transform:uppercase}
+    h1{margin:0;font-size:clamp(26px,5vw,44px);line-height:1.05}
+    .hero-info{margin:10px 0 0;color:var(--muted);font-size:16px;font-weight:700}
+    .rules{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 22px}
+    .rule{border:2px solid var(--line);border-radius:8px;padding:13px;background:#fff;text-align:center}
+    .rule strong{display:block;color:var(--navy);font-size:22px}
+    .rule span{display:block;margin-top:3px;color:var(--muted);font-size:13px;font-weight:700}
+    .section-title{margin:28px 0 12px;font-size:25px}
+    .standings{display:grid;gap:10px}
+    .standing{display:grid;grid-template-columns:52px minmax(0,1fr) auto;align-items:start;gap:14px;border:2px solid var(--line);border-radius:8px;padding:14px;background:#fff}
+    .standing.is-podium{border-color:var(--gold)}
+    .rank{display:grid;width:44px;height:44px;place-items:center;border-radius:50%;color:#fff;background:var(--navy);font-size:20px;font-weight:900}
+    .standing-main{min-width:0}
+    .standing h2{margin:0;font-size:20px;overflow-wrap:anywhere}
+    .standing p{margin:4px 0 10px;color:var(--muted);font-size:14px;font-weight:700}
+    .total{align-self:center;color:var(--green);font-size:23px;white-space:nowrap}
+    .starts{display:flex;flex-wrap:wrap;gap:6px}
+    .start-chip{display:grid;min-width:96px;border:2px solid var(--line);border-radius:8px;padding:7px 9px;background:var(--pale)}
+    .start-chip small{overflow-wrap:anywhere;font-weight:800}
+    .start-chip strong{margin-top:2px}
+    .start-chip em{margin-top:2px;color:var(--muted);font-size:11px;font-style:normal}
+    .start-chip.is-counted{border-color:var(--green);background:#e8f7ef}
+    .start-chip.is-rejected{border-color:#c73737;background:#fff0f0;opacity:.8}
+    .events{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .event-card{break-inside:avoid;border:2px solid var(--line);border-radius:8px;padding:14px;background:#fff}
+    .event-card header{display:grid;grid-template-columns:42px minmax(0,1fr);align-items:center;gap:10px;margin-bottom:10px}
+    .event-card header>span{display:grid;width:38px;height:38px;place-items:center;border-radius:50%;color:#fff;background:var(--orange);font-weight:900}
+    .event-card h3,.event-card p{margin:0}.event-card p{margin-top:2px;color:var(--muted);font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border:1px solid var(--line);padding:8px;text-align:left}
+    th{color:#fff;background:var(--navy)}
+    td:first-child,td:last-child{width:76px;text-align:center;font-weight:900}
+    footer{margin-top:26px;border-top:2px solid var(--line);padding-top:14px;color:var(--muted);font-size:13px;text-align:center}
+    @media(max-width:700px){.page{padding:12px}.hero{grid-template-columns:78px minmax(0,1fr);padding:14px}.logo{width:78px}.rules{grid-template-columns:1fr}.standing{grid-template-columns:44px minmax(0,1fr);gap:10px}.rank{width:40px;height:40px}.total{grid-column:2;font-size:22px}.events{grid-template-columns:1fr}.start-chip{flex:1 1 104px}.section-title{font-size:22px}}
+    @media print{body{background:#fff}.page{width:100%;padding:0}.hero,.standing,.event-card,.rule{box-shadow:none}.standing,.event-card{break-inside:avoid}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div class="rank">SM</div>
+      <div>
+        <p class="eyebrow">Strongman Next · sezon 2026</p>
+        <h1>Puchar Polski Strongman Tyberian Team</h1>
+        <p class="hero-info">Klasyfikacja generalna po 11 imprezach</p>
+      </div>
+    </header>
+    <section class="rules" aria-label="Zasady klasyfikacji">
+      <div class="rule"><strong>5-4-3-2-1</strong><span>Punkty za miejsca 1-5</span></div>
+      <div class="rule"><strong>4</strong><span>Najlepsze starty w sumie</span></div>
+      <div class="rule"><strong>11</strong><span>Rozegrane imprezy</span></div>
+    </section>
+    <h2 class="section-title">Klasyfikacja generalna</h2>
+    <section class="standings">
+      <article class="standing is-podium">
+        <span class="rank">1</span>
+        <div class="standing-main">
+          <h2>Paweł Piskorz</h2>
+          <p>6 starty · wszystkie punkty: 23 · odrzucone: 4</p>
+          <div class="starts">
+        <span class="start-chip is-rejected">
+          <small>Kleszczów</small>
+          <strong>1 pkt</strong>
+          <em>5. miejsce · odrzucone</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Ruciane-Nida</small>
+          <strong>4 pkt</strong>
+          <em>2. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Tuszyn</small>
+          <strong>5 pkt</strong>
+          <em>1. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Kleczew</small>
+          <strong>5 pkt</strong>
+          <em>1. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Lubawka</small>
+          <strong>5 pkt</strong>
+          <em>1. miejsce</em>
+        </span>
+        <span class="start-chip is-rejected">
+          <small>Radwanice</small>
+          <strong>3 pkt</strong>
+          <em>3. miejsce · odrzucone</em>
+        </span></div>
+        </div>
+        <strong class="total">19 pkt</strong>
+      </article>
+      <article class="standing is-podium">
+        <span class="rank">2</span>
+        <div class="standing-main">
+          <h2>Łukasz Kieliszkowski</h2>
+          <p>4 starty · wszystkie punkty: 18</p>
+          <div class="starts">
+        <span class="start-chip is-counted">
+          <small>Siewierz</small>
+          <strong>5 pkt</strong>
+          <em>1. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Kleszczów</small>
+          <strong>5 pkt</strong>
+          <em>1. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Prabuty</small>
+          <strong>5 pkt</strong>
+          <em>1. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Tuszyn</small>
+          <strong>3 pkt</strong>
+          <em>3. miejsce</em>
+        </span></div>
+        </div>
+        <strong class="total">18 pkt</strong>
+      </article>
+      <article class="standing is-podium">
+        <span class="rank">2</span>
+        <div class="standing-main">
+          <h2>Rafał Sojc</h2>
+          <p>4 starty · wszystkie punkty: 18</p>
+          <div class="starts">
+        <span class="start-chip is-counted">
+          <small>Kleszczów</small>
+          <strong>4 pkt</strong>
+          <em>2. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Ruciane-Nida</small>
+          <strong>5 pkt</strong>
+          <em>1. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Busko-Zdrój</small>
+          <strong>5 pkt</strong>
+          <em>1. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Lubawka</small>
+          <strong>4 pkt</strong>
+          <em>2. miejsce</em>
+        </span></div>
+        </div>
+        <strong class="total">18 pkt</strong>
+      </article>
+      <article class="standing ">
+        <span class="rank">4</span>
+        <div class="standing-main">
+          <h2>Marcin Stankiewicz</h2>
+          <p>5 starty · wszystkie punkty: 19 · odrzucone: 3</p>
+          <div class="starts">
+        <span class="start-chip is-counted">
+          <small>Siewierz</small>
+          <strong>4 pkt</strong>
+          <em>2. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Ruciane-Nida</small>
+          <strong>3 pkt</strong>
+          <em>3. miejsce</em>
+        </span>
+        <span class="start-chip is-rejected">
+          <small>Busko-Zdrój</small>
+          <strong>3 pkt</strong>
+          <em>3. miejsce · odrzucone</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Kleczew</small>
+          <strong>4 pkt</strong>
+          <em>2. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Skalbmierz</small>
+          <strong>5 pkt</strong>
+          <em>1. miejsce</em>
+        </span></div>
+        </div>
+        <strong class="total">16 pkt</strong>
+      </article>
+      <article class="standing ">
+        <span class="rank">5</span>
+        <div class="standing-main">
+          <h2>Jakub Szczechowski</h2>
+          <p>3 starty · wszystkie punkty: 14</p>
+          <div class="starts">
+        <span class="start-chip is-counted">
+          <small>Czerwonak</small>
+          <strong>5 pkt</strong>
+          <em>1. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Prabuty</small>
+          <strong>4 pkt</strong>
+          <em>2. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Radwanice</small>
+          <strong>5 pkt</strong>
+          <em>1. miejsce</em>
+        </span></div>
+        </div>
+        <strong class="total">14 pkt</strong>
+      </article>
+      <article class="standing ">
+        <span class="rank">6</span>
+        <div class="standing-main">
+          <h2>Bartłomiej Bąbol</h2>
+          <p>5 starty · wszystkie punkty: 15 · odrzucone: 2</p>
+          <div class="starts">
+        <span class="start-chip is-counted">
+          <small>Siewierz</small>
+          <strong>3 pkt</strong>
+          <em>3. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Kleszczów</small>
+          <strong>3 pkt</strong>
+          <em>3. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Prabuty</small>
+          <strong>3 pkt</strong>
+          <em>3. miejsce</em>
+        </span>
+        <span class="start-chip is-rejected">
+          <small>Tuszyn</small>
+          <strong>2 pkt</strong>
+          <em>4. miejsce · odrzucone</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Busko-Zdrój</small>
+          <strong>4 pkt</strong>
+          <em>2. miejsce</em>
+        </span></div>
+        </div>
+        <strong class="total">13 pkt</strong>
+      </article>
+      <article class="standing ">
+        <span class="rank">7</span>
+        <div class="standing-main">
+          <h2>Paweł Kostrzewski</h2>
+          <p>5 starty · wszystkie punkty: 14 · odrzucone: 2</p>
+          <div class="starts">
+        <span class="start-chip is-counted">
+          <small>Czerwonak</small>
+          <strong>2 pkt</strong>
+          <em>4. miejsce</em>
+        </span>
+        <span class="start-chip is-rejected">
+          <small>Prabuty</small>
+          <strong>2 pkt</strong>
+          <em>4. miejsce · odrzucone</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Kleczew</small>
+          <strong>3 pkt</strong>
+          <em>3. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Lubawka</small>
+          <strong>3 pkt</strong>
+          <em>3. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Radwanice</small>
+          <strong>4 pkt</strong>
+          <em>2. miejsce</em>
+        </span></div>
+        </div>
+        <strong class="total">12 pkt</strong>
+      </article>
+      <article class="standing ">
+        <span class="rank">8</span>
+        <div class="standing-main">
+          <h2>Bartosz Postój</h2>
+          <p>6 starty · wszystkie punkty: 15 · odrzucone: 4</p>
+          <div class="starts">
+        <span class="start-chip is-counted">
+          <small>Siewierz</small>
+          <strong>2 pkt</strong>
+          <em>4. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Kleszczów</small>
+          <strong>2 pkt</strong>
+          <em>4. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Tuszyn</small>
+          <strong>4 pkt</strong>
+          <em>2. miejsce</em>
+        </span>
+        <span class="start-chip is-rejected">
+          <small>Busko-Zdrój</small>
+          <strong>2 pkt</strong>
+          <em>4. miejsce · odrzucone</em>
+        </span>
+        <span class="start-chip is-rejected">
+          <small>Lubawka</small>
+          <strong>2 pkt</strong>
+          <em>4. miejsce · odrzucone</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Skalbmierz</small>
+          <strong>3 pkt</strong>
+          <em>3. miejsce</em>
+        </span></div>
+        </div>
+        <strong class="total">11 pkt</strong>
+      </article>
+      <article class="standing ">
+        <span class="rank">9</span>
+        <div class="standing-main">
+          <h2>Tomasz Lademann</h2>
+          <p>2 starty · wszystkie punkty: 7</p>
+          <div class="starts">
+        <span class="start-chip is-counted">
+          <small>Czerwonak</small>
+          <strong>3 pkt</strong>
+          <em>3. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Skalbmierz</small>
+          <strong>4 pkt</strong>
+          <em>2. miejsce</em>
+        </span></div>
+        </div>
+        <strong class="total">7 pkt</strong>
+      </article>
+      <article class="standing ">
+        <span class="rank">10</span>
+        <div class="standing-main">
+          <h2>Krzysztof Kacnerski</h2>
+          <p>4 starty · wszystkie punkty: 5</p>
+          <div class="starts">
+        <span class="start-chip is-counted">
+          <small>Siewierz</small>
+          <strong>1 pkt</strong>
+          <em>5. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Prabuty</small>
+          <strong>1 pkt</strong>
+          <em>5. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Kleczew</small>
+          <strong>1 pkt</strong>
+          <em>5. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Radwanice</small>
+          <strong>2 pkt</strong>
+          <em>4. miejsce</em>
+        </span></div>
+        </div>
+        <strong class="total">5 pkt</strong>
+      </article>
+      <article class="standing ">
+        <span class="rank">11</span>
+        <div class="standing-main">
+          <h2>Marcin Schabowski</h2>
+          <p>1 start · wszystkie punkty: 4</p>
+          <div class="starts">
+        <span class="start-chip is-counted">
+          <small>Czerwonak</small>
+          <strong>4 pkt</strong>
+          <em>2. miejsce</em>
+        </span></div>
+        </div>
+        <strong class="total">4 pkt</strong>
+      </article>
+      <article class="standing ">
+        <span class="rank">11</span>
+        <div class="standing-main">
+          <h2>Mariusz Pachut</h2>
+          <p>4 starty · wszystkie punkty: 4</p>
+          <div class="starts">
+        <span class="start-chip is-counted">
+          <small>Czerwonak</small>
+          <strong>1 pkt</strong>
+          <em>5. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Ruciane-Nida</small>
+          <strong>1 pkt</strong>
+          <em>5. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Lubawka</small>
+          <strong>1 pkt</strong>
+          <em>5. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Radwanice</small>
+          <strong>1 pkt</strong>
+          <em>5. miejsce</em>
+        </span></div>
+        </div>
+        <strong class="total">4 pkt</strong>
+      </article>
+      <article class="standing ">
+        <span class="rank">13</span>
+        <div class="standing-main">
+          <h2>Adam Wądołowski</h2>
+          <p>2 starty · wszystkie punkty: 3</p>
+          <div class="starts">
+        <span class="start-chip is-counted">
+          <small>Tuszyn</small>
+          <strong>1 pkt</strong>
+          <em>5. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Kleczew</small>
+          <strong>2 pkt</strong>
+          <em>4. miejsce</em>
+        </span></div>
+        </div>
+        <strong class="total">3 pkt</strong>
+      </article>
+      <article class="standing ">
+        <span class="rank">14</span>
+        <div class="standing-main">
+          <h2>Michał Maruszewski</h2>
+          <p>2 starty · wszystkie punkty: 2</p>
+          <div class="starts">
+        <span class="start-chip is-counted">
+          <small>Busko-Zdrój</small>
+          <strong>1 pkt</strong>
+          <em>5. miejsce</em>
+        </span>
+        <span class="start-chip is-counted">
+          <small>Skalbmierz</small>
+          <strong>1 pkt</strong>
+          <em>5. miejsce</em>
+        </span></div>
+        </div>
+        <strong class="total">2 pkt</strong>
+      </article>
+      <article class="standing ">
+        <span class="rank">14</span>
+        <div class="standing-main">
+          <h2>Michał Sajdak</h2>
+          <p>1 start · wszystkie punkty: 2</p>
+          <div class="starts">
+        <span class="start-chip is-counted">
+          <small>Skalbmierz</small>
+          <strong>2 pkt</strong>
+          <em>4. miejsce</em>
+        </span></div>
+        </div>
+        <strong class="total">2 pkt</strong>
+      </article>
+      <article class="standing ">
+        <span class="rank">14</span>
+        <div class="standing-main">
+          <h2>Przemysław Marczewski</h2>
+          <p>1 start · wszystkie punkty: 2</p>
+          <div class="starts">
+        <span class="start-chip is-counted">
+          <small>Ruciane-Nida</small>
+          <strong>2 pkt</strong>
+          <em>4. miejsce</em>
+        </span></div>
+        </div>
+        <strong class="total">2 pkt</strong>
+      </article></section>
+    <h2 class="section-title">Wyniki poszczególnych imprez</h2>
+    <section class="events">
+    <article class="event-card">
+      <header>
+        <span>1</span>
+        <div>
+          <h3>Siewierz</h3>
+          <p>01.05.2026</p>
+        </div>
+      </header>
+      <table>
+        <thead><tr><th>Miejsce</th><th>Zawodnik</th><th>Punkty</th></tr></thead>
+        <tbody>
+          
+            <tr>
+              <td>1</td>
+              <td>Łukasz Kieliszkowski</td>
+              <td>5</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Marcin Stankiewicz</td>
+              <td>4</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Bartłomiej Bąbol</td>
+              <td>3</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Bartosz Postój</td>
+              <td>2</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Krzysztof Kacnerski</td>
+              <td>1</td>
+            </tr>
+        </tbody>
+      </table>
+    </article>
+    <article class="event-card">
+      <header>
+        <span>2</span>
+        <div>
+          <h3>Czerwonak</h3>
+          <p>30.05.2026</p>
+        </div>
+      </header>
+      <table>
+        <thead><tr><th>Miejsce</th><th>Zawodnik</th><th>Punkty</th></tr></thead>
+        <tbody>
+          
+            <tr>
+              <td>1</td>
+              <td>Jakub Szczechowski</td>
+              <td>5</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Marcin Schabowski</td>
+              <td>4</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Tomasz Lademann</td>
+              <td>3</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Paweł Kostrzewski</td>
+              <td>2</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Mariusz Pachut</td>
+              <td>1</td>
+            </tr>
+        </tbody>
+      </table>
+    </article>
+    <article class="event-card">
+      <header>
+        <span>3</span>
+        <div>
+          <h3>Kleszczów</h3>
+          <p>01.06.2026</p>
+        </div>
+      </header>
+      <table>
+        <thead><tr><th>Miejsce</th><th>Zawodnik</th><th>Punkty</th></tr></thead>
+        <tbody>
+          
+            <tr>
+              <td>1</td>
+              <td>Łukasz Kieliszkowski</td>
+              <td>5</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Rafał Sojc</td>
+              <td>4</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Bartłomiej Bąbol</td>
+              <td>3</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Bartosz Postój</td>
+              <td>2</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Paweł Piskorz</td>
+              <td>1</td>
+            </tr>
+        </tbody>
+      </table>
+    </article>
+    <article class="event-card">
+      <header>
+        <span>4</span>
+        <div>
+          <h3>Ruciane-Nida</h3>
+          <p>06.06.2026</p>
+        </div>
+      </header>
+      <table>
+        <thead><tr><th>Miejsce</th><th>Zawodnik</th><th>Punkty</th></tr></thead>
+        <tbody>
+          
+            <tr>
+              <td>1</td>
+              <td>Rafał Sojc</td>
+              <td>5</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Paweł Piskorz</td>
+              <td>4</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Marcin Stankiewicz</td>
+              <td>3</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Przemysław Marczewski</td>
+              <td>2</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Mariusz Pachut</td>
+              <td>1</td>
+            </tr>
+        </tbody>
+      </table>
+    </article>
+    <article class="event-card">
+      <header>
+        <span>5</span>
+        <div>
+          <h3>Prabuty</h3>
+          <p>07.06.2026</p>
+        </div>
+      </header>
+      <table>
+        <thead><tr><th>Miejsce</th><th>Zawodnik</th><th>Punkty</th></tr></thead>
+        <tbody>
+          
+            <tr>
+              <td>1</td>
+              <td>Łukasz Kieliszkowski</td>
+              <td>5</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Jakub Szczechowski</td>
+              <td>4</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Bartłomiej Bąbol</td>
+              <td>3</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Paweł Kostrzewski</td>
+              <td>2</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Krzysztof Kacnerski</td>
+              <td>1</td>
+            </tr>
+        </tbody>
+      </table>
+    </article>
+    <article class="event-card">
+      <header>
+        <span>6</span>
+        <div>
+          <h3>Tuszyn</h3>
+          <p>12.06.2026</p>
+        </div>
+      </header>
+      <table>
+        <thead><tr><th>Miejsce</th><th>Zawodnik</th><th>Punkty</th></tr></thead>
+        <tbody>
+          
+            <tr>
+              <td>1</td>
+              <td>Paweł Piskorz</td>
+              <td>5</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Bartosz Postój</td>
+              <td>4</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Łukasz Kieliszkowski</td>
+              <td>3</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Bartłomiej Bąbol</td>
+              <td>2</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Adam Wądołowski</td>
+              <td>1</td>
+            </tr>
+        </tbody>
+      </table>
+    </article>
+    <article class="event-card">
+      <header>
+        <span>7</span>
+        <div>
+          <h3>Busko-Zdrój</h3>
+          <p>27.06.2026</p>
+        </div>
+      </header>
+      <table>
+        <thead><tr><th>Miejsce</th><th>Zawodnik</th><th>Punkty</th></tr></thead>
+        <tbody>
+          
+            <tr>
+              <td>1</td>
+              <td>Rafał Sojc</td>
+              <td>5</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Bartłomiej Bąbol</td>
+              <td>4</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Marcin Stankiewicz</td>
+              <td>3</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Bartosz Postój</td>
+              <td>2</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Michał Maruszewski</td>
+              <td>1</td>
+            </tr>
+        </tbody>
+      </table>
+    </article>
+    <article class="event-card">
+      <header>
+        <span>8</span>
+        <div>
+          <h3>Kleczew</h3>
+          <p>25.07.2026</p>
+        </div>
+      </header>
+      <table>
+        <thead><tr><th>Miejsce</th><th>Zawodnik</th><th>Punkty</th></tr></thead>
+        <tbody>
+          
+            <tr>
+              <td>1</td>
+              <td>Paweł Piskorz</td>
+              <td>5</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Marcin Stankiewicz</td>
+              <td>4</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Paweł Kostrzewski</td>
+              <td>3</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Adam Wądołowski</td>
+              <td>2</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Krzysztof Kacnerski</td>
+              <td>1</td>
+            </tr>
+        </tbody>
+      </table>
+    </article>
+    <article class="event-card">
+      <header>
+        <span>9</span>
+        <div>
+          <h3>Lubawka</h3>
+          <p>26.07.2026</p>
+        </div>
+      </header>
+      <table>
+        <thead><tr><th>Miejsce</th><th>Zawodnik</th><th>Punkty</th></tr></thead>
+        <tbody>
+          
+            <tr>
+              <td>1</td>
+              <td>Paweł Piskorz</td>
+              <td>5</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Rafał Sojc</td>
+              <td>4</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Paweł Kostrzewski</td>
+              <td>3</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Bartosz Postój</td>
+              <td>2</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Mariusz Pachut</td>
+              <td>1</td>
+            </tr>
+        </tbody>
+      </table>
+    </article>
+    <article class="event-card">
+      <header>
+        <span>10</span>
+        <div>
+          <h3>Radwanice</h3>
+          <p>02.08.2026</p>
+        </div>
+      </header>
+      <table>
+        <thead><tr><th>Miejsce</th><th>Zawodnik</th><th>Punkty</th></tr></thead>
+        <tbody>
+          
+            <tr>
+              <td>1</td>
+              <td>Jakub Szczechowski</td>
+              <td>5</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Paweł Kostrzewski</td>
+              <td>4</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Paweł Piskorz</td>
+              <td>3</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Krzysztof Kacnerski</td>
+              <td>2</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Mariusz Pachut</td>
+              <td>1</td>
+            </tr>
+        </tbody>
+      </table>
+    </article>
+    <article class="event-card">
+      <header>
+        <span>11</span>
+        <div>
+          <h3>Skalbmierz</h3>
+          <p>09.08.2026</p>
+        </div>
+      </header>
+      <table>
+        <thead><tr><th>Miejsce</th><th>Zawodnik</th><th>Punkty</th></tr></thead>
+        <tbody>
+          
+            <tr>
+              <td>1</td>
+              <td>Marcin Stankiewicz</td>
+              <td>5</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Tomasz Lademann</td>
+              <td>4</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Bartosz Postój</td>
+              <td>3</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Michał Sajdak</td>
+              <td>2</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Michał Maruszewski</td>
+              <td>1</td>
+            </tr>
+        </tbody>
+      </table>
+    </article></section>
+    <footer>Wygenerowano 13.08.2026, 19:41:06 w aplikacji Strongman Next. Plik działa samodzielnie i nie wymaga dostępu do aplikacji.</footer>
+  </main>
+</body>
+</html>

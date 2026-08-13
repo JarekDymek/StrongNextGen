@@ -1,42 +1,12 @@
-export async function processPhoto(file, options = {}) {
+export async function decodePhotoFile(file) {
   if (!(file instanceof Blob) || !file.size || (file.type && !file.type.startsWith('image/'))) {
-    throw new Error('Wybierz prawidłowy plik graficzny.');
+    throw new Error('invalidPhoto');
   }
-  const image = await decodeImage(file);
-  const maxDimension = options.maxDimension || 120;
-  const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
-  const width = Math.max(1, Math.round(image.width * scale));
-  const height = Math.max(1, Math.round(image.height * scale));
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const context = canvas.getContext('2d', { alpha: false });
-  if (!context) throw new Error('Przeglądarka nie może przetworzyć zdjęcia.');
-  context.fillStyle = '#ffffff';
-  context.fillRect(0, 0, width, height);
-  context.drawImage(image, 0, 0, width, height);
-  image.close?.();
-
-  let quality = 0.82;
-  let blob = await canvasToBlob(canvas, quality);
-  while (blob.size > 10 * 1024 && quality > 0.5) {
-    quality = Number(Math.max(0.5, quality - 0.06).toFixed(2));
-    blob = await canvasToBlob(canvas, quality);
-  }
-  return {
-    dataUrl: await blobToDataUrl(blob),
-    width,
-    height,
-    bytes: blob.size
-  };
-}
-
-async function decodeImage(file) {
-  if ('createImageBitmap' in window) {
+  if (typeof globalThis.createImageBitmap === 'function') {
     try {
-      return await createImageBitmap(file, { imageOrientation: 'from-image' });
+      return await globalThis.createImageBitmap(file, { imageOrientation: 'from-image' });
     } catch {
-      // HTMLImageElement remains available on Safari versions with partial bitmap support.
+      // Safari versions with partial ImageBitmap support use the image fallback.
     }
   }
   const url = URL.createObjectURL(file);
@@ -54,9 +24,67 @@ async function decodeImage(file) {
   }
 }
 
+export async function encodeCroppedPhoto(image, sourceRect, options = {}) {
+  if (!image || !sourceRect) throw new Error('invalidPhoto');
+  const size = options.size || 120;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d', { alpha: false });
+  if (!context) throw new Error('photoReadError');
+  context.fillStyle = '#ffffff';
+  context.fillRect(0, 0, size, size);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = 'high';
+  context.drawImage(
+    image,
+    sourceRect.x,
+    sourceRect.y,
+    sourceRect.width,
+    sourceRect.height,
+    0,
+    0,
+    size,
+    size
+  );
+  const blob = await compressJpeg(canvas, options.targetBytes || 10 * 1024);
+  return {
+    dataUrl: await blobToDataUrl(blob),
+    width: size,
+    height: size,
+    bytes: blob.size
+  };
+}
+
+// Retained for compatibility with older tests and direct form integrations.
+export async function processPhoto(file, options = {}) {
+  const image = await decodePhotoFile(file);
+  try {
+    const side = Math.min(image.width, image.height);
+    return await encodeCroppedPhoto(image, {
+      x: (image.width - side) / 2,
+      y: (image.height - side) / 2,
+      width: side,
+      height: side
+    }, options);
+  } finally {
+    image.close?.();
+  }
+}
+
+async function compressJpeg(canvas, targetBytes) {
+  let quality = 0.86;
+  let blob = await canvasToBlob(canvas, quality);
+  while (blob.size > targetBytes && quality > 0.58) {
+    quality = Number(Math.max(0.58, quality - 0.05).toFixed(2));
+    blob = await canvasToBlob(canvas, quality);
+  }
+  return blob;
+}
+
 function canvasToBlob(canvas, quality) {
   return new Promise((resolve, reject) => {
-    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Nie udało się zapisać zdjęcia.')), 'image/jpeg', quality);
+    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('photoReadError')), 'image/jpeg', quality);
   });
 }
 
@@ -64,7 +92,7 @@ function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ''));
-    reader.onerror = () => reject(new Error('Nie udało się odczytać zdjęcia.'));
+    reader.onerror = () => reject(new Error('photoReadError'));
     reader.readAsDataURL(blob);
   });
 }

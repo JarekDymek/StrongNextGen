@@ -205,19 +205,30 @@ await formPage.goto(new URL('formularz/', baseUrl).href, { waitUntil: 'networkid
 assert.equal(await formPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
 await formPage.getByLabel('Imię i nazwisko').fill('  piotr   żółć ');
 await formPage.getByLabel('Data urodzenia').fill('1992-03-04');
-await formPage.getByLabel('Miejscowość').fill(' nowy   sącz ');
+await formPage.getByLabel('Miejscowość zamieszkania').fill(' nowy   sącz ');
+await formPage.getByLabel('Reprezentowany kraj').selectOption('PL');
 await formPage.getByLabel('Wzrost (cm)').fill('186');
 await formPage.getByLabel('Waga (kg)').fill('124.5');
-await formPage.getByLabel('Osiągnięcia i informacje').fill(' mistrz   regionu ');
+await formPage.getByLabel('Przysiad — rekord życiowy').fill('300');
+await formPage.getByLabel('Martwy ciąg — rekord życiowy').fill('360');
+await formPage.locator('[name="nationalLevel"]').selectOption('NATIONAL_CHAMPIONSHIP');
+await formPage.locator('[name="nationalPlace"]').fill('1');
+await formPage.locator('[name="nationalYear"]').fill('2025');
+await formPage.locator('[name="titleCodes"][value="NATIONAL_CHAMPION"]').check();
 await formPage.getByLabel('Puchar Polski').check();
 await formPage.getByLabel('Inne kategorie, oddzielone przecinkami').fill('pokazy, legenda, POKAZY');
 await formPage.locator('[data-photo-input]').setInputFiles({ name: 'duze-zdjecie.svg', mimeType: 'image/svg+xml', buffer: svg });
-await formPage.locator('[data-photo-status]').filter({ hasText: 'Gotowe: 90 x 120 px' }).waitFor();
+await formPage.locator('[data-photo-status]').filter({ hasText: 'Kadr gotowy' }).waitFor();
+await formPage.getByText('Potwierdzenie danych i zdjęcia', { exact: true }).click();
 await formPage.getByLabel(/Potwierdzam poprawność danych/).check();
+await formPage.getByText('Oświadczenie zawodnika', { exact: true }).click();
+await formPage.getByLabel(/Zapoznałem się z oświadczeniem/).check();
+await formPage.getByText('Informacja o przetwarzaniu danych osobowych', { exact: true }).click();
+await formPage.getByLabel(/Potwierdzam zapoznanie się z informacją/).check();
 await formPage.getByRole('button', { name: 'Sprawdź i przygotuj plik' }).click();
+await formPage.locator('[data-result-panel]').waitFor({ state: 'visible' });
 assert.equal(await formPage.getByLabel('Imię i nazwisko').inputValue(), 'PIOTR ŻÓŁĆ');
-assert.equal(await formPage.getByLabel('Miejscowość').inputValue(), 'NOWY SĄCZ');
-assert.equal(await formPage.getByLabel('Osiągnięcia i informacje').inputValue(), 'MISTRZ REGIONU');
+assert.equal(await formPage.getByLabel('Miejscowość zamieszkania').inputValue(), 'NOWY SĄCZ');
 
 const submissionDownloadPromise = formPage.waitForEvent('download');
 await formPage.getByRole('button', { name: 'Pobierz plik zgłoszenia JSON' }).click();
@@ -226,17 +237,22 @@ assert.equal(submissionDownload.suggestedFilename(), 'zawodnik_PIOTR_ZOLC.json')
 const submissionPath = path.join(artifacts, 'zawodnik_PIOTR_ZOLC.json');
 await submissionDownload.saveAs(submissionPath);
 const submissionJson = JSON.parse(await fs.readFile(submissionPath, 'utf8'));
-assert.equal(submissionJson.schemaVersion, 1);
+assert.equal(submissionJson.schemaVersion, 2);
 assert.equal(submissionJson.type, 'competitor-submission');
 assert.equal('id' in submissionJson.competitor, false);
 assert.equal(submissionJson.competitor.name, 'PIOTR ŻÓŁĆ');
 assert.equal(submissionJson.competitor.weight, '124.5');
+assert.equal(submissionJson.competitor.countryCode, 'PL');
+assert.equal(submissionJson.competitor.strengthRecords.deadliftKg, 360);
+assert.deepEqual(submissionJson.competitor.career.titleCodes, ['NATIONAL_CHAMPION']);
 assert.deepEqual(submissionJson.competitor.categories, ['Puchar Polski', 'POKAZY']);
 assert.equal(submissionJson.competitor.photo.startsWith('data:image/jpeg;base64,'), true);
 assert.ok(Buffer.from(submissionJson.competitor.photo.split(',')[1], 'base64').length <= 10 * 1024);
 await formPage.screenshot({ path: path.join(artifacts, 'external-form-phone.png'), fullPage: true });
 assert.deepEqual(formErrors, []);
 await formContext.close();
+await page.getByPlaceholder('Wpisz fragment imienia lub nazwiska').fill('');
+await page.getByRole('button', { name: 'Wszyscy', exact: true }).click();
 
 async function importCompetitorSubmission(payload) {
   const chooserPromise = page.waitForEvent('filechooser');
@@ -258,7 +274,16 @@ assert.equal(await importCompetitorSubmission(submissionJson), 'Dodaj nowego zaw
 const submittedRecord = await page.evaluate(() => JSON.parse(localStorage.getItem('strongman-next.competitor-database.v1')).find(item => item.name === 'PIOTR ŻÓŁĆ'));
 assert.ok(submittedRecord?.id);
 assert.deepEqual(submittedRecord.categories, ['Puchar Polski', 'POKAZY']);
+assert.equal(submittedRecord.countryCode, 'PL');
+assert.equal(submittedRecord.strengthRecords.deadliftKg, 360);
+assert.deepEqual(submittedRecord.career.titleCodes, ['NATIONAL_CHAMPION']);
 assert.equal(await page.evaluate(id => JSON.parse(localStorage.getItem('strongman-next.state.v1')).selectedCompetitorIds.includes(id), submittedRecord.id), false);
+await page.locator(`[data-competitor-id="${submittedRecord.id}"] [data-action="open-competitor-profile"]`).last().click();
+await page.locator('.profile-modal').getByText('Polska', { exact: true }).waitFor();
+await page.locator('.profile-modal').getByText('Martwy ciąg', { exact: true }).waitFor();
+await page.locator('.profile-modal').getByText('360 kg', { exact: true }).waitFor();
+await page.locator('.profile-modal').getByText('Mistrz kraju', { exact: true }).waitFor();
+await page.locator('.profile-modal').getByRole('button', { name: 'Zamknij', exact: true }).click();
 
 const updatedSubmission = structuredClone(submissionJson);
 updatedSubmission.competitor.notes = 'NOWE OSIĄGNIĘCIE';
@@ -273,6 +298,9 @@ assert.equal(updatedSubmissionInfo.count, 1);
 assert.equal(updatedSubmissionInfo.record.id, submittedRecord.id);
 assert.equal(updatedSubmissionInfo.record.notes, 'NOWE OSIĄGNIĘCIE');
 assert.deepEqual(updatedSubmissionInfo.record.categories, ['Inny']);
+assert.equal(updatedSubmissionInfo.record.countryCode, 'PL');
+assert.equal(updatedSubmissionInfo.record.strengthRecords.deadliftKg, 360);
+assert.deepEqual(updatedSubmissionInfo.record.career.titleCodes, ['NATIONAL_CHAMPION']);
 
 const michalId = 'competitor-michal-sajdak-1786279130885-bf0b79';
 const importedState = {
@@ -367,16 +395,28 @@ await seasonPage.waitForFunction(() => Boolean(localStorage.getItem('strongman-n
 await seasonPage.evaluate(() => {
   const state = JSON.parse(localStorage.getItem('strongman-next.state.v1'));
   state.baseRevision = 'help-workflows-v1-2026-08-12';
-  state.seasonEvents = state.seasonEvents.filter(event => event.id !== 'season-2026-11');
+  state.seasonEvents = state.seasonEvents.map(event => event.id === 'season-2026-11'
+    ? { ...event, ranking: [{ position: 1, name: 'BŁĘDNY ZAPIS LOKALNY' }] }
+    : event);
+  state.seasonEvents.push({
+    id: 'season-2026-12',
+    number: 12,
+    date: '2026-08-16',
+    location: 'Impreza użytkownika',
+    name: 'Impreza użytkownika · 16.08.2026',
+    ranking: [{ position: 1, name: 'NOWY ZAWODNIK' }]
+  });
   localStorage.setItem('strongman-next.state.v1', JSON.stringify(state));
 });
 await seasonPage.reload({ waitUntil: 'networkidle' });
 const migratedSeason = await seasonPage.evaluate(() => JSON.parse(localStorage.getItem('strongman-next.state.v1')));
-assert.equal(migratedSeason.seasonEvents.length, 11);
+assert.equal(migratedSeason.seasonEvents.length, 12);
 assert.equal(migratedSeason.seasonEvents.filter(event => event.id === 'season-2026-11').length, 1);
+assert.equal(migratedSeason.seasonEvents.find(event => event.id === 'season-2026-11').ranking[0].name, 'Marcin Stankiewicz');
+assert.equal(migratedSeason.seasonEvents.find(event => event.id === 'season-2026-12').location, 'Impreza użytkownika');
 await seasonPage.locator('[data-action="go-stage"][data-stage="season"]').click();
 await seasonPage.getByText('11. Skalbmierz · 09.08.2026', { exact: false }).waitFor();
-assert.equal(await seasonPage.locator('.season-event-card').count(), 11);
+assert.equal(await seasonPage.locator('.season-event-card').count(), 12);
 await seasonMigration.close();
 
 await browser.close();
