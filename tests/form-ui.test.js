@@ -26,10 +26,29 @@ try {
   await page.locator('[name="weight"]').fill('135');
   await page.locator('[name="squatKg"]').fill('330');
   await page.locator('[name="deadliftKg"]').fill('390');
-  await page.locator('[name="nationalLevel"]').selectOption('NATIONAL_CHAMPIONSHIP');
-  await page.locator('[name="nationalPlace"]').fill('1');
-  await page.locator('[name="nationalYear"]').fill('2025');
-  await page.locator('[name="titleCodes"][value="NATIONAL_CHAMPION"]').check();
+  const firstNational = page.locator('[data-career-list="national"] [data-career-entry]').first();
+  await firstNational.locator('[data-career-field="level"]').selectOption('NATIONAL_CHAMPIONSHIP');
+  await firstNational.locator('[data-career-field="place"]').fill('1');
+  await firstNational.locator('[data-career-field="year"]').fill('2025');
+  await page.locator('[data-add-career="national"]').click();
+  const secondNational = page.locator('[data-career-list="national"] [data-career-entry]').nth(1);
+  await secondNational.locator('[data-career-field="level"]').selectOption('NATIONAL_CUP');
+  await secondNational.locator('[data-career-field="place"]').fill('2');
+  await secondNational.locator('[data-career-field="year"]').fill('2024');
+  await page.locator('[data-add-career="national"]').click();
+  assert.equal(await page.locator('[data-career-list="national"] [data-career-entry]').count(), 3);
+  await page.locator('[data-career-list="national"] [data-career-entry]').last().locator('[data-remove-career]').click();
+  assert.equal(await page.locator('[data-career-list="national"] [data-career-entry]').count(), 2);
+
+  const firstInternational = page.locator('[data-career-list="international"] [data-career-entry]').first();
+  await firstInternational.locator('[data-career-field="level"]').selectOption('EUROPEAN_CHAMPIONSHIP');
+  await firstInternational.locator('[data-career-field="place"]').fill('3');
+  await firstInternational.locator('[data-career-field="year"]').fill('2024');
+  await page.locator('[data-add-career="international"]').click();
+  const secondInternational = page.locator('[data-career-list="international"] [data-career-entry]').nth(1);
+  await secondInternational.locator('[data-career-field="level"]').selectOption('WORLD_CHAMPIONSHIP');
+  await secondInternational.locator('[data-career-field="place"]').fill('5');
+  await secondInternational.locator('[data-career-field="year"]').fill('2023');
   await page.locator('[name="categories"][value="Puchar Polski"]').check();
 
   const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600"><rect width="600" height="600" fill="#ef4b23"/><rect x="600" width="600" height="600" fill="#245ee8"/></svg>');
@@ -53,21 +72,33 @@ try {
     name: document.querySelector('[name="name"]').value,
     country: document.querySelector('[name="countryCode"]').value,
     zoom: document.querySelector('[data-crop-zoom]').value,
-    title: document.querySelector('[name="titleCodes"][value="NATIONAL_CHAMPION"]').checked,
+    nationalCount: document.querySelectorAll('[data-career-list="national"] [data-career-entry]').length,
+    secondNationalLevel: document.querySelectorAll('[data-career-list="national"] [data-career-entry]')[1].querySelector('[data-career-field="level"]').value,
+    internationalCount: document.querySelectorAll('[data-career-list="international"] [data-career-entry]').length,
+    secondInternationalLevel: document.querySelectorAll('[data-career-list="international"] [data-career-entry]')[1].querySelector('[data-career-field="level"]').value,
     photo: document.querySelector('[data-photo-input]').files.length
   }));
-  assert.deepEqual(retained, { name: 'JOHN SMITH', country: 'DE', zoom: '2', title: true, photo: 1 });
+  assert.deepEqual(retained, {
+    name: 'JOHN SMITH',
+    country: 'DE',
+    zoom: '2',
+    nationalCount: 2,
+    secondNationalLevel: 'NATIONAL_CUP',
+    internationalCount: 2,
+    secondInternationalLevel: 'WORLD_CHAMPIONSHIP',
+    photo: 1
+  });
   assert.equal(await page.getByText('Germany', { exact: true }).count(), 1);
-  assert.equal(await page.locator('[name="nationalLevel"]').inputValue(), 'NATIONAL_CHAMPIONSHIP');
+  assert.equal(await firstNational.locator('[data-career-field="level"]').inputValue(), 'NATIONAL_CHAMPIONSHIP');
   await page.getByRole('button', { name: /PL/ }).click();
   assert.equal(await page.locator('[name="countryCode"] option:checked').textContent(), 'Niemcy');
 
   await page.getByText('Potwierdzenie danych i zdjęcia', { exact: true }).click();
   await page.locator('[name="dataAndPhotoConfirmed"]').check();
-  await page.getByText('Informacja o przetwarzaniu danych osobowych', { exact: true }).click();
-  await page.locator('[name="privacyNoticeAcknowledged"]').check();
+  assert.equal(await page.getByText('Tytuły Strongman', { exact: true }).count(), 0);
+  assert.equal(await page.getByText('Informacja o przetwarzaniu danych osobowych', { exact: true }).count(), 0);
   await page.getByRole('button', { name: 'Sprawdź i przygotuj plik' }).click();
-  await page.locator('[data-form-status]').filter({ hasText: 'potwierdź dane' }).waitFor();
+  await page.locator('[data-form-status]').filter({ hasText: 'potwierdź poprawność danych' }).waitFor();
   await page.getByText('Oświadczenie zawodnika', { exact: true }).click();
   await page.locator('[name="riskAccepted"]').check();
   await page.getByRole('button', { name: 'Sprawdź i przygotuj plik' }).click();
@@ -84,10 +115,15 @@ try {
   assert.equal(submission.competitor.name, 'JOHN SMITH');
   assert.equal(submission.competitor.countryCode, 'DE');
   assert.equal(submission.competitor.strengthRecords.benchPressKg, null);
-  assert.deepEqual(submission.competitor.career.titleCodes, ['NATIONAL_CHAMPION']);
+  assert.equal(submission.competitor.career.nationalResults.length, 2);
+  assert.equal(submission.competitor.career.nationalResults[1].level, 'NATIONAL_CUP');
+  assert.equal(submission.competitor.career.internationalResults.length, 2);
+  assert.equal(submission.competitor.career.internationalResults[1].level, 'WORLD_CHAMPIONSHIP');
+  assert.equal('titleCodes' in submission.competitor.career, false);
   assert.equal(submission.declarations.riskAccepted, true);
   assert.equal(submission.declarations.mediaPermissionAccepted, false);
-  assert.equal(submission.declarations.version, '2026-08-v1');
+  assert.equal(submission.declarations.version, '2026-08-v2');
+  assert.equal('privacyNoticeAcknowledged' in submission.declarations, false);
   assert.match(submission.competitor.photo, /^data:image\/jpeg;base64,/);
   const photoSize = await page.evaluate(async dataUrl => {
     const image = new Image();

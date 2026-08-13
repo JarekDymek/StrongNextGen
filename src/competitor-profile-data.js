@@ -112,11 +112,33 @@ export function normalizeStrengthRecords(source) {
 
 export function normalizeCareer(source) {
   const value = source && typeof source === 'object' && !Array.isArray(source) ? source : {};
+  const nationalResults = normalizeCareerResults(
+    Array.isArray(value.nationalResults) ? value.nationalResults : value.nationalBest ? [value.nationalBest] : [],
+    NATIONAL_LEVEL_SET
+  );
+  const internationalResults = normalizeCareerResults(
+    Array.isArray(value.internationalResults) ? value.internationalResults : value.internationalBest ? [value.internationalBest] : [],
+    INTERNATIONAL_LEVEL_SET
+  );
   return {
-    nationalBest: normalizeCareerBest(value.nationalBest, NATIONAL_LEVEL_SET),
-    internationalBest: normalizeCareerBest(value.internationalBest, INTERNATIONAL_LEVEL_SET),
+    nationalResults,
+    internationalResults,
     titleCodes: normalizeEnumList(value.titleCodes, TITLE_CODE_SET)
   };
+}
+
+export function normalizeCareerResults(values, allowedLevels) {
+  const results = [];
+  const seen = new Set();
+  (Array.isArray(values) ? values : []).forEach(value => {
+    const result = normalizeCareerBest(value, allowedLevels);
+    if (!result) return;
+    const key = [result.level, result.place, result.year, result.eventName || ''].join(':');
+    if (seen.has(key)) return;
+    seen.add(key);
+    results.push(result);
+  });
+  return results.slice(0, 20);
 }
 
 export function normalizeCareerBest(source, allowedLevels) {

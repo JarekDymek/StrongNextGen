@@ -167,23 +167,19 @@ function mergeStrengthRecords(current, incoming, { preferIncoming = false } = {}
 function mergeCareer(current, incoming, { preferIncoming = false } = {}) {
   const previous = normalizeCareer(current);
   const candidate = normalizeCareer(incoming);
-  const chooseBest = (oldValue, newValue) => {
-    if (preferIncoming && hasCareerBestValue(newValue)) return newValue;
-    return hasCareerBestValue(oldValue) ? oldValue : newValue;
+  const chooseResults = (oldValues, newValues) => {
+    if (preferIncoming && newValues.length) return newValues;
+    return oldValues.length ? oldValues : newValues;
   };
   return {
-    nationalBest: chooseBest(previous.nationalBest, candidate.nationalBest),
-    internationalBest: chooseBest(previous.internationalBest, candidate.internationalBest),
+    nationalResults: chooseResults(previous.nationalResults, candidate.nationalResults),
+    internationalResults: chooseResults(previous.internationalResults, candidate.internationalResults),
     titleCodes: preferIncoming && candidate.titleCodes.length
       ? candidate.titleCodes
       : previous.titleCodes.length
         ? previous.titleCodes
         : candidate.titleCodes
   };
-}
-
-function hasCareerBestValue(value) {
-  return Boolean(value && (value.level || value.place !== null || value.year !== null || value.eventName));
 }
 
 function hasOwn(value, key) {

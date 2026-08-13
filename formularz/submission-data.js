@@ -6,10 +6,10 @@ import {
   normalizeCountryCode,
   normalizeOptionalNumber,
   normalizeStrengthRecords,
-  normalizeUpperText as normalizeProfileText,
-  TITLE_CODES
+  normalizeUpperText as normalizeProfileText
 } from '../src/competitor-profile-data.js';
-import { LEGAL_TEXT_VERSION } from './legal-config.js';
+
+export const LEGAL_TEXT_VERSION = '2026-08-v2';
 
 export const SYSTEM_CATEGORIES = Object.freeze([
   'Puchar Polski',
@@ -107,15 +107,27 @@ export function createStrengthRecords(values) {
 }
 
 export function createCareer(values) {
+  const nationalResults = buildCareerResults(
+    Array.isArray(values.nationalResults) ? values.nationalResults : values.nationalBest ? [values.nationalBest] : [],
+    NATIONAL_LEVEL_CODES
+  );
+  const internationalResults = buildCareerResults(
+    Array.isArray(values.internationalResults) ? values.internationalResults : values.internationalBest ? [values.internationalBest] : [],
+    INTERNATIONAL_LEVEL_CODES
+  );
   const candidate = normalizeCareer({
-    nationalBest: buildCareerBest(values.nationalBest, NATIONAL_LEVEL_CODES),
-    internationalBest: buildCareerBest(values.internationalBest, INTERNATIONAL_LEVEL_CODES),
-    titleCodes: (Array.isArray(values.titleCodes) ? values.titleCodes : []).filter(code => TITLE_CODES.includes(code))
+    nationalResults,
+    internationalResults
   });
-  if (!isCompleteCareerBest(candidate.nationalBest) || !isCompleteCareerBest(candidate.internationalBest)) {
+  if (![...candidate.nationalResults, ...candidate.internationalResults].every(isCompleteCareerBest) ||
+      candidate.nationalResults.length !== nationalResults.length ||
+      candidate.internationalResults.length !== internationalResults.length) {
     throw new Error('invalidCareer');
   }
-  return candidate;
+  return {
+    nationalResults: candidate.nationalResults,
+    internationalResults: candidate.internationalResults
+  };
 }
 
 export function createDeclarations(values, locale, now = new Date()) {
@@ -125,10 +137,9 @@ export function createDeclarations(values, locale, now = new Date()) {
     dataAndPhotoConfirmed: Boolean(values.dataAndPhotoConfirmed),
     riskAccepted: Boolean(values.riskAccepted),
     mediaPermissionAccepted: Boolean(values.mediaPermissionAccepted),
-    privacyNoticeAcknowledged: Boolean(values.privacyNoticeAcknowledged),
     acceptedAt: now.toISOString()
   };
-  if (!declarations.dataAndPhotoConfirmed || !declarations.riskAccepted || !declarations.privacyNoticeAcknowledged) {
+  if (!declarations.dataAndPhotoConfirmed || !declarations.riskAccepted) {
     throw new Error('invalidDeclarations');
   }
   return declarations;
@@ -157,6 +168,12 @@ function buildCareerBest(value, allowedCodes) {
     year: value.year,
     eventName: normalizeUpperText(value.eventName)
   };
+}
+
+function buildCareerResults(values, allowedCodes) {
+  return values
+    .map(value => buildCareerBest(value, allowedCodes))
+    .filter(Boolean);
 }
 
 function categoryKey(value) {

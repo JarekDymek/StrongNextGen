@@ -90,11 +90,26 @@ function validateSubmissionProfileData(source, schemaVersion) {
   if (rawTitleCodes !== undefined && (!Array.isArray(rawTitleCodes) || rawTitleCodes.some(code => !TITLE_CODES.includes(String(code))))) {
     return { ok: false, error: 'Lista tytułów zawiera nieznany kod.' };
   }
-  if (!validCareerBest(source.career?.nationalBest, career.nationalBest, NATIONAL_LEVEL_CODES) ||
-      !validCareerBest(source.career?.internationalBest, career.internationalBest, INTERNATIONAL_LEVEL_CODES)) {
+  if (!validCareerResults(source.career, 'nationalResults', 'nationalBest', career.nationalResults, NATIONAL_LEVEL_CODES) ||
+      !validCareerResults(source.career, 'internationalResults', 'internationalBest', career.internationalResults, INTERNATIONAL_LEVEL_CODES)) {
     return { ok: false, error: 'Wynik kariery wymaga prawidłowego rodzaju zawodów, miejsca i roku.' };
   }
   return { ok: true, strengthRecords, career };
+}
+
+function validCareerResults(source, arrayField, legacyField, normalized, allowedLevels) {
+  if (source?.[arrayField] !== undefined && !Array.isArray(source[arrayField])) return false;
+  const rawValues = Array.isArray(source?.[arrayField])
+    ? source[arrayField]
+    : source?.[legacyField]
+      ? [source[legacyField]]
+      : [];
+  if (rawValues.some(value => value !== null && value !== undefined &&
+      (!value || typeof value !== 'object' || Array.isArray(value)))) return false;
+  const raw = rawValues.filter(value => value && typeof value === 'object' && !Array.isArray(value) &&
+    Object.values(value).some(item => String(item ?? '').trim() !== ''));
+  if (raw.length > 20 || normalized.length !== raw.length) return false;
+  return raw.every((value, index) => validCareerBest(value, normalized[index], allowedLevels));
 }
 
 function validCareerBest(raw, normalized, allowedLevels) {
@@ -113,17 +128,18 @@ function normalizeSubmissionDeclarations(value) {
   const version = String(value.version || '').trim();
   const acceptedAt = String(value.acceptedAt || '').trim();
   if (!locale || !version || version.length > 40 || Number.isNaN(Date.parse(acceptedAt))) return null;
-  if (value.dataAndPhotoConfirmed !== true || value.riskAccepted !== true || value.privacyNoticeAcknowledged !== true) return null;
+  if (value.dataAndPhotoConfirmed !== true || value.riskAccepted !== true) return null;
   if (typeof value.mediaPermissionAccepted !== 'boolean') return null;
-  return {
+  const declarations = {
     version,
     locale,
     dataAndPhotoConfirmed: true,
     riskAccepted: true,
     mediaPermissionAccepted: value.mediaPermissionAccepted,
-    privacyNoticeAcknowledged: true,
     acceptedAt: new Date(acceptedAt).toISOString()
   };
+  if (value.privacyNoticeAcknowledged === true) declarations.privacyNoticeAcknowledged = true;
+  return declarations;
 }
 
 function normalizeSubmissionText(value) {

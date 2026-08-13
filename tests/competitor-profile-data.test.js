@@ -24,8 +24,22 @@ const career = normalizeCareer({
   internationalBest: { level: 'EUROPEAN_CHAMPIONSHIP', place: 3, year: 2024 },
   titleCodes: ['NATIONAL_CHAMPION', 'NATIONAL_CHAMPION', 'INVALID']
 });
-assert.equal(isCompleteCareerBest(career.nationalBest), true);
+assert.equal(isCompleteCareerBest(career.nationalResults[0]), true);
+assert.equal(isCompleteCareerBest(career.internationalResults[0]), true);
 assert.deepEqual(career.titleCodes, ['NATIONAL_CHAMPION']);
-assert.equal(isCompleteCareerBest(normalizeCareer({ nationalBest: { level: 'NATIONAL_CHAMPIONSHIP', year: 2025 } }).nationalBest), false);
+assert.equal(isCompleteCareerBest(normalizeCareer({ nationalBest: { level: 'NATIONAL_CHAMPIONSHIP', year: 2025 } }).nationalResults[0]), false);
+
+const multipleCareer = normalizeCareer({
+  nationalResults: [
+    { level: 'NATIONAL_CHAMPIONSHIP', place: 1, year: 2025 },
+    { level: 'NATIONAL_CUP', place: 2, year: 2024 }
+  ],
+  internationalResults: [
+    { level: 'WORLD_CHAMPIONSHIP', place: 5, year: 2023 },
+    { level: 'EUROPEAN_CHAMPIONSHIP', place: 3, year: 2024 }
+  ]
+});
+assert.equal(multipleCareer.nationalResults.length, 2);
+assert.equal(multipleCareer.internationalResults.length, 2);
 
 console.log('Competitor profile data tests passed');

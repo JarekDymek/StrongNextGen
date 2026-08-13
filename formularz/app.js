@@ -3,12 +3,10 @@ import {
   COUNTRY_CODES,
   INTERNATIONAL_LEVEL_CODES,
   NATIONAL_LEVEL_CODES,
-  SPORT_LABELS,
-  TITLE_CODES
+  SPORT_LABELS
 } from '../src/competitor-profile-data.js';
 import { createPhotoCropper } from './cropper.js';
 import { applyTranslations, translate } from './i18n.js';
-import { privacyNotice } from './legal-config.js';
 import { createSubmission, normalizeUpperText, submissionFilename } from './submission-data.js';
 
 const form = document.querySelector('[data-submission-form]');
@@ -28,10 +26,30 @@ const cropper = createPhotoCropper({
   onChange: invalidatePreparedSubmission
 });
 
+initializeCareerLists();
 applyLocale('pl');
 
 document.querySelectorAll('[data-locale]').forEach(button => {
   button.addEventListener('click', () => applyLocale(button.dataset.locale));
+});
+
+document.querySelectorAll('[data-add-career]').forEach(button => {
+  button.addEventListener('click', () => addCareerEntry(button.dataset.addCareer));
+});
+
+form.addEventListener('click', event => {
+  const button = event.target.closest('[data-remove-career]');
+  if (!button) return;
+  const entry = button.closest('[data-career-entry]');
+  const list = entry?.closest('[data-career-list]');
+  if (!entry || !list) return;
+  if (list.children.length === 1) {
+    entry.querySelectorAll('input, select').forEach(control => { control.value = ''; });
+  } else {
+    entry.remove();
+  }
+  updateCareerEntryLabels(list.dataset.careerList);
+  invalidatePreparedSubmission();
 });
 
 form.addEventListener('input', event => {
@@ -106,25 +124,13 @@ form.addEventListener('submit', async event => {
         deadliftKg: data.get('deadliftKg')
       },
       career: {
-        nationalBest: {
-          level: data.get('nationalLevel'),
-          place: data.get('nationalPlace'),
-          year: data.get('nationalYear'),
-          eventName: data.get('nationalEventName')
-        },
-        internationalBest: {
-          level: data.get('internationalLevel'),
-          place: data.get('internationalPlace'),
-          year: data.get('internationalYear'),
-          eventName: data.get('internationalEventName')
-        },
-        titleCodes: data.getAll('titleCodes')
+        nationalResults: readCareerEntries('national'),
+        internationalResults: readCareerEntries('international')
       },
       declarations: {
         dataAndPhotoConfirmed: data.get('dataAndPhotoConfirmed') === 'on',
         riskAccepted: data.get('riskAccepted') === 'on',
-        mediaPermissionAccepted: data.get('mediaPermissionAccepted') === 'on',
-        privacyNoticeAcknowledged: data.get('privacyNoticeAcknowledged') === 'on'
+        mediaPermissionAccepted: data.get('mediaPermissionAccepted') === 'on'
       }
     }, photo.dataUrl);
     normalizeVisibleText(preparedSubmission);
@@ -162,8 +168,7 @@ function applyLocale(nextLocale) {
   });
   rebuildCountryOptions();
   rebuildCareerOptions();
-  rebuildTitleOptions();
-  document.querySelector('[data-privacy-notice]').textContent = privacyNotice(locale);
+  document.querySelectorAll('[data-career-list]').forEach(list => updateCareerEntryLabels(list.dataset.careerList));
   updatePhotoButtonLabel();
 }
 
@@ -188,23 +193,6 @@ function rebuildCareerOptions() {
   });
 }
 
-function rebuildTitleOptions() {
-  const container = document.querySelector('[data-title-options]');
-  const checked = new Set(new FormData(form).getAll('titleCodes'));
-  container.replaceChildren(...TITLE_CODES.map(code => {
-    const label = document.createElement('label');
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    input.name = 'titleCodes';
-    input.value = code;
-    input.checked = checked.has(code);
-    const span = document.createElement('span');
-    span.textContent = SPORT_LABELS[locale][code];
-    label.append(input, span);
-    return label;
-  }));
-}
-
 function option(value, label) {
   const element = document.createElement('option');
   element.value = value;
@@ -218,8 +206,47 @@ function normalizeVisibleText(submission) {
   form.elements.height.value = submission.competitor.height;
   form.elements.weight.value = submission.competitor.weight;
   form.elements.customCategories.value = normalizeUpperText(form.elements.customCategories.value);
-  form.elements.nationalEventName.value = normalizeUpperText(form.elements.nationalEventName.value);
-  form.elements.internationalEventName.value = normalizeUpperText(form.elements.internationalEventName.value);
+  form.querySelectorAll('[data-career-field="eventName"]').forEach(input => {
+    input.value = normalizeUpperText(input.value);
+  });
+}
+
+function initializeCareerLists() {
+  addCareerEntry('national');
+  addCareerEntry('international');
+}
+
+function addCareerEntry(kind) {
+  const list = document.querySelector(`[data-career-list="${kind}"]`);
+  if (!list || list.children.length >= 20) return;
+  const entry = document.querySelector('[data-career-template]').content.firstElementChild.cloneNode(true);
+  entry.dataset.careerKind = kind;
+  entry.querySelector('[data-level-select]').dataset.levelSelect = kind;
+  list.append(entry);
+  applyTranslations(entry, locale);
+  rebuildCareerOptions();
+  updateCareerEntryLabels(kind);
+  invalidatePreparedSubmission();
+}
+
+function updateCareerEntryLabels(kind) {
+  const entries = [...document.querySelectorAll(`[data-career-list="${kind}"] [data-career-entry]`)];
+  entries.forEach((entry, index) => {
+    entry.querySelector('[data-career-entry-title]').textContent = `${translate(locale, 'careerResult')} ${index + 1}`;
+    const removeButton = entry.querySelector('[data-remove-career]');
+    removeButton.hidden = entries.length === 1;
+    removeButton.title = translate(locale, 'removeResult');
+    removeButton.setAttribute('aria-label', translate(locale, 'removeResult'));
+  });
+}
+
+function readCareerEntries(kind) {
+  return [...document.querySelectorAll(`[data-career-list="${kind}"] [data-career-entry]`)].map(entry => ({
+    level: entry.querySelector('[data-career-field="level"]').value,
+    place: entry.querySelector('[data-career-field="place"]').value,
+    year: entry.querySelector('[data-career-field="year"]').value,
+    eventName: entry.querySelector('[data-career-field="eventName"]').value
+  }));
 }
 
 function showPreparedSubmission(submission) {

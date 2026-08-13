@@ -1,6 +1,6 @@
 # Strongman Next
 
-## Wersja stabilna 1.2.0
+## Wersja stabilna 1.2.1
 
 ### Klasyfikacja sezonu po 11 imprezach
 
@@ -8,7 +8,7 @@ Wbudowana baza sezonu 2026 obejmuje 11 imprez do Skalbmierza z 9 sierpnia 2026. 
 
 ### Zewnętrzny formularz zawodnika
 
-Formularz pod adresem `/formularz/` działa po polsku i angielsku. Generuje lokalnie plik zgłoszenia schema v2 z kodem reprezentowanego kraju, rekordami siłowymi, danymi kariery, kodami tytułów, wersjonowanymi oświadczeniami i wykadrowanym zdjęciem JPEG 120 × 120 px. Import starszych plików schema v1 pozostaje obsługiwany.
+Formularz pod adresem `/formularz/` działa po polsku i angielsku. Generuje lokalnie plik zgłoszenia schema v2 z kodem reprezentowanego kraju, rekordami siłowymi, wieloma wynikami kariery krajowej i międzynarodowej, wersjonowanymi oświadczeniami i wykadrowanym zdjęciem JPEG 120 × 120 px. Import starszych plików schema v1 oraz wcześniejszej odmiany schema v2 pozostaje obsługiwany.
 
 ### Pomoc podczas zawodów
 
@@ -166,4 +166,4 @@ Formularz przetwarza dane i zdjęcie wyłącznie w przeglądarce zawodnika. Gene
 
 ## Status wydania
 
-Wersja 1.2.0 przeszła testy reguł punktacji, klasyfikacji sezonu po 11 imprezach, formularza PL/EN i croppera, importu schema v1/v2, trwałej bazy zawodników, pełnego przebiegu zawodów, procedur Pomocy, widoków telefonu i iPada oraz uruchomienia PWA offline. Projekt nie wymaga procesu bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.
+Wersja 1.2.1 przeszła testy reguł punktacji, klasyfikacji sezonu po 11 imprezach, formularza PL/EN z wieloma wynikami kariery i cropperem, importu schema v1/v2, trwałej bazy zawodników, pełnego przebiegu zawodów, procedur Pomocy, widoków telefonu i iPada oraz uruchomienia PWA offline. Projekt nie wymaga procesu bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.

@@ -1406,8 +1406,12 @@ function renderStructuredCompetitorDetails(competitor) {
   ].filter(([, value]) => value !== null);
   const career = normalizeCareer(competitor.career);
   const careerRows = [];
-  if (career.nationalBest) careerRows.push(['Najlepszy wynik krajowy', formatCareerBest(career.nationalBest)]);
-  if (career.internationalBest) careerRows.push(['Najlepszy wynik międzynarodowy', formatCareerBest(career.internationalBest)]);
+  career.nationalResults.forEach((result, index) => {
+    careerRows.push([`Wynik krajowy ${index + 1}`, formatCareerBest(result)]);
+  });
+  career.internationalResults.forEach((result, index) => {
+    careerRows.push([`Wynik międzynarodowy ${index + 1}`, formatCareerBest(result)]);
+  });
   if (career.titleCodes.length) {
     careerRows.push(['Tytuły', career.titleCodes.map(code => SPORT_LABELS.pl[code] || code).join(', ')]);
   }

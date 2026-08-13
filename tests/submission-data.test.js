@@ -33,15 +33,18 @@ const values = {
   customCategories: 'pokazy',
   strengthRecords: { squatKg: '330', benchPressKg: '', deadliftKg: '390.5' },
   career: {
-    nationalBest: { level: 'NATIONAL_CHAMPIONSHIP', place: '1', year: '2025', eventName: ' german cup ' },
-    internationalBest: { level: 'EUROPEAN_CHAMPIONSHIP', place: '3', year: '2024', eventName: '' },
-    titleCodes: ['NATIONAL_CHAMPION', 'NATIONAL_CHAMPION', 'UNKNOWN']
+    nationalResults: [
+      { level: 'NATIONAL_CHAMPIONSHIP', place: '1', year: '2025', eventName: ' german cup ' },
+      { level: 'NATIONAL_CUP', place: '2', year: '2024', eventName: '' }
+    ],
+    internationalResults: [
+      { level: 'EUROPEAN_CHAMPIONSHIP', place: '3', year: '2024', eventName: '' }
+    ]
   },
   declarations: {
     dataAndPhotoConfirmed: true,
     riskAccepted: true,
-    mediaPermissionAccepted: false,
-    privacyNoticeAcknowledged: true
+    mediaPermissionAccepted: false
   }
 };
 const submission = createSubmission(values, photo, now);
@@ -56,14 +59,17 @@ assert.equal(submission.competitor.weight, '135.5');
 assert.equal(submission.competitor.strengthRecords.squatKg, 330);
 assert.equal(submission.competitor.strengthRecords.benchPressKg, null);
 assert.equal(submission.competitor.strengthRecords.deadliftKg, 390.5);
-assert.equal(submission.competitor.career.nationalBest.eventName, 'GERMAN CUP');
-assert.deepEqual(submission.competitor.career.titleCodes, ['NATIONAL_CHAMPION']);
+assert.equal(submission.competitor.career.nationalResults[0].eventName, 'GERMAN CUP');
+assert.equal(submission.competitor.career.nationalResults.length, 2);
+assert.equal(submission.competitor.career.internationalResults.length, 1);
+assert.equal('titleCodes' in submission.competitor.career, false);
 assert.deepEqual(submission.competitor.categories, ['Puchar Polski', 'POKAZY']);
 assert.equal('notes' in submission.competitor, false);
 assert.equal('id' in submission.competitor, false);
-assert.equal(submission.declarations.version, '2026-08-v1');
+assert.equal(submission.declarations.version, '2026-08-v2');
 assert.equal(submission.declarations.locale, 'en');
 assert.equal(submission.declarations.mediaPermissionAccepted, false);
+assert.equal('privacyNoticeAcknowledged' in submission.declarations, false);
 assert.equal(submission.declarations.acceptedAt, now.toISOString());
 assert.equal(submissionFilename('Michał Żółć'), 'zawodnik_MICHAL_ZOLC.json');
 
@@ -72,7 +78,7 @@ assert.throws(() => createSubmission({ ...values, birthDate: '2026-02-30' }, pho
 assert.throws(() => createSubmission({ ...values, strengthRecords: { deadliftKg: '-10' } }, photo, now), /invalidStrength/);
 assert.throws(() => createSubmission({
   ...values,
-  career: { ...values.career, nationalBest: { level: 'NATIONAL_CHAMPIONSHIP', place: '', year: '2025' } }
+  career: { ...values.career, nationalResults: [{ level: 'NATIONAL_CHAMPIONSHIP', place: '', year: '2025' }] }
 }, photo, now), /invalidCareer/);
 assert.throws(() => createSubmission({
   ...values,

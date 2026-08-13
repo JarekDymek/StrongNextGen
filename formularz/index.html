@@ -89,29 +89,40 @@
 
         <section class="form-section career-section">
           <h2 data-i18n="careerTitle">Kariera Strongman</h2>
-          <fieldset class="career-result">
-            <legend data-i18n="nationalBest">Najlepszy wynik krajowy</legend>
-            <div class="field-grid career-grid">
-              <label class="field-full"><span data-i18n="competitionLevel">Rodzaj zawodów</span><select name="nationalLevel" data-level-select="national"></select></label>
-              <label><span data-i18n="place">Miejsce</span><input type="number" name="nationalPlace" min="1" max="999" step="1" inputmode="numeric"></label>
-              <label><span data-i18n="year">Rok</span><input type="number" name="nationalYear" min="1900" max="2100" step="1" inputmode="numeric"></label>
-              <label class="field-full"><span data-i18n="eventName">Nazwa imprezy (opcjonalnie)</span><input name="nationalEventName" data-uppercase maxlength="120"></label>
+          <section class="career-group">
+            <div class="career-group-header">
+              <h3 data-i18n="nationalResults">Wyniki krajowe</h3>
+              <button type="button" class="add-career-button" data-add-career="national" data-i18n-aria-label="addNationalResult">
+                <b aria-hidden="true">+</b><span data-i18n="addResult">Dodaj wynik</span>
+              </button>
             </div>
-          </fieldset>
-          <fieldset class="career-result">
-            <legend data-i18n="internationalBest">Najlepszy wynik międzynarodowy</legend>
-            <div class="field-grid career-grid">
-              <label class="field-full"><span data-i18n="competitionLevel">Rodzaj zawodów</span><select name="internationalLevel" data-level-select="international"></select></label>
-              <label><span data-i18n="place">Miejsce</span><input type="number" name="internationalPlace" min="1" max="999" step="1" inputmode="numeric"></label>
-              <label><span data-i18n="year">Rok</span><input type="number" name="internationalYear" min="1900" max="2100" step="1" inputmode="numeric"></label>
-              <label class="field-full"><span data-i18n="eventName">Nazwa imprezy (opcjonalnie)</span><input name="internationalEventName" data-uppercase maxlength="120"></label>
+            <div class="career-list" data-career-list="national"></div>
+          </section>
+          <section class="career-group">
+            <div class="career-group-header">
+              <h3 data-i18n="internationalResults">Wyniki międzynarodowe</h3>
+              <button type="button" class="add-career-button" data-add-career="international" data-i18n-aria-label="addInternationalResult">
+                <b aria-hidden="true">+</b><span data-i18n="addResult">Dodaj wynik</span>
+              </button>
             </div>
-          </fieldset>
-          <fieldset class="title-fieldset">
-            <legend data-i18n="titles">Tytuły Strongman</legend>
-            <div class="title-grid" data-title-options></div>
-          </fieldset>
+            <div class="career-list" data-career-list="international"></div>
+          </section>
         </section>
+
+        <template data-career-template>
+          <fieldset class="career-result" data-career-entry>
+            <div class="career-entry-heading">
+              <strong data-career-entry-title></strong>
+              <button type="button" class="remove-career-button" data-remove-career data-i18n-aria-label="removeResult">×</button>
+            </div>
+            <div class="field-grid career-grid">
+              <label class="field-full"><span data-i18n="competitionLevel">Rodzaj zawodów</span><select data-career-field="level" data-level-select></select></label>
+              <label><span data-i18n="place">Miejsce</span><input type="number" data-career-field="place" min="1" max="999" step="1" inputmode="numeric"></label>
+              <label><span data-i18n="year">Rok</span><input type="number" data-career-field="year" min="1900" max="2100" step="1" inputmode="numeric"></label>
+              <label class="field-full"><span data-i18n="eventName">Nazwa imprezy (opcjonalnie)</span><input data-career-field="eventName" data-uppercase maxlength="120"></label>
+            </div>
+          </fieldset>
+        </template>
 
         <section class="form-section photo-section">
           <div class="photo-cropper" data-cropper hidden>
@@ -148,11 +159,6 @@
             <summary data-i18n="mediaTitle">Zezwolenie na wykorzystanie wizerunku i materiałów</summary>
             <p data-i18n="mediaBody"></p>
             <label class="consent"><input type="checkbox" name="mediaPermissionAccepted"><span data-i18n="mediaAccepted"></span></label>
-          </details>
-          <details>
-            <summary data-i18n="privacyTitle">Informacja o przetwarzaniu danych osobowych</summary>
-            <p data-privacy-notice></p>
-            <label class="consent"><input type="checkbox" name="privacyNoticeAcknowledged"><span data-i18n="privacyAccepted"></span></label>
           </details>
         </section>
 
