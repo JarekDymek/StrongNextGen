@@ -111,8 +111,8 @@ try {
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Pobierz plik JSON' }).click();
   const download = await downloadPromise;
-  assert.equal(await page.locator('[data-send]').isDisabled(), true, 'Bez skonfigurowanego endpointu wysyłka nie może udawać aktywnej');
-  await page.locator('[data-delivery-status]').filter({ hasText: 'Automatyczna wysyłka nie jest jeszcze aktywna' }).waitFor();
+  assert.equal(await page.locator('[data-send]').isDisabled(), false, 'Skonfigurowany endpoint powinien aktywować wysyłkę');
+  assert.equal(await page.locator('[data-delivery-status]').textContent(), '');
   const downloadPath = path.join(artifacts, 'competitor-submission-v3.json');
   await download.saveAs(downloadPath);
   const submission = JSON.parse(await fs.readFile(downloadPath, 'utf8'));

@@ -170,7 +170,7 @@ SUBMISSION_TO_EMAIL=jarekdymek@gmail.com  # opcjonalne, ten adres jest domyślny
 ALLOWED_ORIGIN=https://jarekdymek.github.io
 ```
 
-Po wdrożeniu należy wpisać publiczny adres funkcji do znacznika `strongman-submission-endpoint` w `formularz/index.html`. Do czasu tej konfiguracji przycisk wysyłki jest jawnie nieaktywny, a download i Web Share działają bez backendu. Na Androidzie formularz automatycznie ponawia odrzucone udostępnienie JSON jako kompatybilny plik `*.json.txt`; jego zawartość nadal jest prawidłowym JSON-em i może zostać zaimportowana do aplikacji. Na platformie serverless należy dodatkowo ustawić limit żądań dla endpointu.
+Formularz korzysta z funkcji `https://strong-next-gen.vercel.app/api/send-submission`. Sekrety Resend są zapisane wyłącznie jako chronione zmienne środowiskowe projektu Vercel. Gdy endpoint jest niedostępny, pobieranie pliku i Web Share pozostają niezależnymi ścieżkami awaryjnymi. Na Androidzie formularz automatycznie ponawia odrzucone udostępnienie JSON jako kompatybilny plik `*.json.txt`; jego zawartość nadal jest prawidłowym JSON-em i może zostać zaimportowana do aplikacji. Na platformie serverless należy dodatkowo utrzymać limit żądań dla endpointu.
 
 ## Format importu konkurencji
 
