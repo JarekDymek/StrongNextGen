@@ -197,13 +197,6 @@ button:focus-visible,
   border-color: var(--blue);
 }
 
-.category-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.category-grid label,
 .consent {
   grid-template-columns: 30px minmax(0, 1fr);
   align-items: center;
@@ -373,6 +366,8 @@ input[type="checkbox"] {
 
 .file-button,
 .primary-button,
+.send-button,
+.share-button,
 .download-button,
 .danger-button,
 .secondary-button {
@@ -393,8 +388,16 @@ input[type="checkbox"] {
   background: var(--blue);
 }
 
-.download-button {
+.send-button {
   background: var(--green);
+}
+
+.share-button {
+  background: var(--blue);
+}
+
+.download-button {
+  background: var(--navy);
 }
 
 .danger-button {
@@ -405,6 +408,12 @@ input[type="checkbox"] {
   border-color: var(--navy);
   color: var(--navy);
   background: #e7edf4;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  box-shadow: none;
 }
 
 .file-button input {
@@ -439,6 +448,11 @@ input[type="checkbox"] {
 .result-panel h2 {
   margin: 0;
   overflow-wrap: anywhere;
+}
+
+.result-actions {
+  display: grid;
+  gap: 12px;
 }
 
 .declarations-section details {
@@ -498,7 +512,6 @@ footer {
     height: 58px;
   }
 
-  .category-grid,
   .three-fields,
   .photo-section {
     grid-template-columns: 1fr;

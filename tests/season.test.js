@@ -120,7 +120,10 @@ const publicHtml = buildSeasonHtml({
   seriesName: 'Puchar Polski <Strongman>',
   maxCountedStarts: 4,
   events: DEFAULT_SEASON.events,
-  standings,
+  standings: standings.map(row => ({
+    ...row,
+    contact: { phone: '+48111222333', email: 'private@example.com' }
+  })),
   exportedAt: '2026-08-05T12:00:00Z',
 });
 assert.match(publicHtml, /^<!doctype html>/);
@@ -129,5 +132,6 @@ assert.match(publicHtml, /Paweł Piskorz/);
 assert.match(publicHtml, /is-rejected/);
 assert.match(publicHtml, /Wyniki poszczególnych imprez/);
 assert.doesNotMatch(publicHtml, /<script/i);
+assert.doesNotMatch(publicHtml, /private@example\.com|\+48111222333/);
 
 console.log('Season tests passed');

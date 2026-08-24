@@ -9,22 +9,7 @@ import {
   normalizeUpperText as normalizeProfileText
 } from '../src/competitor-profile-data.js';
 
-export const LEGAL_TEXT_VERSION = '2026-08-v2';
-
-export const SYSTEM_CATEGORIES = Object.freeze([
-  'Puchar Polski',
-  'Legenda',
-  'Tyberian Team',
-  'Inny'
-]);
-
-const CATEGORY_ALIASES = new Map([
-  ['puchar polski', 'Puchar Polski'],
-  ['legenda', 'Legenda'],
-  ['tyberian team', 'Tyberian Team'],
-  ['inny', 'Inny'],
-  ['aktywny zawodnik', 'Inny']
-]);
+export const LEGAL_TEXT_VERSION = '2026-08-v3';
 
 export function normalizeUpperText(value) {
   return normalizeProfileText(value);
@@ -36,26 +21,6 @@ export function normalizePositiveNumber(value) {
   return Number.isFinite(parsed) && parsed > 0 ? String(parsed) : '';
 }
 
-export function normalizeSubmissionCategories(selected, customInput = '') {
-  const categories = new Map();
-  (Array.isArray(selected) ? selected : []).forEach(value => {
-    const trimmed = String(value || '').trim().replace(/\s+/g, ' ');
-    const key = categoryKey(trimmed);
-    if (!key || key === 'bez kategorii') return;
-    const systemLabel = CATEGORY_ALIASES.get(key);
-    if (systemLabel && !categories.has(categoryKey(systemLabel))) {
-      categories.set(categoryKey(systemLabel), systemLabel);
-    }
-  });
-  String(customInput || '').split(',').forEach(value => {
-    const trimmed = String(value || '').trim().replace(/\s+/g, ' ');
-    const key = categoryKey(trimmed);
-    if (!key || key === 'bez kategorii' || CATEGORY_ALIASES.has(key)) return;
-    if (!categories.has(key)) categories.set(key, normalizeUpperText(trimmed));
-  });
-  return [...categories.values()];
-}
-
 export function createSubmission(values, photo, now = new Date()) {
   const locale = values.formLocale === 'en' ? 'en' : 'pl';
   const name = normalizeUpperText(values.name);
@@ -64,6 +29,7 @@ export function createSubmission(values, photo, now = new Date()) {
   const countryCode = normalizeCountryCode(values.countryCode);
   const height = normalizePositiveNumber(values.height);
   const weight = normalizePositiveNumber(values.weight);
+  const contact = createContact(values.contact || {});
   if (!name || !isValidIsoDate(birthDate) || !residence || !countryCode || !height || !weight) {
     throw new Error('invalidRequired');
   }
@@ -76,10 +42,11 @@ export function createSubmission(values, photo, now = new Date()) {
   const declarations = createDeclarations(values.declarations || {}, locale, now);
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     type: 'competitor-submission',
     createdAt: now.toISOString(),
     formLocale: locale,
+    contact,
     competitor: {
       name,
       birthDate,
@@ -87,13 +54,36 @@ export function createSubmission(values, photo, now = new Date()) {
       countryCode,
       height,
       weight,
-      categories: normalizeSubmissionCategories(values.categories, values.customCategories),
       strengthRecords,
       career,
       photo
     },
     declarations
   };
+}
+
+export function createContact(values) {
+  const phone = normalizePhone(values.phone);
+  const email = normalizeEmail(values.email);
+  if (!phone || !email) throw new Error('invalidContact');
+  return { phone, email };
+}
+
+export function normalizePhone(value) {
+  const source = String(value || '').trim();
+  if (!source || source.length > 40 || !/^[+\d\s().-]+$/.test(source)) return '';
+  let compact = source.replace(/[\s().-]+/g, '');
+  if (compact.startsWith('00')) compact = `+${compact.slice(2)}`;
+  if (!/^\+?\d+$/.test(compact)) return '';
+  const digits = compact.replace(/^\+/, '');
+  if (digits.length < 7 || digits.length > 15) return '';
+  return compact.startsWith('+') ? `+${digits}` : digits;
+}
+
+export function normalizeEmail(value) {
+  const email = String(value || '').trim().toLocaleLowerCase('en-US');
+  if (!email || email.length > 254 || /\s/.test(email)) return '';
+  return /^[^@]+@[^@]+\.[^@]{2,}$/.test(email) ? email : '';
 }
 
 export function createStrengthRecords(values) {
@@ -137,9 +127,10 @@ export function createDeclarations(values, locale, now = new Date()) {
     dataAndPhotoConfirmed: Boolean(values.dataAndPhotoConfirmed),
     riskAccepted: Boolean(values.riskAccepted),
     mediaPermissionAccepted: Boolean(values.mediaPermissionAccepted),
+    contactDataNoticeAcknowledged: Boolean(values.contactDataNoticeAcknowledged),
     acceptedAt: now.toISOString()
   };
-  if (!declarations.dataAndPhotoConfirmed || !declarations.riskAccepted) {
+  if (!declarations.dataAndPhotoConfirmed || !declarations.riskAccepted || !declarations.contactDataNoticeAcknowledged) {
     throw new Error('invalidDeclarations');
   }
   return declarations;
@@ -174,16 +165,6 @@ function buildCareerResults(values, allowedCodes) {
   return values
     .map(value => buildCareerBest(value, allowedCodes))
     .filter(Boolean);
-}
-
-function categoryKey(value) {
-  return String(value || '')
-    .trim()
-    .toLocaleLowerCase('pl-PL')
-    .replace(/ł/g, 'l')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, ' ');
 }
 
 function isValidIsoDate(value) {

@@ -1,6 +1,6 @@
 # Strongman Next
 
-## Wersja stabilna 1.2.1
+## Wersja stabilna 1.3.0
 
 ### Klasyfikacja sezonu po 11 imprezach
 
@@ -8,7 +8,7 @@ Wbudowana baza sezonu 2026 obejmuje 11 imprez do Skalbmierza z 9 sierpnia 2026. 
 
 ### Zewnętrzny formularz zawodnika
 
-Formularz pod adresem `/formularz/` działa po polsku i angielsku. Generuje lokalnie plik zgłoszenia schema v2 z kodem reprezentowanego kraju, rekordami siłowymi, wieloma wynikami kariery krajowej i międzynarodowej, wersjonowanymi oświadczeniami i wykadrowanym zdjęciem JPEG 120 × 120 px. Import starszych plików schema v1 oraz wcześniejszej odmiany schema v2 pozostaje obsługiwany.
+Formularz pod adresem `/formularz/` działa po polsku i angielsku. Generuje plik zgłoszenia schema v3 z prywatnym telefonem i adresem e-mail, kodem reprezentowanego kraju, rekordami siłowymi, wieloma wynikami kariery krajowej i międzynarodowej, wersjonowanymi oświadczeniami i wykadrowanym zdjęciem JPEG 120 × 120 px. Kategorie nadaje wyłącznie organizator podczas importu lub edycji bazy. Import starszych plików schema v1 i v2 pozostaje obsługiwany.
 
 ### Pomoc podczas zawodów
 
@@ -151,7 +151,26 @@ Publiczny formularz statyczny działa niezależnie od aplikacji zawodów:
 https://jarekdymek.github.io/StrongNextGen/formularz/
 ```
 
-Formularz przetwarza dane i zdjęcie wyłącznie w przeglądarce zawodnika. Generuje jeden plik `zawodnik_IMIE_NAZWISKO.json` typu `competitor-submission`. Organizator dodaje go zwykłym przyciskiem importu bazy zawodników. Aplikacja pokazuje podgląd i pozwala dodać nowy rekord albo zaktualizować istniejący bez zmiany jego identyfikatora.
+Formularz przetwarza dane i zdjęcie w przeglądarce zawodnika. Generuje jeden plik `zawodnik_IMIE_NAZWISKO.json` typu `competitor-submission` w schema v3. Pole `contact` zawiera znormalizowany telefon i e-mail; nie jest używane w wynikach, rankingach, listach startowych, publicznym profilu ani eksporcie HTML. Nowe zgłoszenie nie zawiera `category` ani `categories`.
+
+Organizator dodaje plik zwykłym przyciskiem importu bazy zawodników. Podgląd importu pozwala nadać kategorie administracyjne. Dla istniejącego zawodnika formularz pokazuje aktualne kategorie, a samo zgłoszenie ich nie usuwa ani nie zastępuje. Identyfikator istniejącego zawodnika pozostaje bez zmian.
+
+Po przygotowaniu zgłoszenia dostępne są:
+
+- `Wyślij zgłoszenie` przez skonfigurowany bezpieczny endpoint,
+- `Udostępnij zgłoszenie` przez Web Share API z rzeczywistym plikiem JSON, jeśli przeglądarka to obsługuje,
+- `Pobierz plik JSON` jako zawsze dostępna kopia awaryjna.
+
+GitHub Pages nie uruchamia kodu serwerowego. Repo zawiera minimalną funkcję `api/send-submission.js` dla środowiska serverless i dostawcy Resend, ale automatyczna poczta wymaga osobnego wdrożenia endpointu. Sekrety pozostają wyłącznie po stronie serwera. Wymagane zmienne środowiskowe:
+
+```text
+RESEND_API_KEY
+SUBMISSION_FROM_EMAIL
+SUBMISSION_TO_EMAIL=jarekdymek@gmail.com  # opcjonalne, ten adres jest domyślny
+ALLOWED_ORIGIN=https://jarekdymek.github.io
+```
+
+Po wdrożeniu należy wpisać publiczny adres funkcji do znacznika `strongman-submission-endpoint` w `formularz/index.html`. Do czasu tej konfiguracji przycisk wysyłki jest jawnie nieaktywny, a download i Web Share działają bez backendu. Na platformie serverless należy dodatkowo ustawić limit żądań dla endpointu.
 
 ## Format importu konkurencji
 
@@ -166,4 +185,4 @@ Formularz przetwarza dane i zdjęcie wyłącznie w przeglądarce zawodnika. Gene
 
 ## Status wydania
 
-Wersja 1.2.1 przeszła testy reguł punktacji, klasyfikacji sezonu po 11 imprezach, formularza PL/EN z wieloma wynikami kariery i cropperem, importu schema v1/v2, trwałej bazy zawodników, pełnego przebiegu zawodów, procedur Pomocy, widoków telefonu i iPada oraz uruchomienia PWA offline. Projekt nie wymaga procesu bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.
+Wersja 1.3.0 przeszła testy reguł punktacji, klasyfikacji sezonu po 11 imprezach, formularza PL/EN z prywatnym kontaktem i cropperem, importu schema v1/v2/v3, zachowania kategorii organizatora, trwałej bazy zawodników, pełnego przebiegu zawodów, procedur Pomocy, widoków telefonu i iPada oraz uruchomienia PWA offline. Projekt nie wymaga procesu bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.

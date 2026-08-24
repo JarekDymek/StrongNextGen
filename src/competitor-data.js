@@ -75,6 +75,16 @@ export function competitorMatchesCategory(competitor, requestedCategory) {
   return categories.includes(requested);
 }
 
+export function normalizeCompetitorContact(value) {
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const rawPhone = String(source.phone || '').trim();
+  const compactPhone = rawPhone.replace(/[\s().-]+/g, '').replace(/^00/, '+');
+  const phone = /^\+?\d{7,15}$/.test(compactPhone) ? compactPhone : '';
+  const rawEmail = String(source.email || '').trim().toLocaleLowerCase('en-US');
+  const email = rawEmail.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(rawEmail) ? rawEmail : '';
+  return { phone, email };
+}
+
 export function normalizeCompetitorRecord(item, index = 0) {
   const source = typeof item === 'string' ? { name: item } : item || {};
   const name = String(source.name || '').trim().replace(/\s+/g, ' ');
@@ -95,6 +105,7 @@ export function normalizeCompetitorRecord(item, index = 0) {
     countryCode: normalizeCountryCode(source.countryCode),
     strengthRecords: normalizeStrengthRecords(source.strengthRecords),
     career: normalizeCareer(source.career),
+    contact: normalizeCompetitorContact(source.contact),
     photo: validPhoto(source.photo || source.image || source.avatar || source.icon),
     dataWarnings: uniqueStrings(warnings)
   };
@@ -139,6 +150,9 @@ export function mergeCompetitorDetails(existing, incoming, options = {}) {
   merged.career = mergeCareer(current.career, candidate.career, {
     preferIncoming: mode === 'preferIncoming' && hasOwn(incoming, 'career')
   });
+  merged.contact = mergeContact(current.contact, candidate.contact, {
+    preferIncoming: mode === 'preferIncoming' && hasOwn(incoming, 'contact')
+  });
   const currentCategories = getCompetitorCategories(current);
   const candidateCategories = getCompetitorCategories(candidate);
   merged.categories = categoriesMode === 'replace'
@@ -149,6 +163,16 @@ export function mergeCompetitorDetails(existing, incoming, options = {}) {
   merged.category = merged.categories[0] || '';
   merged.dataWarnings = uniqueStrings([...(current.dataWarnings || []), ...(candidate.dataWarnings || [])]);
   return merged;
+}
+
+function mergeContact(current, incoming, { preferIncoming = false } = {}) {
+  const previous = normalizeCompetitorContact(current);
+  const candidate = normalizeCompetitorContact(incoming);
+  if (preferIncoming) return candidate;
+  return {
+    phone: previous.phone || candidate.phone,
+    email: previous.email || candidate.email
+  };
 }
 
 function mergeStrengthRecords(current, incoming, { preferIncoming = false } = {}) {
@@ -206,6 +230,7 @@ export function upsertCompetitorRecord(collection, incoming, { mode = 'fillMissi
 
   const previous = records[index];
   const merged = mergeCompetitorDetails(previous, candidate, { mode, categoriesMode });
+  if (!hasOwn(incoming, 'contact')) merged.contact = normalizeCompetitorContact(previous.contact);
   records[index] = merged;
   return {
     records,

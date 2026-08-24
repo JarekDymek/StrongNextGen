@@ -6,6 +6,15 @@ import {
   SPORT_LABELS
 } from '../src/competitor-profile-data.js';
 import { createPhotoCropper } from './cropper.js';
+import {
+  canShareSubmission,
+  createSendController,
+  createSubmissionFile,
+  resolveSubmissionEndpoint,
+  sendSubmission,
+  shareSubmission,
+  submissionJson
+} from './delivery.js';
 import { applyTranslations, translate } from './i18n.js';
 import { createSubmission, normalizeUpperText, submissionFilename } from './submission-data.js';
 
@@ -16,6 +25,10 @@ const cropperElement = document.querySelector('[data-cropper]');
 const cropControls = document.querySelector('[data-crop-controls]');
 const resultPanel = document.querySelector('[data-result-panel]');
 const submitButton = form.querySelector('[type="submit"]');
+const sendButton = document.querySelector('[data-send]');
+const shareButton = document.querySelector('[data-share]');
+const deliveryStatus = document.querySelector('[data-delivery-status]');
+const sendController = createSendController(sendSubmission);
 let locale = 'pl';
 let preparedSubmission = null;
 let photoBusy = false;
@@ -116,8 +129,10 @@ form.addEventListener('submit', async event => {
       countryCode: data.get('countryCode'),
       height: data.get('height'),
       weight: data.get('weight'),
-      categories: data.getAll('categories'),
-      customCategories: data.get('customCategories'),
+      contact: {
+        phone: data.get('phone'),
+        email: data.get('email')
+      },
       strengthRecords: {
         squatKg: data.get('squatKg'),
         benchPressKg: data.get('benchPressKg'),
@@ -130,7 +145,8 @@ form.addEventListener('submit', async event => {
       declarations: {
         dataAndPhotoConfirmed: data.get('dataAndPhotoConfirmed') === 'on',
         riskAccepted: data.get('riskAccepted') === 'on',
-        mediaPermissionAccepted: data.get('mediaPermissionAccepted') === 'on'
+        mediaPermissionAccepted: data.get('mediaPermissionAccepted') === 'on',
+        contactDataNoticeAcknowledged: data.get('contactDataNoticeAcknowledged') === 'on'
       }
     }, photo.dataUrl);
     normalizeVisibleText(preparedSubmission);
@@ -146,7 +162,7 @@ form.addEventListener('submit', async event => {
 
 document.querySelector('[data-download]').addEventListener('click', () => {
   if (!preparedSubmission) return;
-  const blob = new Blob([JSON.stringify(preparedSubmission, null, 2)], { type: 'application/json;charset=utf-8' });
+  const blob = new Blob([submissionJson(preparedSubmission)], { type: 'application/json;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -156,6 +172,39 @@ document.querySelector('[data-download]').addEventListener('click', () => {
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 2000);
   document.querySelector('[data-form-status]').textContent = translate(locale, 'downloaded');
+});
+
+sendButton.addEventListener('click', async () => {
+  if (!preparedSubmission || sendController.isBusy()) return;
+  const endpoint = resolveSubmissionEndpoint();
+  if (!endpoint) return setDeliveryStatus(translate(locale, 'sendUnavailable'), true);
+  sendButton.disabled = true;
+  sendButton.textContent = translate(locale, 'sending');
+  setDeliveryStatus(translate(locale, 'sending'));
+  try {
+    await sendController.run({
+      endpoint,
+      submission: preparedSubmission,
+      filename: submissionFilename(preparedSubmission.competitor.name)
+    });
+    setDeliveryStatus(translate(locale, 'sent'));
+  } catch (error) {
+    setDeliveryStatus(translate(locale, error?.message === 'sendUnavailable' ? 'sendUnavailable' : 'sendFailed'), true);
+  } finally {
+    sendButton.disabled = !resolveSubmissionEndpoint();
+    sendButton.textContent = translate(locale, 'send');
+  }
+});
+
+shareButton.addEventListener('click', async () => {
+  if (!preparedSubmission) return;
+  const filename = submissionFilename(preparedSubmission.competitor.name);
+  const file = createSubmissionFile(preparedSubmission, filename);
+  try {
+    await shareSubmission(navigator, file, preparedSubmission.competitor.name);
+  } catch (error) {
+    if (error?.name !== 'AbortError') setDeliveryStatus(translate(locale, 'shareFailed'), true);
+  }
 });
 
 window.addEventListener('beforeunload', () => cropper.destroy());
@@ -170,6 +219,7 @@ function applyLocale(nextLocale) {
   rebuildCareerOptions();
   document.querySelectorAll('[data-career-list]').forEach(list => updateCareerEntryLabels(list.dataset.careerList));
   updatePhotoButtonLabel();
+  updateDeliveryActions();
 }
 
 function rebuildCountryOptions() {
@@ -205,7 +255,8 @@ function normalizeVisibleText(submission) {
   form.elements.residence.value = submission.competitor.residence;
   form.elements.height.value = submission.competitor.height;
   form.elements.weight.value = submission.competitor.weight;
-  form.elements.customCategories.value = normalizeUpperText(form.elements.customCategories.value);
+  form.elements.phone.value = submission.contact.phone;
+  form.elements.email.value = submission.contact.email;
   form.querySelectorAll('[data-career-field="eventName"]').forEach(input => {
     input.value = normalizeUpperText(input.value);
   });
@@ -258,9 +309,12 @@ function showPreparedSubmission(submission) {
     submission.competitor.residence,
     countryDisplayName(submission.competitor.countryCode, locale),
     `${submission.competitor.height} cm`,
-    `${submission.competitor.weight} kg`
+    `${submission.competitor.weight} kg`,
+    submission.contact.email,
+    submission.contact.phone
   ].join(' · ');
   resultPanel.hidden = false;
+  updateDeliveryActions();
   resultPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
@@ -282,9 +336,26 @@ function showFormError(message) {
   status.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+function updateDeliveryActions() {
+  const endpoint = resolveSubmissionEndpoint();
+  sendButton.disabled = !preparedSubmission || !endpoint || sendController.isBusy();
+  sendButton.textContent = translate(locale, sendController.isBusy() ? 'sending' : 'send');
+  const file = preparedSubmission
+    ? createSubmissionFile(preparedSubmission, submissionFilename(preparedSubmission.competitor.name))
+    : null;
+  shareButton.hidden = !file || !canShareSubmission(navigator, file);
+  if (preparedSubmission && !endpoint) setDeliveryStatus(translate(locale, 'sendUnavailable'));
+}
+
+function setDeliveryStatus(message, isError = false) {
+  deliveryStatus.textContent = message;
+  deliveryStatus.classList.toggle('is-error', isError);
+}
+
 function invalidatePreparedSubmission() {
   preparedSubmission = null;
   resultPanel.hidden = true;
+  setDeliveryStatus('');
   const status = document.querySelector('[data-form-status]');
   status.textContent = '';
   status.classList.remove('is-error');

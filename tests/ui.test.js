@@ -209,6 +209,8 @@ await formPage.getByLabel('Miejscowość zamieszkania').fill(' nowy   sącz ');
 await formPage.getByLabel('Reprezentowany kraj').selectOption('PL');
 await formPage.getByLabel('Wzrost (cm)').fill('186');
 await formPage.getByLabel('Waga (kg)').fill('124.5');
+await formPage.getByLabel('Numer telefonu').fill('+48 600-700-800');
+await formPage.getByLabel('Adres e-mail').fill('Piotr.Zolc@Example.com');
 await formPage.getByLabel('Przysiad — rekord życiowy').fill('300');
 await formPage.getByLabel('Martwy ciąg — rekord życiowy').fill('360');
 const firstNationalResult = formPage.locator('[data-career-list="national"] [data-career-entry]').first();
@@ -220,12 +222,13 @@ const secondNationalResult = formPage.locator('[data-career-list="national"] [da
 await secondNationalResult.locator('[data-career-field="level"]').selectOption('NATIONAL_CUP');
 await secondNationalResult.locator('[data-career-field="place"]').fill('2');
 await secondNationalResult.locator('[data-career-field="year"]').fill('2024');
-await formPage.getByLabel('Puchar Polski').check();
-await formPage.getByLabel('Inne kategorie, oddzielone przecinkami').fill('pokazy, legenda, POKAZY');
+assert.equal(await formPage.locator('[name="categories"]').count(), 0);
 await formPage.locator('[data-photo-input]').setInputFiles({ name: 'duze-zdjecie.svg', mimeType: 'image/svg+xml', buffer: svg });
 await formPage.locator('[data-photo-status]').filter({ hasText: 'Kadr gotowy' }).waitFor();
 await formPage.getByText('Potwierdzenie danych i zdjęcia', { exact: true }).click();
 await formPage.getByLabel(/Potwierdzam poprawność danych/).check();
+await formPage.getByText('Informacja o przetwarzaniu danych kontaktowych', { exact: true }).click();
+await formPage.getByLabel(/Zapoznałem się z informacją/).check();
 await formPage.getByText('Oświadczenie zawodnika', { exact: true }).click();
 await formPage.getByLabel(/Zapoznałem się z oświadczeniem/).check();
 await formPage.getByRole('button', { name: 'Sprawdź i przygotuj plik' }).click();
@@ -234,13 +237,13 @@ assert.equal(await formPage.getByLabel('Imię i nazwisko').inputValue(), 'PIOTR 
 assert.equal(await formPage.getByLabel('Miejscowość zamieszkania').inputValue(), 'NOWY SĄCZ');
 
 const submissionDownloadPromise = formPage.waitForEvent('download');
-await formPage.getByRole('button', { name: 'Pobierz plik zgłoszenia JSON' }).click();
+await formPage.getByRole('button', { name: 'Pobierz plik JSON' }).click();
 const submissionDownload = await submissionDownloadPromise;
 assert.equal(submissionDownload.suggestedFilename(), 'zawodnik_PIOTR_ZOLC.json');
 const submissionPath = path.join(artifacts, 'zawodnik_PIOTR_ZOLC.json');
 await submissionDownload.saveAs(submissionPath);
 const submissionJson = JSON.parse(await fs.readFile(submissionPath, 'utf8'));
-assert.equal(submissionJson.schemaVersion, 2);
+assert.equal(submissionJson.schemaVersion, 3);
 assert.equal(submissionJson.type, 'competitor-submission');
 assert.equal('id' in submissionJson.competitor, false);
 assert.equal(submissionJson.competitor.name, 'PIOTR ŻÓŁĆ');
@@ -251,7 +254,9 @@ assert.equal(submissionJson.competitor.career.nationalResults.length, 2);
 assert.equal(submissionJson.competitor.career.nationalResults[1].level, 'NATIONAL_CUP');
 assert.equal('titleCodes' in submissionJson.competitor.career, false);
 assert.equal('privacyNoticeAcknowledged' in submissionJson.declarations, false);
-assert.deepEqual(submissionJson.competitor.categories, ['Puchar Polski', 'POKAZY']);
+assert.equal('categories' in submissionJson.competitor, false);
+assert.equal('category' in submissionJson.competitor, false);
+assert.deepEqual(submissionJson.contact, { phone: '+48600700800', email: 'piotr.zolc@example.com' });
 assert.equal(submissionJson.competitor.photo.startsWith('data:image/jpeg;base64,'), true);
 assert.ok(Buffer.from(submissionJson.competitor.photo.split(',')[1], 'base64').length <= 10 * 1024);
 await formPage.screenshot({ path: path.join(artifacts, 'external-form-phone.png'), fullPage: true });
@@ -279,7 +284,8 @@ async function importCompetitorSubmission(payload) {
 assert.equal(await importCompetitorSubmission(submissionJson), 'Dodaj nowego zawodnika');
 const submittedRecord = await page.evaluate(() => JSON.parse(localStorage.getItem('strongman-next.competitor-database.v1')).find(item => item.name === 'PIOTR ŻÓŁĆ'));
 assert.ok(submittedRecord?.id);
-assert.deepEqual(submittedRecord.categories, ['Puchar Polski', 'POKAZY']);
+assert.deepEqual(submittedRecord.categories, []);
+assert.deepEqual(submittedRecord.contact, submissionJson.contact);
 assert.equal(submittedRecord.countryCode, 'PL');
 assert.equal(submittedRecord.strengthRecords.deadliftKg, 360);
 assert.equal(submittedRecord.career.nationalResults.length, 2);
@@ -290,11 +296,21 @@ await page.locator('.profile-modal').getByText('Polska', { exact: true }).waitFo
 await page.locator('.profile-modal').getByText('Martwy ciąg', { exact: true }).waitFor();
 await page.locator('.profile-modal').getByText('360 kg', { exact: true }).waitFor();
 await page.locator('.profile-modal').getByText('Wynik krajowy 2', { exact: true }).waitFor();
+assert.equal(await page.locator('.profile-modal').getByText('+48600700800', { exact: true }).count(), 0);
+assert.equal(await page.locator('.profile-modal').getByText('piotr.zolc@example.com', { exact: true }).count(), 0);
 await page.locator('.profile-modal').getByRole('button', { name: 'Zamknij', exact: true }).click();
+
+const submittedRow = page.locator(`[data-competitor-id="${submittedRecord.id}"]`);
+await submittedRow.getByRole('button', { name: 'Edytuj' }).click();
+editor = page.locator('[data-form="competitor-editor"]');
+await editor.getByLabel('Puchar Polski').check();
+await editor.getByLabel('Legenda').check();
+await editor.getByRole('button', { name: 'Zapisz zawodnika' }).click();
+await editor.waitFor({ state: 'detached' });
 
 const updatedSubmission = structuredClone(submissionJson);
 updatedSubmission.competitor.notes = 'NOWE OSIĄGNIĘCIE';
-updatedSubmission.competitor.categories = ['Inny'];
+updatedSubmission.contact = { phone: '+48600111222', email: 'nowy@example.com' };
 assert.equal(await importCompetitorSubmission(updatedSubmission), 'Aktualizuj istniejącego');
 assert.equal(await importCompetitorSubmission(updatedSubmission), 'Aktualizuj istniejącego');
 const updatedSubmissionInfo = await page.evaluate(id => {
@@ -304,11 +320,22 @@ const updatedSubmissionInfo = await page.evaluate(id => {
 assert.equal(updatedSubmissionInfo.count, 1);
 assert.equal(updatedSubmissionInfo.record.id, submittedRecord.id);
 assert.equal(updatedSubmissionInfo.record.notes, 'NOWE OSIĄGNIĘCIE');
-assert.deepEqual(updatedSubmissionInfo.record.categories, ['Inny']);
+assert.deepEqual(updatedSubmissionInfo.record.categories, ['Puchar Polski', 'Legenda']);
+assert.deepEqual(updatedSubmissionInfo.record.contact, updatedSubmission.contact);
 assert.equal(updatedSubmissionInfo.record.countryCode, 'PL');
 assert.equal(updatedSubmissionInfo.record.strengthRecords.deadliftKg, 360);
 assert.equal(updatedSubmissionInfo.record.career.nationalResults.length, 2);
 assert.equal(updatedSubmissionInfo.record.career.nationalResults[1].level, 'NATIONAL_CUP');
+
+const legacyV2Submission = structuredClone(updatedSubmission);
+legacyV2Submission.schemaVersion = 2;
+delete legacyV2Submission.contact;
+legacyV2Submission.competitor.categories = ['Inny'];
+delete legacyV2Submission.declarations.contactDataNoticeAcknowledged;
+assert.equal(await importCompetitorSubmission(legacyV2Submission), 'Aktualizuj istniejącego');
+const afterLegacyUpdate = await page.evaluate(id => JSON.parse(localStorage.getItem('strongman-next.competitor-database.v1')).find(item => item.id === id), submittedRecord.id);
+assert.deepEqual(afterLegacyUpdate.categories, ['Puchar Polski', 'Legenda']);
+assert.deepEqual(afterLegacyUpdate.contact, updatedSubmission.contact);
 
 const michalId = 'competitor-michal-sajdak-1786279130885-bf0b79';
 const importedState = {

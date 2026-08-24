@@ -1,8 +1,6 @@
 import {
-  getCompetitorCategories,
-  normalizeCategoryKey,
   normalizeCompetitorRecord,
-  SYSTEM_COMPETITOR_CATEGORIES
+  normalizeCompetitorContact
 } from './competitor-data.js';
 import { estimateDataUrlBytes } from './image-tools.js';
 import {
@@ -17,7 +15,7 @@ import {
 
 export function normalizeSubmissionFile(json) {
   const schemaVersion = Number(json?.schemaVersion);
-  if (!json || ![1, 2].includes(schemaVersion) || json.type !== 'competitor-submission' || !json.competitor || typeof json.competitor !== 'object' || Array.isArray(json.competitor)) {
+  if (!json || ![1, 2, 3].includes(schemaVersion) || json.type !== 'competitor-submission' || !json.competitor || typeof json.competitor !== 'object' || Array.isArray(json.competitor)) {
     return { ok: false, error: 'To nie jest prawidłowy plik zgłoszenia zawodnika.' };
   }
   const source = json.competitor;
@@ -35,19 +33,18 @@ export function normalizeSubmissionFile(json) {
     return { ok: false, error: 'Zdjęcie w zgłoszeniu ma nieprawidłowy format albo jest zbyt duże.' };
   }
 
-  const countryCode = schemaVersion === 2 ? normalizeCountryCode(source.countryCode) : '';
-  if (schemaVersion === 2 && !countryCode) return { ok: false, error: 'Zgłoszenie zawiera nieprawidłowy kod reprezentowanego kraju.' };
+  const countryCode = schemaVersion >= 2 ? normalizeCountryCode(source.countryCode) : '';
+  if (schemaVersion >= 2 && !countryCode) return { ok: false, error: 'Zgłoszenie zawiera nieprawidłowy kod reprezentowanego kraju.' };
   const structured = validateSubmissionProfileData(source, schemaVersion);
   if (!structured.ok) return structured;
-  const declarations = schemaVersion === 2 ? normalizeSubmissionDeclarations(json.declarations) : null;
-  if (schemaVersion === 2 && !declarations) {
+  const declarations = schemaVersion >= 2 ? normalizeSubmissionDeclarations(json.declarations, schemaVersion) : null;
+  if (schemaVersion >= 2 && !declarations) {
     return { ok: false, error: 'Zgłoszenie nie zawiera kompletnych wymaganych oświadczeń.' };
   }
-
-  const systemByKey = new Map(SYSTEM_COMPETITOR_CATEGORIES.map(category => [normalizeCategoryKey(category), category]));
-  const categories = getCompetitorCategories(source).map(category =>
-    systemByKey.get(normalizeCategoryKey(category)) || normalizeSubmissionText(category)
-  ).filter(category => category.length <= 80).slice(0, 20);
+  const contact = schemaVersion === 3 ? normalizeSubmissionContact(json.contact) : normalizeCompetitorContact({});
+  if (schemaVersion === 3 && (!contact.phone || !contact.email)) {
+    return { ok: false, error: 'Zgłoszenie nie zawiera prawidłowych danych kontaktowych.' };
+  }
   const competitor = normalizeCompetitorRecord({
     ...source,
     id: source.id ? String(source.id).slice(0, 200) : 'submission-preview',
@@ -60,11 +57,13 @@ export function normalizeSubmissionFile(json) {
     countryCode,
     strengthRecords: structured.strengthRecords,
     career: structured.career,
-    category: categories[0] || '',
-    categories,
+    contact,
+    category: '',
+    categories: [],
     photo
   });
   competitor.id = source.id ? String(source.id).slice(0, 200) : '';
+  if (schemaVersion < 3) delete competitor.contact;
   return { ok: true, competitor, schemaVersion, declarations };
 }
 
@@ -122,7 +121,7 @@ function validCareerBest(raw, normalized, allowedLevels) {
   return !normalized.eventName || normalized.eventName.length <= 120;
 }
 
-function normalizeSubmissionDeclarations(value) {
+function normalizeSubmissionDeclarations(value, schemaVersion) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const locale = value.locale === 'en' ? 'en' : value.locale === 'pl' ? 'pl' : '';
   const version = String(value.version || '').trim();
@@ -130,16 +129,24 @@ function normalizeSubmissionDeclarations(value) {
   if (!locale || !version || version.length > 40 || Number.isNaN(Date.parse(acceptedAt))) return null;
   if (value.dataAndPhotoConfirmed !== true || value.riskAccepted !== true) return null;
   if (typeof value.mediaPermissionAccepted !== 'boolean') return null;
+  if (schemaVersion === 3 && value.contactDataNoticeAcknowledged !== true) return null;
   const declarations = {
     version,
     locale,
     dataAndPhotoConfirmed: true,
     riskAccepted: true,
     mediaPermissionAccepted: value.mediaPermissionAccepted,
+    ...(schemaVersion === 3 ? { contactDataNoticeAcknowledged: true } : {}),
     acceptedAt: new Date(acceptedAt).toISOString()
   };
   if (value.privacyNoticeAcknowledged === true) declarations.privacyNoticeAcknowledged = true;
   return declarations;
+}
+
+function normalizeSubmissionContact(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return normalizeCompetitorContact({});
+  if (Object.keys(value).some(key => !['phone', 'email'].includes(key))) return normalizeCompetitorContact({});
+  return normalizeCompetitorContact(value);
 }
 
 function normalizeSubmissionText(value) {

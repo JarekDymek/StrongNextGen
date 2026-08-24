@@ -1490,6 +1490,20 @@ function renderCompetitorEditor() {
             <span>Miejscowo&#347;&#263;</span>
             <input name="residence" value="${escapeAttr(editor.residence || '')}" data-competitor-editor-field autocomplete="address-level2">
           </label>
+          <fieldset class="category-fieldset field-full">
+            <legend>Dane kontaktowe — prywatne</legend>
+            <div class="field-grid">
+              <label>
+                <span>Numer telefonu</span>
+                <input type="tel" name="phone" value="${escapeAttr(editor.contact?.phone || '')}" data-competitor-editor-field autocomplete="tel" inputmode="tel">
+              </label>
+              <label>
+                <span>Adres e-mail</span>
+                <input type="email" name="email" value="${escapeAttr(editor.contact?.email || '')}" data-competitor-editor-field autocomplete="email" inputmode="email">
+              </label>
+            </div>
+            <p class="section-note">Te dane nie są pokazywane w wynikach, listach startowych ani publicznych profilach.</p>
+          </fieldset>
           <label>
             <span>Wzrost (cm)</span>
             <input name="height" value="${escapeAttr(editor.height || '')}" data-competitor-editor-field inputmode="numeric">
@@ -1532,13 +1546,15 @@ function renderCompetitorSubmission() {
   if (!preview) return '';
   const competitor = preview.competitor;
   const existing = competitorById(preview.matchId);
+  const selectedCategories = preview.categories || [];
   const details = [
     ['Data urodzenia', competitor.birthDate],
     ['Miejscowość', competitor.residence],
     ['Reprezentowany kraj', countryDisplayName(competitor.countryCode, 'pl') || 'Nie podano'],
     ['Wzrost', `${competitor.height} cm`],
     ['Waga', `${competitor.weight} kg`],
-    ['Kategorie', getCompetitorCategories(competitor).join(', ') || 'Bez kategorii']
+    ['Telefon (prywatny)', competitor.contact?.phone || 'Nie podano'],
+    ['E-mail (prywatny)', competitor.contact?.email || 'Nie podano']
   ];
   return `
     <div class="modal-backdrop submission-backdrop" role="presentation">
@@ -1555,6 +1571,18 @@ function renderCompetitorSubmission() {
         <dl class="profile-details">
           ${details.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join('')}
         </dl>
+        <fieldset class="category-fieldset submission-categories">
+          <legend>Kategorie — tylko organizator</legend>
+          <div class="category-options">
+            ${SYSTEM_COMPETITOR_CATEGORIES.map(category => `
+              <label class="category-option">
+                <input type="checkbox" name="submissionCategories" value="${escapeAttr(category)}" ${selectedCategories.some(value => normalizeCategoryKey(value) === normalizeCategoryKey(category)) ? 'checked' : ''}>
+                <span>${escapeHtml(category)}</span>
+              </label>
+            `).join('')}
+          </div>
+          <p class="section-note">Pozostaw wszystko odznaczone, aby zapisać zawodnika bez kategorii.</p>
+        </fieldset>
         ${renderStructuredCompetitorDetails(competitor)}
         ${competitor.notes ? `<section class="profile-notes-section"><h3>Osiągnięcia i informacje</h3><p class="profile-notes">${escapeHtml(competitor.notes)}</p></section>` : ''}
         <p class="submission-safety">Import zmieni wyłącznie rekord zawodnika. Wyniki i kolejność zawodów pozostaną bez zmian.</p>
@@ -2147,10 +2175,11 @@ function openCompetitorEditor(id = '') {
     height: '',
     weight: '',
     notes: '',
+    contact: { phone: '', email: '' },
     photo: '',
     dataWarnings: []
   }) || {
-    id: '', name: '', category: '', categories: [], birthDate: '', residence: '', height: '', weight: '', notes: '', photo: '', dataWarnings: []
+    id: '', name: '', category: '', categories: [], birthDate: '', residence: '', height: '', weight: '', notes: '', contact: { phone: '', email: '' }, photo: '', dataWarnings: []
   };
   if (!existing) state.ui.competitorEditor.id = '';
   state.ui.competitorEditor.photoStatus = '';
@@ -2173,6 +2202,10 @@ function syncCompetitorEditorFromForm(form) {
   ['name', 'birthDate', 'residence', 'height', 'weight', 'notes'].forEach(field => {
     editor[field] = String(data.get(field) || '').trim();
   });
+  editor.contact = {
+    phone: String(data.get('phone') || '').trim(),
+    email: String(data.get('email') || '').trim()
+  };
   editor.categories = competitorEditorCategories(data);
   editor.category = editor.categories[0] || '';
 }
@@ -2257,6 +2290,10 @@ function saveCompetitorEditor(data) {
     height: String(data.get('height') || '').trim(),
     weight: String(data.get('weight') || '').trim(),
     notes: String(data.get('notes') || '').trim(),
+    contact: {
+      phone: String(data.get('phone') || '').trim(),
+      email: String(data.get('email') || '').trim()
+    },
     photo: editor.photo || '',
     dataWarnings: editor.dataWarnings || []
   };
@@ -2636,6 +2673,7 @@ function openCompetitorSubmission(json) {
   state.ui.competitorSubmission = {
     competitor,
     matchId: idMatch?.id || identityMatch?.id || '',
+    categories: getCompetitorCategories(idMatch || identityMatch || {}),
     schemaVersion: normalized.schemaVersion,
     declarations: normalized.declarations || null
   };
@@ -2651,10 +2689,13 @@ function confirmCompetitorSubmission() {
   const preview = state.ui.competitorSubmission;
   if (!preview) return;
   const existing = competitorById(preview.matchId);
+  const categories = [...app.querySelectorAll('input[name="submissionCategories"]:checked')]
+    .map(input => input.value);
   const source = {
     ...preview.competitor,
     id: existing?.id || makeId('competitor', preview.competitor.name),
-    category: preview.competitor.categories[0] || ''
+    category: categories[0] || '',
+    categories
   };
   const previousName = existing?.name || '';
   const result = upsertCompetitorRecord(state.competitors, source, {

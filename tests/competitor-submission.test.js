@@ -20,6 +20,8 @@ assert.equal(v1.ok, true);
 assert.equal(v1.schemaVersion, 1);
 assert.equal(v1.competitor.notes, 'STARY OPIS');
 assert.equal(v1.competitor.countryCode, '');
+assert.deepEqual(v1.competitor.categories, []);
+assert.equal('contact' in v1.competitor, false);
 
 const v2Document = {
   schemaVersion: 2,
@@ -60,6 +62,7 @@ assert.deepEqual(v2.competitor.career.titleCodes, ['NATIONAL_CHAMPION']);
 assert.equal(v2.competitor.career.nationalResults.length, 1);
 assert.equal(v2.competitor.career.internationalResults.length, 1);
 assert.equal(v2.declarations.mediaPermissionAccepted, false);
+assert.deepEqual(v2.competitor.categories, [], 'Kategorie ze starego zgłoszenia nie mogą sterować danymi administracyjnymi');
 
 const currentV2Document = structuredClone(v2Document);
 currentV2Document.competitor.career = {
@@ -80,7 +83,24 @@ assert.equal(currentV2.competitor.career.nationalResults.length, 2);
 assert.equal(currentV2.competitor.career.internationalResults.length, 2);
 assert.equal('privacyNoticeAcknowledged' in currentV2.declarations, false);
 
-assert.equal(normalizeSubmissionFile({ ...v2Document, schemaVersion: 3 }).ok, false);
+const v3Document = structuredClone(currentV2Document);
+v3Document.schemaVersion = 3;
+v3Document.contact = { phone: '+49 151 234 56 789', email: 'John.Smith@Example.com' };
+v3Document.competitor = { ...v3Document.competitor };
+delete v3Document.competitor.categories;
+v3Document.declarations.version = '2026-08-v3';
+v3Document.declarations.contactDataNoticeAcknowledged = true;
+const v3 = normalizeSubmissionFile(v3Document);
+assert.equal(v3.ok, true);
+assert.equal(v3.schemaVersion, 3);
+assert.deepEqual(v3.competitor.contact, { phone: '+4915123456789', email: 'john.smith@example.com' });
+assert.deepEqual(v3.competitor.categories, []);
+
+assert.equal(normalizeSubmissionFile({ ...v3Document, contact: { phone: 'bad', email: 'bad' } }).ok, false);
+assert.equal(normalizeSubmissionFile({
+  ...v3Document,
+  declarations: { ...v3Document.declarations, contactDataNoticeAcknowledged: false }
+}).ok, false);
 assert.equal(normalizeSubmissionFile({ ...v2Document, competitor: { ...v2Document.competitor, countryCode: 'XX' } }).ok, false);
 assert.equal(normalizeSubmissionFile({
   ...v2Document,

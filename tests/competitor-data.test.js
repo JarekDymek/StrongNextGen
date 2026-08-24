@@ -168,6 +168,32 @@ const categoriesCleared = mergeCompetitorDetails(categoriesReplaced, {
 assert.deepEqual(categoriesCleared.categories, []);
 assert.equal(categoriesCleared.category, '');
 
+const privateContactPreserved = mergeCompetitorDetails({
+  id: 'contact',
+  name: 'Kontakt Testowy',
+  categories: ['Puchar Polski', 'Legenda'],
+  contact: { phone: '+48123456789', email: 'old@example.com' }
+}, {
+  id: 'contact',
+  name: 'Kontakt Testowy Zmieniony',
+  categories: []
+}, { mode: 'preferIncoming', categoriesMode: 'fillMissing' });
+assert.deepEqual(privateContactPreserved.contact, { phone: '+48123456789', email: 'old@example.com' });
+
+const privateContactUpdated = mergeCompetitorDetails(privateContactPreserved, {
+  id: 'contact',
+  name: 'Kontakt Testowy Zmieniony',
+  contact: { phone: '0046 60 245 26 47', email: 'NEW@EXAMPLE.COM' }
+}, { mode: 'preferIncoming', categoriesMode: 'fillMissing' });
+assert.deepEqual(privateContactUpdated.contact, { phone: '+46602452647', email: 'new@example.com' });
+
+const legacyUpsert = upsertCompetitorRecord([privateContactUpdated], {
+  id: 'contact',
+  name: 'Kontakt Testowy Zmieniony',
+  categories: []
+}, { mode: 'preferIncoming', categoriesMode: 'replace' });
+assert.deepEqual(legacyUpsert.competitor.contact, privateContactUpdated.contact, 'Brak contact w starym pliku nie może czyścić danych');
+
 const values = new Map();
 globalThis.localStorage = {
   getItem: key => values.has(key) ? values.get(key) : null,

@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0b1f36">
+    <meta name="strongman-submission-endpoint" content="">
     <title>Zgłoszenie zawodnika Strongman</title>
     <link rel="icon" href="../assets/icon-192.png">
     <link rel="stylesheet" href="styles.css">
@@ -54,19 +55,20 @@
           </div>
         </section>
 
-        <fieldset class="form-section">
-          <legend data-i18n="categories">Kategorie</legend>
-          <div class="category-grid">
-            <label><input type="checkbox" name="categories" value="Puchar Polski"><span data-i18n="categoryPolishCup">Puchar Polski</span></label>
-            <label><input type="checkbox" name="categories" value="Legenda"><span data-i18n="categoryLegend">Legenda</span></label>
-            <label><input type="checkbox" name="categories" value="Tyberian Team"><span data-i18n="categoryTeam">Tyberian Team</span></label>
-            <label><input type="checkbox" name="categories" value="Inny"><span data-i18n="categoryOther">Inny</span></label>
+        <section class="form-section">
+          <h2 data-i18n="contactTitle">Dane kontaktowe</h2>
+          <p class="section-hint" data-i18n="contactHint">Dane są przekazywane wyłącznie organizatorowi i nie są publikowane w wynikach.</p>
+          <div class="field-grid">
+            <label>
+              <span data-i18n="phone">Numer telefonu</span>
+              <input type="tel" name="phone" autocomplete="tel" inputmode="tel" maxlength="40" data-i18n-placeholder="phonePlaceholder" placeholder="np. +48 123 456 789" required>
+            </label>
+            <label>
+              <span data-i18n="email">Adres e-mail</span>
+              <input type="email" name="email" autocomplete="email" inputmode="email" maxlength="254" data-i18n-placeholder="emailPlaceholder" placeholder="zawodnik@example.com" required>
+            </label>
           </div>
-          <label>
-            <span data-i18n="otherCategories">Inne kategorie, oddzielone przecinkami</span>
-            <input name="customCategories" data-uppercase autocomplete="off" maxlength="200">
-          </label>
-        </fieldset>
+        </section>
 
         <section class="form-section">
           <h2 data-i18n="strengthTitle">Rekordy siłowe</h2>
@@ -147,6 +149,11 @@
         <section class="form-section declarations-section">
           <h2 data-i18n="declarationsTitle">Oświadczenia i zezwolenia</h2>
           <details>
+            <summary data-i18n="contactNoticeTitle">Informacja o przetwarzaniu danych kontaktowych</summary>
+            <p data-i18n="contactNoticeBody"></p>
+            <label class="consent"><input type="checkbox" name="contactDataNoticeAcknowledged"><span data-i18n="contactNoticeAccepted"></span></label>
+          </details>
+          <details>
             <summary data-i18n="dataConfirmationTitle">Potwierdzenie danych i zdjęcia</summary>
             <label class="consent"><input type="checkbox" name="dataAndPhotoConfirmed"><span data-i18n="dataConfirmation">Potwierdzam poprawność danych oraz prawo do przekazania organizatorowi dołączonego zdjęcia i oświadczenia.</span></label>
           </details>
@@ -167,15 +174,20 @@
       </form>
 
       <section class="result-panel" data-result-panel hidden>
-        <span data-i18n="resultReady">Plik gotowy</span>
+        <span data-i18n="resultReady">Zgłoszenie zostało przygotowane poprawnie</span>
         <h2 data-result-name></h2>
         <p data-result-details></p>
-        <button type="button" class="download-button" data-download data-i18n="download">Pobierz plik zgłoszenia JSON</button>
-        <p data-i18n="sendInstruction">Wyślij pobrany plik organizatorowi przez e-mail lub wybrany komunikator.</p>
+        <div class="result-actions">
+          <button type="button" class="send-button" data-send data-i18n="send">Wyślij zgłoszenie</button>
+          <button type="button" class="share-button" data-share data-i18n="share" hidden>Udostępnij zgłoszenie</button>
+          <button type="button" class="download-button" data-download data-i18n="download">Pobierz plik JSON</button>
+        </div>
+        <p class="status" data-delivery-status role="status"></p>
+        <p data-i18n="sendInstruction">Możesz wysłać zgłoszenie bezpośrednio, udostępnić plik albo pobrać JSON jako kopię awaryjną.</p>
       </section>
     </main>
 
-    <footer data-i18n="footer">Dane i zdjęcie są przetwarzane wyłącznie na tym urządzeniu. Formularz niczego nie wysyła do Internetu.</footer>
+    <footer data-i18n="footer">Dane i zdjęcie są przygotowywane na tym urządzeniu. Trafią do organizatora dopiero po wybraniu wysyłki, udostępnienia albo po samodzielnym przekazaniu pobranego pliku.</footer>
     <script type="module" src="app.js"></script>
   </body>
 </html>

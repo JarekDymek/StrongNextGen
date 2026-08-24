@@ -24,6 +24,8 @@ try {
   await page.locator('[name="countryCode"]').selectOption('DE');
   await page.locator('[name="height"]').fill('190');
   await page.locator('[name="weight"]').fill('135');
+  await page.locator('[name="phone"]').fill('+49 151 234-56-789');
+  await page.locator('[name="email"]').fill('John.Smith@Example.com');
   await page.locator('[name="squatKg"]').fill('330');
   await page.locator('[name="deadliftKg"]').fill('390');
   const firstNational = page.locator('[data-career-list="national"] [data-career-entry]').first();
@@ -49,7 +51,7 @@ try {
   await secondInternational.locator('[data-career-field="level"]').selectOption('WORLD_CHAMPIONSHIP');
   await secondInternational.locator('[data-career-field="place"]').fill('5');
   await secondInternational.locator('[data-career-field="year"]').fill('2023');
-  await page.locator('[name="categories"][value="Puchar Polski"]').check();
+  assert.equal(await page.locator('[name="categories"]').count(), 0);
 
   const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600"><rect width="600" height="600" fill="#ef4b23"/><rect x="600" width="600" height="600" fill="#245ee8"/></svg>');
   await page.locator('[data-photo-input]').setInputFiles({ name: 'landscape.svg', mimeType: 'image/svg+xml', buffer: svg });
@@ -95,6 +97,8 @@ try {
 
   await page.getByText('Potwierdzenie danych i zdjęcia', { exact: true }).click();
   await page.locator('[name="dataAndPhotoConfirmed"]').check();
+  await page.getByText('Informacja o przetwarzaniu danych kontaktowych', { exact: true }).click();
+  await page.locator('[name="contactDataNoticeAcknowledged"]').check();
   assert.equal(await page.getByText('Tytuły Strongman', { exact: true }).count(), 0);
   assert.equal(await page.getByText('Informacja o przetwarzaniu danych osobowych', { exact: true }).count(), 0);
   await page.getByRole('button', { name: 'Sprawdź i przygotuj plik' }).click();
@@ -105,15 +109,20 @@ try {
   await page.locator('[data-result-panel]').waitFor({ state: 'visible' });
 
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Pobierz plik zgłoszenia JSON' }).click();
+  await page.getByRole('button', { name: 'Pobierz plik JSON' }).click();
   const download = await downloadPromise;
-  const downloadPath = path.join(artifacts, 'competitor-submission-v2.json');
+  assert.equal(await page.locator('[data-send]').isDisabled(), true, 'Bez skonfigurowanego endpointu wysyłka nie może udawać aktywnej');
+  await page.locator('[data-delivery-status]').filter({ hasText: 'Automatyczna wysyłka nie jest jeszcze aktywna' }).waitFor();
+  const downloadPath = path.join(artifacts, 'competitor-submission-v3.json');
   await download.saveAs(downloadPath);
   const submission = JSON.parse(await fs.readFile(downloadPath, 'utf8'));
-  assert.equal(submission.schemaVersion, 2);
+  assert.equal(submission.schemaVersion, 3);
   assert.equal(submission.formLocale, 'pl');
   assert.equal(submission.competitor.name, 'JOHN SMITH');
   assert.equal(submission.competitor.countryCode, 'DE');
+  assert.equal('categories' in submission.competitor, false);
+  assert.equal('category' in submission.competitor, false);
+  assert.deepEqual(submission.contact, { phone: '+4915123456789', email: 'john.smith@example.com' });
   assert.equal(submission.competitor.strengthRecords.benchPressKg, null);
   assert.equal(submission.competitor.career.nationalResults.length, 2);
   assert.equal(submission.competitor.career.nationalResults[1].level, 'NATIONAL_CUP');
@@ -122,7 +131,8 @@ try {
   assert.equal('titleCodes' in submission.competitor.career, false);
   assert.equal(submission.declarations.riskAccepted, true);
   assert.equal(submission.declarations.mediaPermissionAccepted, false);
-  assert.equal(submission.declarations.version, '2026-08-v2');
+  assert.equal(submission.declarations.version, '2026-08-v3');
+  assert.equal(submission.declarations.contactDataNoticeAcknowledged, true);
   assert.equal('privacyNoticeAcknowledged' in submission.declarations, false);
   assert.match(submission.competitor.photo, /^data:image\/jpeg;base64,/);
   const photoSize = await page.evaluate(async dataUrl => {

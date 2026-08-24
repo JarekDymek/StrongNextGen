@@ -1777,6 +1777,18 @@ body.outdoor-mode .sticky-actions {
   gap: 8px;
 }
 
+.category-fieldset .field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.section-note {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 .category-option {
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr);
@@ -2076,6 +2088,14 @@ body.outdoor-mode .photo-editor {
 
   .season-editor-row label:last-child {
     grid-column: auto;
+  }
+}
+
+@media (max-width: 639px) {
+  .competitor-form,
+  .category-fieldset .field-grid,
+  .category-options {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
