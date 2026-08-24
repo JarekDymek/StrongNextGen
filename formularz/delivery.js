@@ -77,6 +77,12 @@ export function canShareSubmission(navigatorRef, file, fallbackFile = null) {
 export async function shareSubmission(navigatorRef, file, title, fallbackFile = null) {
   if (!navigatorRef?.share || !navigatorRef?.canShare) throw new Error('shareUnavailable');
 
+  const canShareFallback = Boolean(fallbackFile && navigatorRef.canShare({ files: [fallbackFile] }));
+  if (/Android/i.test(String(navigatorRef.userAgent || '')) && canShareFallback) {
+    await navigatorRef.share({ files: [fallbackFile], title });
+    return 'text';
+  }
+
   const canShareJson = navigatorRef.canShare({ files: [file] });
   if (canShareJson) {
     try {
@@ -84,11 +90,11 @@ export async function shareSubmission(navigatorRef, file, title, fallbackFile = 
       return 'json';
     } catch (error) {
       if (error?.name === 'AbortError') throw error;
-      if (!fallbackFile || !navigatorRef.canShare({ files: [fallbackFile] })) throw error;
+      if (!canShareFallback) throw error;
     }
   }
 
-  if (!fallbackFile || !navigatorRef.canShare({ files: [fallbackFile] })) throw new Error('shareUnavailable');
+  if (!canShareFallback) throw new Error('shareUnavailable');
   await navigatorRef.share({ files: [fallbackFile], title });
   return 'text';
 }

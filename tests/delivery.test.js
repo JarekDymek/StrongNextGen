@@ -94,6 +94,19 @@ assert.equal(await shareSubmission(fallbackNavigator, file, 'JAN TESTOWY', fallb
 assert.equal(fallbackCalls, 2);
 assert.equal(shared.files[0], fallbackFile);
 
+let androidCalls = 0;
+const androidNavigator = {
+  userAgent: 'Mozilla/5.0 (Linux; Android 15) EdgA/140.0',
+  canShare: ({ files }) => files[0] === file || files[0] === fallbackFile,
+  share: async ({ files }) => {
+    androidCalls += 1;
+    shared = { files };
+  }
+};
+assert.equal(await shareSubmission(androidNavigator, file, 'JAN TESTOWY', fallbackFile), 'text');
+assert.equal(androidCalls, 1, 'Android powinien otworzyć panel tylko raz, zanim wygaśnie aktywacja dotykiem');
+assert.equal(shared.files[0], fallbackFile);
+
 let cancellationCalls = 0;
 const cancelledNavigator = {
   canShare: () => true,

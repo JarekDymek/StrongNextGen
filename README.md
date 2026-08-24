@@ -1,6 +1,6 @@
 # Strongman Next
 
-## Wersja stabilna 1.3.1
+## Wersja stabilna 1.3.2
 
 ### Klasyfikacja sezonu po 11 imprezach
 
@@ -185,4 +185,4 @@ Formularz korzysta z funkcji `https://strong-next-gen.vercel.app/api/send-submis
 
 ## Status wydania
 
-Wersja 1.3.1 przeszła testy reguł punktacji, klasyfikacji sezonu po 11 imprezach, formularza PL/EN z prywatnym kontaktem i cropperem, importu schema v1/v2/v3, zachowania kategorii organizatora, trwałej bazy zawodników, pełnego przebiegu zawodów, procedur Pomocy, widoków telefonu i iPada oraz uruchomienia PWA offline. Projekt nie wymaga procesu bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.
+Wersja 1.3.2 przeszła testy reguł punktacji, klasyfikacji sezonu po 11 imprezach, formularza PL/EN z prywatnym kontaktem i cropperem, importu schema v1/v2/v3, zachowania kategorii organizatora, trwałej bazy zawodników, pełnego przebiegu zawodów, procedur Pomocy, widoków telefonu i iPada oraz uruchomienia PWA offline. Projekt nie wymaga procesu bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.
