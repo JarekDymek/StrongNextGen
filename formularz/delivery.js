@@ -14,6 +14,17 @@ export function createSubmissionFile(submission, filename, FileType = globalThis
   return blob;
 }
 
+export function createShareFallbackFile(submission, filename, FileType = globalThis.File) {
+  const content = submissionJson(submission);
+  const fallbackName = filename.toLowerCase().endsWith('.json') ? `${filename}.txt` : `${filename}.json.txt`;
+  if (typeof FileType === 'function') {
+    return new FileType([content], fallbackName, { type: 'text/plain;charset=utf-8' });
+  }
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  Object.defineProperty(blob, 'name', { value: fallbackName });
+  return blob;
+}
+
 export function resolveSubmissionEndpoint(documentRef = globalThis.document) {
   return String(documentRef?.querySelector('meta[name="strongman-submission-endpoint"]')?.content || '').trim();
 }
@@ -56,11 +67,28 @@ export function createSendController(send = sendSubmission) {
   };
 }
 
-export function canShareSubmission(navigatorRef, file) {
-  return Boolean(navigatorRef?.share && navigatorRef?.canShare?.({ files: [file] }));
+export function canShareSubmission(navigatorRef, file, fallbackFile = null) {
+  if (!navigatorRef?.share || !navigatorRef?.canShare) return false;
+  return [file, fallbackFile]
+    .filter(Boolean)
+    .some(candidate => navigatorRef.canShare({ files: [candidate] }));
 }
 
-export async function shareSubmission(navigatorRef, file, title) {
-  if (!canShareSubmission(navigatorRef, file)) throw new Error('shareUnavailable');
-  await navigatorRef.share({ files: [file], title });
+export async function shareSubmission(navigatorRef, file, title, fallbackFile = null) {
+  if (!navigatorRef?.share || !navigatorRef?.canShare) throw new Error('shareUnavailable');
+
+  const canShareJson = navigatorRef.canShare({ files: [file] });
+  if (canShareJson) {
+    try {
+      await navigatorRef.share({ files: [file], title });
+      return 'json';
+    } catch (error) {
+      if (error?.name === 'AbortError') throw error;
+      if (!fallbackFile || !navigatorRef.canShare({ files: [fallbackFile] })) throw error;
+    }
+  }
+
+  if (!fallbackFile || !navigatorRef.canShare({ files: [fallbackFile] })) throw new Error('shareUnavailable');
+  await navigatorRef.share({ files: [fallbackFile], title });
+  return 'text';
 }

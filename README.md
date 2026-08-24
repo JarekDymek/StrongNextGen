@@ -1,6 +1,6 @@
 # Strongman Next
 
-## Wersja stabilna 1.3.0
+## Wersja stabilna 1.3.1
 
 ### Klasyfikacja sezonu po 11 imprezach
 
@@ -170,7 +170,7 @@ SUBMISSION_TO_EMAIL=jarekdymek@gmail.com  # opcjonalne, ten adres jest domyślny
 ALLOWED_ORIGIN=https://jarekdymek.github.io
 ```
 
-Po wdrożeniu należy wpisać publiczny adres funkcji do znacznika `strongman-submission-endpoint` w `formularz/index.html`. Do czasu tej konfiguracji przycisk wysyłki jest jawnie nieaktywny, a download i Web Share działają bez backendu. Na platformie serverless należy dodatkowo ustawić limit żądań dla endpointu.
+Po wdrożeniu należy wpisać publiczny adres funkcji do znacznika `strongman-submission-endpoint` w `formularz/index.html`. Do czasu tej konfiguracji przycisk wysyłki jest jawnie nieaktywny, a download i Web Share działają bez backendu. Na Androidzie formularz automatycznie ponawia odrzucone udostępnienie JSON jako kompatybilny plik `*.json.txt`; jego zawartość nadal jest prawidłowym JSON-em i może zostać zaimportowana do aplikacji. Na platformie serverless należy dodatkowo ustawić limit żądań dla endpointu.
 
 ## Format importu konkurencji
 
@@ -185,4 +185,4 @@ Po wdrożeniu należy wpisać publiczny adres funkcji do znacznika `strongman-su
 
 ## Status wydania
 
-Wersja 1.3.0 przeszła testy reguł punktacji, klasyfikacji sezonu po 11 imprezach, formularza PL/EN z prywatnym kontaktem i cropperem, importu schema v1/v2/v3, zachowania kategorii organizatora, trwałej bazy zawodników, pełnego przebiegu zawodów, procedur Pomocy, widoków telefonu i iPada oraz uruchomienia PWA offline. Projekt nie wymaga procesu bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.
+Wersja 1.3.1 przeszła testy reguł punktacji, klasyfikacji sezonu po 11 imprezach, formularza PL/EN z prywatnym kontaktem i cropperem, importu schema v1/v2/v3, zachowania kategorii organizatora, trwałej bazy zawodników, pełnego przebiegu zawodów, procedur Pomocy, widoków telefonu i iPada oraz uruchomienia PWA offline. Projekt nie wymaga procesu bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.

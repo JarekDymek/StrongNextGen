@@ -144,7 +144,7 @@ export function pickJsonFile() {
   return new Promise(resolve => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'application/json,.json';
+    input.accept = 'application/json,text/plain,.json,.json.txt,.txt';
     input.addEventListener('change', () => resolve(input.files?.[0] || null), { once: true });
     input.click();
   });

@@ -9,6 +9,7 @@ import { createPhotoCropper } from './cropper.js';
 import {
   canShareSubmission,
   createSendController,
+  createShareFallbackFile,
   createSubmissionFile,
   resolveSubmissionEndpoint,
   sendSubmission,
@@ -200,8 +201,10 @@ shareButton.addEventListener('click', async () => {
   if (!preparedSubmission) return;
   const filename = submissionFilename(preparedSubmission.competitor.name);
   const file = createSubmissionFile(preparedSubmission, filename);
+  const fallbackFile = createShareFallbackFile(preparedSubmission, filename);
   try {
-    await shareSubmission(navigator, file, preparedSubmission.competitor.name);
+    const format = await shareSubmission(navigator, file, preparedSubmission.competitor.name, fallbackFile);
+    setDeliveryStatus(translate(locale, format === 'text' ? 'sharedFallback' : 'shared'));
   } catch (error) {
     if (error?.name !== 'AbortError') setDeliveryStatus(translate(locale, 'shareFailed'), true);
   }
@@ -343,7 +346,10 @@ function updateDeliveryActions() {
   const file = preparedSubmission
     ? createSubmissionFile(preparedSubmission, submissionFilename(preparedSubmission.competitor.name))
     : null;
-  shareButton.hidden = !file || !canShareSubmission(navigator, file);
+  const fallbackFile = preparedSubmission
+    ? createShareFallbackFile(preparedSubmission, submissionFilename(preparedSubmission.competitor.name))
+    : null;
+  shareButton.hidden = !file || !canShareSubmission(navigator, file, fallbackFile);
   if (preparedSubmission && !endpoint) setDeliveryStatus(translate(locale, 'sendUnavailable'));
 }
 

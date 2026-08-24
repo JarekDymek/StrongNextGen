@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {
   canShareSubmission,
   createSendController,
+  createShareFallbackFile,
   createSubmissionFile,
   sendSubmission,
   shareSubmission,
@@ -25,6 +26,10 @@ class TestFile extends Blob {
 const file = createSubmissionFile(submission, 'zawodnik_JAN_TESTOWY.json', TestFile);
 assert.equal(file.name, 'zawodnik_JAN_TESTOWY.json');
 assert.equal(file.type, 'application/json;charset=utf-8');
+const fallbackFile = createShareFallbackFile(submission, file.name, TestFile);
+assert.equal(fallbackFile.name, 'zawodnik_JAN_TESTOWY.json.txt');
+assert.equal(fallbackFile.type, 'text/plain;charset=utf-8');
+assert.deepEqual(JSON.parse(await fallbackFile.text()), submission);
 
 let request = null;
 await sendSubmission({
@@ -72,8 +77,34 @@ const navigatorMock = {
   share: async payload => { shared = payload; }
 };
 assert.equal(canShareSubmission(navigatorMock, file), true);
-await shareSubmission(navigatorMock, file, 'JAN TESTOWY');
+assert.equal(await shareSubmission(navigatorMock, file, 'JAN TESTOWY', fallbackFile), 'json');
 assert.equal(shared.files[0], file);
 assert.equal(shared.title, 'JAN TESTOWY');
+
+let fallbackCalls = 0;
+const fallbackNavigator = {
+  canShare: ({ files }) => files[0] === file || files[0] === fallbackFile,
+  share: async ({ files }) => {
+    fallbackCalls += 1;
+    if (files[0] === file) throw new TypeError('application/json is not shareable');
+    shared = { files };
+  }
+};
+assert.equal(await shareSubmission(fallbackNavigator, file, 'JAN TESTOWY', fallbackFile), 'text');
+assert.equal(fallbackCalls, 2);
+assert.equal(shared.files[0], fallbackFile);
+
+let cancellationCalls = 0;
+const cancelledNavigator = {
+  canShare: () => true,
+  share: async () => {
+    cancellationCalls += 1;
+    const error = new Error('cancelled');
+    error.name = 'AbortError';
+    throw error;
+  }
+};
+await assert.rejects(() => shareSubmission(cancelledNavigator, file, 'JAN TESTOWY', fallbackFile), { name: 'AbortError' });
+assert.equal(cancellationCalls, 1, 'Anulowanie panelu udostępniania nie może otwierać go ponownie');
 
 console.log('Submission delivery tests passed');
