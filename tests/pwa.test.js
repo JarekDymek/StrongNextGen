@@ -19,6 +19,17 @@ try {
   await page.reload({ waitUntil: 'networkidle' });
   assert.equal(await page.evaluate(() => Boolean(navigator.serviceWorker.controller)), true, 'Service worker musi kontrolować aplikację');
 
+  const sharedPayload = JSON.stringify({ schemaVersion: 3, type: 'competitor-submission' });
+  const sharedResult = await page.evaluate(async payload => {
+    const data = new FormData();
+    data.append('submission', new File([payload], 'zawodnik_SHARE_TEST.json', { type: 'application/json' }));
+    await fetch(new URL('share-target', document.baseURI), { method: 'POST', body: data });
+    const module = await import(new URL('src/shared-import.js', document.baseURI));
+    return module.consumeSharedSubmission();
+  }, sharedPayload);
+  assert.equal(sharedResult.filename, 'zawodnik_SHARE_TEST.json');
+  assert.equal(sharedResult.text, sharedPayload);
+
   const manifest = await page.evaluate(async () => {
     const response = await fetch(new URL('manifest.json', document.baseURI));
     return response.json();
@@ -26,6 +37,9 @@ try {
   assert.equal(manifest.display, 'standalone');
   assert.equal(manifest.icons.some(icon => icon.sizes === '192x192'), true);
   assert.equal(manifest.icons.some(icon => icon.sizes === '512x512'), true);
+  assert.equal(manifest.share_target.method, 'POST');
+  assert.equal(manifest.share_target.params.files[0].accept.includes('.json'), true);
+  assert.equal(manifest.file_handlers[0].accept['application/json'].includes('.json'), true);
   const release = await page.evaluate(async () => (await fetch(new URL('version.json', document.baseURI))).json());
   assert.equal(release.version, expectedVersion);
 

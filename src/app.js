@@ -23,6 +23,8 @@ import {
 } from './competitor-profile-data.js';
 import { normalizeSubmissionFile as normalizeSubmissionDocument } from './competitor-submission.js';
 import { EMERGENCY_HELP_TOPICS, getEmergencyHelpTopics } from './help.js';
+import { consumeSharedSubmission, registerFileLaunchHandler } from './shared-import.js';
+import { buildResultsMailto, collectResultsRecipients, resolveResultsEndpoint, sendResultsSummary } from './results-delivery.js';
 import {
   clearSavedState,
   consumeStorageWarnings,
@@ -31,6 +33,7 @@ import {
   hasStorageWarning,
   loadCompetitorDatabase,
   loadCheckpoints,
+  loadSeasonDatabase,
   loadSavedState,
   pickImageFile,
   pickJsonFile,
@@ -39,6 +42,7 @@ import {
   readTextFile,
   saveCheckpoint,
   saveCompetitorDatabase,
+  saveSeasonDatabase,
   saveState
 } from './storage.js';
 
@@ -46,6 +50,7 @@ const app = document.getElementById('app');
 const collator = new Intl.Collator('pl', { sensitivity: 'base' });
 let deferredInstallPrompt = null;
 let stopwatchTimer = null;
+let resultsSendInFlight = false;
 const recentActions = new Map();
 const RAPID_ACTION_COOLDOWNS = new Map([
   ['toggle-competitor', 350],
@@ -79,14 +84,27 @@ const STAGE_SHORT_LABELS = {
 
 const savedStateAtStartup = loadSavedState();
 const competitorDatabaseAtStartup = loadCompetitorDatabase();
+const seasonDatabaseAtStartup = loadSeasonDatabase();
 const competitorDatabaseReadFailed = hasStorageWarning('bazy zawodników');
+const seasonDatabaseReadFailed = hasStorageWarning('bazy sezonu');
 const stateMigrationRequired = Boolean(savedStateAtStartup && savedStateAtStartup.baseRevision !== BASE_REVISION);
-let state = hydrateState(savedStateAtStartup, competitorDatabaseAtStartup);
+let state = hydrateState(savedStateAtStartup, competitorDatabaseAtStartup, seasonDatabaseAtStartup);
 state.ui = createUiState();
 let persistenceFailureReported = false;
 if (!competitorDatabaseReadFailed) {
   try {
     saveCompetitorDatabase(state.competitors);
+  } catch (error) {
+    reportPersistenceFailure(error);
+  }
+}
+if (!seasonDatabaseReadFailed) {
+  try {
+    saveSeasonDatabase({
+      baseRevision: BASE_REVISION,
+      events: state.seasonEvents,
+      maxCountedStarts: state.seasonMaxCountedStarts
+    });
   } catch (error) {
     reportPersistenceFailure(error);
   }
@@ -103,6 +121,7 @@ render();
 consumeStorageWarnings().forEach(warning => flash(warning));
 registerServiceWorker();
 initPwaInstall();
+initializeIncomingSubmissions().catch(error => reportUnexpectedError(error));
 
 app.addEventListener('click', event => {
   handleClick(event).catch(error => reportUnexpectedError(error));
@@ -192,10 +211,22 @@ function createUiState() {
   };
 }
 
-function hydrateState(saved, durableDatabase = null) {
+function hydrateState(saved, durableDatabase = null, durableSeason = null) {
   const databaseSeed = Array.isArray(durableDatabase) ? durableDatabase : DEFAULT_COMPETITORS;
   const base = createInitialState(databaseSeed);
-  if (!saved || typeof saved !== 'object') return base;
+  const durableSeasonEvents = normalizeSeasonEvents(durableSeason?.events || []);
+  const normalizedDurableSeason = durableSeasonEvents.length
+    ? durableSeason?.baseRevision === BASE_REVISION
+      ? durableSeasonEvents
+      : mergeCanonicalSeasonEvents(base.seasonEvents, durableSeasonEvents)
+    : null;
+  if (!saved || typeof saved !== 'object') {
+    if (normalizedDurableSeason) base.seasonEvents = normalizedDurableSeason;
+    if (normalizedDurableSeason) {
+      base.seasonMaxCountedStarts = Math.max(1, Number.parseInt(durableSeason?.maxCountedStarts, 10) || base.seasonMaxCountedStarts);
+    }
+    return base;
+  }
 
   const recovered = mergeCompetitorCollections(base.competitors, saved.competitors || [], {
     mode: 'fillMissing',
@@ -205,9 +236,12 @@ function hydrateState(saved, durableDatabase = null) {
   const selectedCompetitorIds = normalizeIdList(migratedSaved.selectedCompetitorIds);
   const selectedEventIds = normalizeIdList(migratedSaved.selectedEventIds);
   const savedSeasonEvents = normalizeSeasonEvents(migratedSaved.seasonEvents || []);
-  const seasonEvents = migratedSaved.baseRevision === BASE_REVISION
+  const savedSeason = migratedSaved.baseRevision === BASE_REVISION
     ? (savedSeasonEvents.length ? savedSeasonEvents : base.seasonEvents)
     : mergeCanonicalSeasonEvents(base.seasonEvents, savedSeasonEvents);
+  const seasonEvents = normalizedDurableSeason
+    ? mergeCanonicalSeasonEvents(normalizedDurableSeason, savedSeason)
+    : savedSeason;
 
   const next = {
     ...base,
@@ -230,7 +264,10 @@ function hydrateState(saved, durableDatabase = null) {
     eventOrderOverrides: normalizeEventOrderOverrides(migratedSaved.eventOrderOverrides),
     scores: {},
     seasonEvents,
-    seasonMaxCountedStarts: Math.max(1, Number.parseInt(migratedSaved.seasonMaxCountedStarts, 10) || base.seasonMaxCountedStarts),
+    seasonMaxCountedStarts: Math.max(1, Number.parseInt(
+      normalizedDurableSeason ? durableSeason?.maxCountedStarts : migratedSaved.seasonMaxCountedStarts,
+      10
+    ) || base.seasonMaxCountedStarts),
     baseRevision: BASE_REVISION,
     schemaVersion: 3
   };
@@ -1080,6 +1117,7 @@ function renderEventSummary(event) {
 function renderSummary() {
   const competitors = state.selectedCompetitorIds.map(id => competitorById(id)).filter(Boolean);
   const standings = rankStandings(competitors, state.scores, state.eventHistory);
+  const resultRecipients = collectResultsRecipients(competitors);
   return `
     <section class="panel strong-panel">
       <div class="panel-heading">
@@ -1092,8 +1130,12 @@ function renderSummary() {
       <div class="button-column">
         <button type="button" class="secondary-button" data-action="export-state">Eksportuj pełny stan</button>
         <button type="button" class="success-button" data-action="export-results-html">Eksportuj wyniki HTML</button>
+        <button type="button" class="primary-button" data-action="send-results-email" ${resultRecipients.all.length && !resultsSendInFlight ? '' : 'disabled'}>
+          ${resultsSendInFlight ? 'Wysyłanie wyników…' : 'Wyślij wyniki zawodnikom'}
+        </button>
         <button type="button" class="secondary-button" data-action="go-scoring">Wróć do wyników</button>
       </div>
+      <p class="section-note">Adresy e-mail: ${resultRecipients.all.length} z ${competitors.length} zawodników. Dane kontaktowe nie trafiają do raportu publicznego.</p>
     </section>
 
     <section class="standings">
@@ -1695,6 +1737,7 @@ async function handleClick(event) {
   if (action === 'stopwatch-save') return saveStopwatchResult();
   if (action === 'stopwatch-close') return closeStopwatch();
   if (action === 'export-results-html') return exportResultsHtml();
+  if (action === 'send-results-email') return sendResultsToCompetitors(trigger);
   if (action === 'open-help') return openEmergencyHelp();
   if (action === 'close-help') return closeEmergencyHelp();
   if (action === 'help-show-topics') return showHelpTopics();
@@ -2139,7 +2182,7 @@ function restoreHelpCheckpoint(session, showTopics) {
   }
   const snapshot = { ...checkpoint.snapshot };
   if (!Object.prototype.hasOwnProperty.call(snapshot, 'logoData')) snapshot.logoData = state.logoData;
-  state = hydrateState(snapshot, loadCompetitorDatabase());
+  state = hydrateState(snapshot, loadCompetitorDatabase(), loadSeasonDatabase());
   state.ui = createUiState();
   if (showTopics) state.ui.emergencyHelp = { open: true, topicId: '', phase: 'topics', checkpointId: '', origin: null };
   persistAndRender(showTopics ? 'Przywrócono stan sprzed procedury. Wybierz inny temat.' : 'Procedura anulowana. Przywrócono punkt bezpieczeństwa.', { competitorsChanged: true });
@@ -2612,7 +2655,7 @@ async function importState() {
     return;
   }
   if (!window.confirm('Wczytać stan z pliku i zastąpić aktualny stan aplikacji?')) return;
-  state = hydrateState(json, loadCompetitorDatabase());
+  state = hydrateState(json, loadCompetitorDatabase(), loadSeasonDatabase());
   state.ui = createUiState();
   persistAndRender('Stan został wczytany.', { competitorsChanged: true });
 }
@@ -2707,6 +2750,25 @@ function confirmCompetitorSubmission() {
   if (existing && previousName !== result.competitor.name) renameCompetitorInHistory(existing.id, result.competitor.name);
   state.ui.competitorSubmission = null;
   persistAndRender(existing ? 'Zaktualizowano istniejącego zawodnika.' : 'Dodano nowego zawodnika do trwałej bazy.', { competitorsChanged: true });
+}
+
+async function initializeIncomingSubmissions() {
+  registerFileLaunchHandler(file => openIncomingSubmissionText(file.text()));
+  const pending = await consumeSharedSubmission();
+  if (pending) await openIncomingSubmissionText(Promise.resolve(pending.text));
+  if (new URL(location.href).searchParams.get('shared-submission') === 'error') {
+    flash('Nie udało się odebrać udostępnionego pliku. Pobierz załącznik i użyj Import zawodników.');
+  }
+}
+
+async function openIncomingSubmissionText(textPromise) {
+  try {
+    const json = JSON.parse(await textPromise);
+    openCompetitorSubmission(json);
+  } catch (error) {
+    console.error('[Strongman Next] Nie udało się otworzyć udostępnionego zgłoszenia:', error);
+    flash('Udostępniony plik nie jest prawidłowym zgłoszeniem zawodnika.');
+  }
 }
 
 function isValidIsoDate(value) {
@@ -2819,7 +2881,7 @@ function saveSeasonEvent(data) {
     normalized,
   ]);
   state.ui.seasonEditor = null;
-  persistAndRender('Zawody sezonu zapisane i klasyfikacja przeliczona.', { competitorsChanged: true });
+  persistAndRender('Zawody sezonu zapisane i klasyfikacja przeliczona.', { competitorsChanged: true, seasonChanged: true });
 }
 
 function deleteSeasonEvent(id) {
@@ -2827,7 +2889,7 @@ function deleteSeasonEvent(id) {
   if (!seasonEvent) return;
   if (!window.confirm(`Usunąć z sezonu zawody ${seasonEvent.location} · ${formatSeasonDate(seasonEvent.date)}? Klasyfikacja zostanie natychmiast przeliczona.`)) return;
   state.seasonEvents = renumberSeasonEvents(state.seasonEvents.filter(event => event.id !== id));
-  persistAndRender('Zawody usunięte z klasyfikacji sezonu.');
+  persistAndRender('Zawody usunięte z klasyfikacji sezonu.', { seasonChanged: true });
 }
 
 function exportSeason() {
@@ -2891,7 +2953,7 @@ async function importSeason() {
         if (!window.confirm(`Zaimportować ${imported.length} imprez i zastąpić wpisy o tej samej dacie oraz miejscowości?`)) return;
         state.seasonEvents = mergeSeasonEvents(state.seasonEvents, imported);
         ensureSeasonCompetitors(imported);
-        persistAndRender(`Zaimportowano ${imported.length} imprez sezonu.`, { competitorsChanged: true });
+        persistAndRender(`Zaimportowano ${imported.length} imprez sezonu.`, { competitorsChanged: true, seasonChanged: true });
         return;
       }
       const candidate = normalizeSeasonEvent(payload?.events?.[0] || payload);
@@ -3038,7 +3100,7 @@ function confirmReset() {
   const input = app.querySelector('[data-reset-input]');
   if (input?.value !== 'RESET') return;
   clearSavedState();
-  state = hydrateState(null, loadCompetitorDatabase());
+  state = hydrateState(null, loadCompetitorDatabase(), loadSeasonDatabase());
   state.ui = createUiState();
   persistAndRender('Aplikacja została zresetowana.');
 }
@@ -3049,7 +3111,7 @@ function loadCheckpointById(id) {
   if (!window.confirm('Wczytać punkt kontrolny i zastąpić aktualny stan?')) return;
   const snapshot = { ...checkpoint.snapshot };
   if (!Object.prototype.hasOwnProperty.call(snapshot, 'logoData')) snapshot.logoData = state.logoData;
-  state = hydrateState(snapshot, loadCompetitorDatabase());
+  state = hydrateState(snapshot, loadCompetitorDatabase(), loadSeasonDatabase());
   state.ui = createUiState();
   persistAndRender('Punkt kontrolny został wczytany.', { competitorsChanged: true });
 }
@@ -3169,6 +3231,52 @@ function exportResultsHtml() {
   const filename = `${safeFilename(`${state.eventName || 'zawody'}_wyniki_${timestamp()}`)}.html`;
   downloadHtmlFile(filename, html);
   flash('Eksport wyników HTML przygotowany.');
+}
+
+async function sendResultsToCompetitors(trigger) {
+  if (resultsSendInFlight) return;
+  const competitors = state.selectedCompetitorIds.map(id => competitorById(id)).filter(Boolean);
+  const recipients = collectResultsRecipients(competitors);
+  if (!recipients.all.length) return flash('Żaden zawodnik tych zawodów nie ma zapisanego adresu e-mail.');
+  const standings = rankStandings(competitors, state.scores, state.eventHistory);
+  const html = buildResultsHtml(standings);
+  const filename = `${safeFilename(`${state.eventName || 'zawody'}_wyniki_${timestamp()}`)}.html`;
+  resultsSendInFlight = true;
+  if (trigger) {
+    trigger.disabled = true;
+    trigger.setAttribute('aria-busy', 'true');
+    trigger.textContent = 'Wysyłanie wyników…';
+  }
+  try {
+    const endpoint = resolveResultsEndpoint();
+    if (recipients.verified.length === recipients.all.length && endpoint) {
+      const result = await sendResultsSummary({
+        endpoint,
+        event: { name: state.eventName || 'Zawody Strong Man', location: state.eventLocation || '', date: state.eventDate || '' },
+        recipients: recipients.verified,
+        html
+      });
+      flash(`Podsumowanie wysłano osobno do ${result.sent} zawodników.`);
+      return;
+    }
+    openResultsEmailFallback(recipients.all.map(item => item.email), standings, filename, html);
+  } catch (error) {
+    console.warn('[Strongman Next] Automatyczna wysyłka wyników jest niedostępna:', error);
+    openResultsEmailFallback(recipients.all.map(item => item.email), standings, filename, html);
+  } finally {
+    resultsSendInFlight = false;
+    if (trigger?.isConnected) {
+      trigger.disabled = false;
+      trigger.removeAttribute('aria-busy');
+      trigger.textContent = 'Wyślij wyniki zawodnikom';
+    }
+  }
+}
+
+function openResultsEmailFallback(emails, standings, filename, html) {
+  downloadHtmlFile(filename, html);
+  flash('Raport HTML pobrano. Otwieram wiadomość z adresami zawodników w polu UDW — dołącz pobrany plik i wyślij.');
+  window.location.href = buildResultsMailto({ emails, eventName: state.eventName, standings });
 }
 
 function downloadHtmlFile(filename, html) {
@@ -3387,11 +3495,18 @@ function applyFilter(type, value) {
   });
 }
 
-function persist({ competitorsChanged = false } = {}) {
+function persist({ competitorsChanged = false, seasonChanged = false } = {}) {
   state.scores = buildScores(state.selectedCompetitorIds, state.eventHistory);
   state.schemaVersion = 3;
   try {
     if (competitorsChanged) saveCompetitorDatabase(state.competitors);
+    if (seasonChanged) {
+      saveSeasonDatabase({
+        baseRevision: BASE_REVISION,
+        events: state.seasonEvents,
+        maxCountedStarts: state.seasonMaxCountedStarts
+      });
+    }
     saveState(state);
     persistenceFailureReported = false;
     return true;

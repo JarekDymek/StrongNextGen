@@ -452,6 +452,15 @@ assert.equal(migratedSeason.seasonEvents.find(event => event.id === 'season-2026
 await seasonPage.locator('[data-action="go-stage"][data-stage="season"]').click();
 await seasonPage.getByText('11. Skalbmierz · 09.08.2026', { exact: false }).waitFor();
 assert.equal(await seasonPage.locator('.season-event-card').count(), 12);
+const safetyAfterSeason = seasonPage.locator('details[data-section="safety"]');
+await seasonPage.locator('[data-action="go-stage"][data-stage="setup"]').click();
+if (!(await safetyAfterSeason.getAttribute('open'))) await safetyAfterSeason.locator('summary').click();
+await seasonPage.getByRole('button', { name: 'Reset aplikacji' }).click();
+await seasonPage.locator('[data-reset-input]').fill('RESET');
+await seasonPage.getByRole('button', { name: 'Resetuj' }).click();
+await seasonPage.locator('[data-action="go-stage"][data-stage="season"]').click();
+assert.equal(await seasonPage.locator('.season-event-card').count(), 12, 'Reset zawodów nie może usuwać trwałej imprezy sezonu nr 12');
+assert.equal(await seasonPage.evaluate(() => JSON.parse(localStorage.getItem('strongman-next.season-database.v1')).events.length), 12);
 await seasonMigration.close();
 
 await browser.close();

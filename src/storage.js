@@ -1,6 +1,7 @@
 const STATE_KEY = 'strongman-next.state.v1';
 const CHECKPOINTS_KEY = 'strongman-next.checkpoints.v1';
 const COMPETITOR_DATABASE_KEY = 'strongman-next.competitor-database.v1';
+const SEASON_DATABASE_KEY = 'strongman-next.season-database.v1';
 const MAX_IMPORT_BYTES = 15 * 1024 * 1024;
 const storageWarnings = new Map();
 
@@ -64,6 +65,28 @@ export function loadCompetitorDatabase() {
 
 export function saveCompetitorDatabase(competitors) {
   localStorage.setItem(COMPETITOR_DATABASE_KEY, JSON.stringify(Array.isArray(competitors) ? competitors : []));
+}
+
+export function loadSeasonDatabase() {
+  try {
+    const raw = localStorage.getItem(SEASON_DATABASE_KEY);
+    if (raw === null) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.events)) throw new Error('Nieprawidłowy format bazy sezonu.');
+    return parsed;
+  } catch (error) {
+    rememberStorageWarning('bazy sezonu', error);
+    return null;
+  }
+}
+
+export function saveSeasonDatabase({ baseRevision = '', events = [], maxCountedStarts = 4 } = {}) {
+  localStorage.setItem(SEASON_DATABASE_KEY, JSON.stringify({
+    baseRevision: String(baseRevision || ''),
+    events: Array.isArray(events) ? events : [],
+    maxCountedStarts: Math.max(1, Number.parseInt(maxCountedStarts, 10) || 4),
+    savedAt: new Date().toISOString()
+  }));
 }
 
 export function loadCheckpoints() {

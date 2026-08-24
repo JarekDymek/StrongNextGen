@@ -24,7 +24,10 @@ export default async function handler(request, response) {
 
   const name = body.submission.competitor.name;
   const filename = safeFilename(body.filename, name);
-  const json = JSON.stringify(body.submission, null, 2);
+  const deliveredSubmission = structuredClone(body.submission);
+  const deliveryProof = signContactEmail(deliveredSubmission.contact.email, process.env.RESULTS_SIGNING_SECRET);
+  if (deliveryProof) deliveredSubmission.contact.deliveryProof = deliveryProof;
+  const json = JSON.stringify(deliveredSubmission, null, 2);
   try {
     const mailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -72,3 +75,4 @@ function safeJson(value) {
 function byteLength(value) {
   return Buffer.byteLength(value, 'utf8');
 }
+import { signContactEmail } from './contact-proof.js';

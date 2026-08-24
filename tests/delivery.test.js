@@ -25,10 +25,10 @@ class TestFile extends Blob {
 }
 const file = createSubmissionFile(submission, 'zawodnik_JAN_TESTOWY.json', TestFile);
 assert.equal(file.name, 'zawodnik_JAN_TESTOWY.json');
-assert.equal(file.type, 'application/json;charset=utf-8');
+assert.equal(file.type, 'application/json');
 const fallbackFile = createShareFallbackFile(submission, file.name, TestFile);
-assert.equal(fallbackFile.name, 'zawodnik_JAN_TESTOWY.json.txt');
-assert.equal(fallbackFile.type, 'text/plain;charset=utf-8');
+assert.equal(fallbackFile.name, 'zawodnik_JAN_TESTOWY.txt');
+assert.equal(fallbackFile.type, 'text/plain');
 assert.deepEqual(JSON.parse(await fallbackFile.text()), submission);
 
 let request = null;

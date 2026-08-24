@@ -85,7 +85,7 @@ assert.equal('privacyNoticeAcknowledged' in currentV2.declarations, false);
 
 const v3Document = structuredClone(currentV2Document);
 v3Document.schemaVersion = 3;
-v3Document.contact = { phone: '+49 151 234 56 789', email: 'John.Smith@Example.com' };
+v3Document.contact = { phone: '+49 151 234 56 789', email: 'John.Smith@Example.com', deliveryProof: `v1:${'a'.repeat(64)}` };
 v3Document.competitor = { ...v3Document.competitor };
 delete v3Document.competitor.categories;
 v3Document.declarations.version = '2026-08-v3';
@@ -93,7 +93,7 @@ v3Document.declarations.contactDataNoticeAcknowledged = true;
 const v3 = normalizeSubmissionFile(v3Document);
 assert.equal(v3.ok, true);
 assert.equal(v3.schemaVersion, 3);
-assert.deepEqual(v3.competitor.contact, { phone: '+4915123456789', email: 'john.smith@example.com' });
+assert.deepEqual(v3.competitor.contact, { phone: '+4915123456789', email: 'john.smith@example.com', deliveryProof: `v1:${'a'.repeat(64)}` });
 assert.deepEqual(v3.competitor.categories, []);
 
 assert.equal(normalizeSubmissionFile({ ...v3Document, contact: { phone: 'bad', email: 'bad' } }).ok, false);

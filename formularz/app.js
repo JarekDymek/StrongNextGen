@@ -163,7 +163,13 @@ form.addEventListener('submit', async event => {
 
 document.querySelector('[data-download]').addEventListener('click', () => {
   if (!preparedSubmission) return;
-  const blob = new Blob([submissionJson(preparedSubmission)], { type: 'application/json;charset=utf-8' });
+  downloadPreparedSubmission();
+  document.querySelector('[data-form-status]').textContent = translate(locale, 'downloaded');
+});
+
+function downloadPreparedSubmission() {
+  if (!preparedSubmission) return false;
+  const blob = new Blob([submissionJson(preparedSubmission)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -172,8 +178,8 @@ document.querySelector('[data-download]').addEventListener('click', () => {
   link.click();
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 2000);
-  document.querySelector('[data-form-status]').textContent = translate(locale, 'downloaded');
-});
+  return true;
+}
 
 sendButton.addEventListener('click', async () => {
   if (!preparedSubmission || sendController.isBusy()) return;
@@ -206,7 +212,10 @@ shareButton.addEventListener('click', async () => {
     const format = await shareSubmission(navigator, file, preparedSubmission.competitor.name, fallbackFile);
     setDeliveryStatus(translate(locale, format === 'text' ? 'sharedFallback' : 'shared'));
   } catch (error) {
-    if (error?.name !== 'AbortError') setDeliveryStatus(translate(locale, 'shareFailed'), true);
+    if (error?.name !== 'AbortError') {
+      downloadPreparedSubmission();
+      setDeliveryStatus(translate(locale, 'shareDownloaded'));
+    }
   }
 });
 

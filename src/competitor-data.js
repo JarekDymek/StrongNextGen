@@ -82,7 +82,10 @@ export function normalizeCompetitorContact(value) {
   const phone = /^\+?\d{7,15}$/.test(compactPhone) ? compactPhone : '';
   const rawEmail = String(source.email || '').trim().toLocaleLowerCase('en-US');
   const email = rawEmail.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(rawEmail) ? rawEmail : '';
-  return { phone, email };
+  const deliveryProof = /^v1:[a-f0-9]{64}$/.test(String(source.deliveryProof || '').trim())
+    ? String(source.deliveryProof).trim()
+    : '';
+  return { phone, email, ...(deliveryProof && email ? { deliveryProof } : {}) };
 }
 
 export function normalizeCompetitorRecord(item, index = 0) {
@@ -168,10 +171,16 @@ export function mergeCompetitorDetails(existing, incoming, options = {}) {
 function mergeContact(current, incoming, { preferIncoming = false } = {}) {
   const previous = normalizeCompetitorContact(current);
   const candidate = normalizeCompetitorContact(incoming);
-  if (preferIncoming) return candidate;
+  if (preferIncoming) {
+    const deliveryProof = candidate.deliveryProof || (candidate.email === previous.email ? previous.deliveryProof : '');
+    return { ...candidate, ...(deliveryProof ? { deliveryProof } : {}) };
+  }
+  const email = previous.email || candidate.email;
+  const deliveryProof = previous.email === email ? previous.deliveryProof : candidate.deliveryProof;
   return {
     phone: previous.phone || candidate.phone,
-    email: previous.email || candidate.email
+    email,
+    ...(deliveryProof ? { deliveryProof } : {})
   };
 }
 

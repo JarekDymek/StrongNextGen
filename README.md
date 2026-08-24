@@ -1,6 +1,12 @@
 # Strongman Next
 
-## Wersja stabilna 1.3.2
+## Wersja stabilna 1.3.3
+
+### Trwały sezon, pliki z poczty i wysyłka wyników
+
+Sezon ma osobną trwałą bazę `strongman-next.season-database.v1`. Reset bieżących zawodów nie usuwa już imprez dodanych po wbudowanej bazie 11 zawodów, a aktualizacja zachowuje późniejsze poprawne wpisy. Zainstalowana PWA rejestruje się jako cel udostępniania zgłoszeń. Na Androidzie załącznik należy udostępnić do `Strongman Next`, ponieważ systemowe okno `Otwórz w` nie gwarantuje obsługi PWA dla plików JSON.
+
+W klasyfikacji końcowej dostępna jest akcja wysyłki wyników na prywatne adresy e-mail uczestników. Automatyczny backend akceptuje wyłącznie kontakty podpisane podczas bezpośredniej wysyłki formularza. Dla starszych lub ręcznie przekazanych zgłoszeń aplikacja pobiera raport HTML i otwiera gotową wiadomość z adresami umieszczonymi w UDW. Dotychczasowy ręczny eksport HTML pozostaje bez zmian.
 
 ### Klasyfikacja sezonu po 11 imprezach
 
@@ -170,7 +176,16 @@ SUBMISSION_TO_EMAIL=jarekdymek@gmail.com  # opcjonalne, ten adres jest domyślny
 ALLOWED_ORIGIN=https://jarekdymek.github.io
 ```
 
-Formularz korzysta z funkcji `https://strong-next-gen.vercel.app/api/send-submission`. Sekrety Resend są zapisane wyłącznie jako chronione zmienne środowiskowe projektu Vercel. Gdy endpoint jest niedostępny, pobieranie pliku i Web Share pozostają niezależnymi ścieżkami awaryjnymi. Na Androidzie formularz automatycznie ponawia odrzucone udostępnienie JSON jako kompatybilny plik `*.json.txt`; jego zawartość nadal jest prawidłowym JSON-em i może zostać zaimportowana do aplikacji. Na platformie serverless należy dodatkowo utrzymać limit żądań dla endpointu.
+Formularz korzysta z funkcji `https://strong-next-gen.vercel.app/api/send-submission`. Sekrety Resend są zapisane wyłącznie jako chronione zmienne środowiskowe projektu Vercel. Gdy endpoint jest niedostępny, pobieranie pliku i Web Share pozostają niezależnymi ścieżkami awaryjnymi. Na Androidzie formularz próbuje udostępnić zwykły plik `.txt` zawierający pełny JSON. Jeżeli Edge odrzuci także ten format, prawidłowy `.json` zostaje automatycznie pobrany i można go udostępnić z folderu Pobrane. Zainstalowana PWA może przyjąć plik z systemowego menu Udostępnij i od razu otworzyć podgląd importu.
+
+Automatyczna wysyłka podsumowania korzysta z `api/send-results.js`. Backend wymaga dodatkowo:
+
+```text
+RESULTS_SIGNING_SECRET=<losowy sekret tylko na serwerze>
+RESULTS_FROM_EMAIL=Strongman Next <wyniki@zweryfikowana-domena.example>
+```
+
+`RESULTS_FROM_EMAIL` musi należeć do domeny zweryfikowanej u dostawcy poczty. Domyślna domena testowa `resend.dev` nie może wysyłać wyników do adresów zawodników.
 
 ## Format importu konkurencji
 
@@ -185,4 +200,4 @@ Formularz korzysta z funkcji `https://strong-next-gen.vercel.app/api/send-submis
 
 ## Status wydania
 
-Wersja 1.3.2 przeszła testy reguł punktacji, klasyfikacji sezonu po 11 imprezach, formularza PL/EN z prywatnym kontaktem i cropperem, importu schema v1/v2/v3, zachowania kategorii organizatora, trwałej bazy zawodników, pełnego przebiegu zawodów, procedur Pomocy, widoków telefonu i iPada oraz uruchomienia PWA offline. Projekt nie wymaga procesu bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.
+Wersja 1.3.3 przeszła testy reguł punktacji, klasyfikacji sezonu, zachowania imprezy 12 po resecie, formularza PL/EN, importu schema v1/v2/v3, prywatnych kontaktów, odbioru pliku przez PWA, wysyłki i fallbacku wyników, pełnego przebiegu zawodów, widoków telefonu i iPada oraz działania offline. Projekt nie wymaga bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.

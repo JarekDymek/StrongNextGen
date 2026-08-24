@@ -7,20 +7,20 @@ export function submissionJson(submission) {
 export function createSubmissionFile(submission, filename, FileType = globalThis.File) {
   const content = submissionJson(submission);
   if (typeof FileType === 'function') {
-    return new FileType([content], filename, { type: 'application/json;charset=utf-8' });
+    return new FileType([content], filename, { type: 'application/json' });
   }
-  const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+  const blob = new Blob([content], { type: 'application/json' });
   Object.defineProperty(blob, 'name', { value: filename });
   return blob;
 }
 
 export function createShareFallbackFile(submission, filename, FileType = globalThis.File) {
   const content = submissionJson(submission);
-  const fallbackName = filename.toLowerCase().endsWith('.json') ? `${filename}.txt` : `${filename}.json.txt`;
+  const fallbackName = `${filename.replace(/\.json$/i, '')}.txt`;
   if (typeof FileType === 'function') {
-    return new FileType([content], fallbackName, { type: 'text/plain;charset=utf-8' });
+    return new FileType([content], fallbackName, { type: 'text/plain' });
   }
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const blob = new Blob([content], { type: 'text/plain' });
   Object.defineProperty(blob, 'name', { value: fallbackName });
   return blob;
 }

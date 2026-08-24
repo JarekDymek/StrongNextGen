@@ -145,7 +145,7 @@ function normalizeSubmissionDeclarations(value, schemaVersion) {
 
 function normalizeSubmissionContact(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return normalizeCompetitorContact({});
-  if (Object.keys(value).some(key => !['phone', 'email'].includes(key))) return normalizeCompetitorContact({});
+  if (Object.keys(value).some(key => !['phone', 'email', 'deliveryProof'].includes(key))) return normalizeCompetitorContact({});
   return normalizeCompetitorContact(value);
 }
 

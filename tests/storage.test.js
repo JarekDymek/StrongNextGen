@@ -4,9 +4,11 @@ import {
   createStorageSnapshot,
   hasStorageWarning,
   loadCompetitorDatabase,
+  loadSeasonDatabase,
   loadSavedState,
   saveCheckpoint,
   saveCompetitorDatabase,
+  saveSeasonDatabase,
   saveState
 } from '../src/storage.js';
 
@@ -27,10 +29,12 @@ const state = {
 };
 
 saveCompetitorDatabase(state.competitors);
+saveSeasonDatabase({ baseRevision: 'test-v1', events: state.seasonEvents, maxCountedStarts: 4 });
 saveState(state);
 saveCheckpoint(state, 'Test');
 
 assert.equal(loadCompetitorDatabase()[0].photo, photo, 'Trwała baza zachowuje pełne zdjęcie');
+assert.equal(loadSeasonDatabase().events[0].id, 'season-1', 'Baza sezonu jest niezależna od stanu zawodów');
 const savedState = loadSavedState();
 assert.equal(savedState.competitors[0].photo, '', 'Stan roboczy nie powiela zdjęć z trwałej bazy');
 assert.equal(savedState.logoData, state.logoData, 'Bieżący stan zachowuje niestandardowe logo');
