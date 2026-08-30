@@ -3254,15 +3254,16 @@ async function sendResultsToCompetitors(trigger) {
         endpoint,
         event: { name: state.eventName || 'Zawody Strong Man', location: state.eventLocation || '', date: state.eventDate || '' },
         recipients: recipients.verified,
-        html
+        html,
+        filename
       });
       flash(`Podsumowanie wysłano osobno do ${result.sent} zawodników.`);
       return;
     }
-    openResultsEmailFallback(recipients.all.map(item => item.email), standings, filename, html);
+    openResultsEmailFallback(recipients.all.map(item => item.email), filename, html);
   } catch (error) {
     console.warn('[Strongman Next] Automatyczna wysyłka wyników jest niedostępna:', error);
-    openResultsEmailFallback(recipients.all.map(item => item.email), standings, filename, html);
+    openResultsEmailFallback(recipients.all.map(item => item.email), filename, html);
   } finally {
     resultsSendInFlight = false;
     if (trigger?.isConnected) {
@@ -3273,10 +3274,10 @@ async function sendResultsToCompetitors(trigger) {
   }
 }
 
-function openResultsEmailFallback(emails, standings, filename, html) {
+function openResultsEmailFallback(emails, filename, html) {
   downloadHtmlFile(filename, html);
   flash('Raport HTML pobrano. Otwieram wiadomość z adresami zawodników w polu UDW — dołącz pobrany plik i wyślij.');
-  window.location.href = buildResultsMailto({ emails, eventName: state.eventName, standings });
+  window.location.href = buildResultsMailto({ emails, eventName: state.eventName, filename });
 }
 
 function downloadHtmlFile(filename, html) {

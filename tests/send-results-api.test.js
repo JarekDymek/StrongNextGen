@@ -19,7 +19,8 @@ const html = '<!doctype html><html><body>' + 'Wyniki '.repeat(30) + '</body></ht
 const body = {
   event: { name: 'PUCHAR POLSKI', location: 'TESTOWO', date: '2026-08-24' },
   recipients: [{ email: 'athlete@example.com', deliveryProof: signContactEmail('athlete@example.com', secret) }],
-  html
+  html,
+  filename: 'PUCHAR_POLSKI_wyniki.html'
 };
 const previous = {
   key: process.env.RESEND_API_KEY,
@@ -40,11 +41,12 @@ try {
   await handler({ method: 'POST', headers: { origin: 'https://jarekdymek.github.io' }, body }, response);
   assert.equal(response.statusCode, 200);
   assert.equal(response.body.sent, 1);
-  assert.equal(providerRequest.url, 'https://api.resend.com/emails/batch');
-  const messages = JSON.parse(providerRequest.options.body);
-  assert.equal(messages.length, 1);
-  assert.deepEqual(messages[0].to, ['athlete@example.com']);
-  assert.equal(messages[0].html, html);
+  assert.equal(providerRequest.url, 'https://api.resend.com/emails');
+  const message = JSON.parse(providerRequest.options.body);
+  assert.deepEqual(message.to, ['jarekdymek@gmail.com']);
+  assert.deepEqual(message.bcc, ['athlete@example.com']);
+  assert.equal(message.attachments[0].filename, body.filename);
+  assert.equal(Buffer.from(message.attachments[0].content, 'base64').toString('utf8'), html);
 
   const forged = responseMock();
   await handler({

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { verifyContactEmail } from './contact-proof.js';
 
 const DEFAULT_ALLOWED_ORIGIN = 'https://jarekdymek.github.io';
+const DEFAULT_RECIPIENT = 'jarekdymek@gmail.com';
 const MAX_BODY_BYTES = 700 * 1024;
 const MAX_RECIPIENTS = 50;
 
@@ -25,7 +26,7 @@ export default async function handler(request, response) {
 
   const body = typeof request.body === 'string' ? safeJson(request.body) : request.body;
   const serialized = body ? JSON.stringify(body) : '';
-  if (!body || byteLength(serialized) > MAX_BODY_BYTES || !validEvent(body.event) || !validHtml(body.html)) {
+  if (!body || byteLength(serialized) > MAX_BODY_BYTES || !validEvent(body.event) || !validHtml(body.html) || !validFilename(body.filename)) {
     return response.status(400).json({ ok: false, error: 'invalid-results' });
   }
   const recipients = normalizeRecipients(body.recipients, signingSecret);
@@ -34,16 +35,20 @@ export default async function handler(request, response) {
   }
 
   const subject = `WYNIKI ZAWODÓW — ${body.event.name}`.slice(0, 180);
-  const payload = recipients.map(email => ({
+  const payload = {
     from,
-    to: [email],
+    to: [process.env.RESULTS_TO_EMAIL || process.env.SUBMISSION_TO_EMAIL || DEFAULT_RECIPIENT],
+    bcc: recipients,
     subject,
-    html: body.html,
-    text: `Wyniki zawodów ${body.event.name}. Pełne podsumowanie znajduje się w treści wiadomości.`
-  }));
+    text: `Wyniki zawodów ${body.event.name}. Pełna klasyfikacja końcowa znajduje się w załączonym pliku HTML.`,
+    attachments: [{
+      filename: body.filename,
+      content: Buffer.from(body.html, 'utf8').toString('base64')
+    }]
+  };
   const idempotencyKey = `results/${createHash('sha256').update(serialized).digest('hex').slice(0, 48)}`;
   try {
-    const mailResponse = await fetch('https://api.resend.com/emails/batch', {
+    const mailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         authorization: `Bearer ${apiKey}`,
@@ -81,6 +86,11 @@ function validHtml(value) {
   return typeof value === 'string' && value.length >= 100 && value.length <= 650 * 1024 &&
     /^<!doctype html>/i.test(value.trim()) &&
     !/<(?:script|iframe|object|embed)\b|\son\w+\s*=|javascript:/i.test(value);
+}
+
+function validFilename(value) {
+  return typeof value === 'string' && value.length >= 6 && value.length <= 180 &&
+    /^[a-zA-Z0-9_.-]+\.html$/.test(value);
 }
 
 function safeJson(value) {

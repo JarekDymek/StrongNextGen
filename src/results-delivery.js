@@ -23,7 +23,7 @@ export function resolveResultsEndpoint(documentRef = globalThis.document) {
   return String(documentRef?.querySelector('meta[name="strongman-results-endpoint"]')?.content || '').trim();
 }
 
-export async function sendResultsSummary({ endpoint, event, recipients, html, fetchImpl = globalThis.fetch, timeoutMs = DEFAULT_TIMEOUT_MS }) {
+export async function sendResultsSummary({ endpoint, event, recipients, html, filename, fetchImpl = globalThis.fetch, timeoutMs = DEFAULT_TIMEOUT_MS }) {
   if (!endpoint || typeof fetchImpl !== 'function') throw new Error('resultsSendUnavailable');
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -31,7 +31,7 @@ export async function sendResultsSummary({ endpoint, event, recipients, html, fe
     const response = await fetchImpl(endpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ event, recipients, html }),
+      body: JSON.stringify({ event, recipients, html, filename }),
       signal: controller.signal
     });
     if (!response?.ok) {
@@ -47,10 +47,9 @@ export async function sendResultsSummary({ endpoint, event, recipients, html, fe
   }
 }
 
-export function buildResultsMailto({ emails, eventName, standings }) {
+export function buildResultsMailto({ emails, eventName, filename }) {
   const recipients = [...new Set((emails || []).map(value => String(value || '').trim().toLowerCase()).filter(Boolean))];
   const subject = `WYNIKI ZAWODÓW — ${eventName || 'Zawody Strong Man'}`;
-  const table = (standings || []).map(row => `${row.rank}. ${row.name} — ${Number(row.points).toFixed(2)} pkt`).join('\n');
-  const body = `Wyniki zawodów ${eventName || 'Strong Man'}\n\n${table}\n\nPełny raport HTML został przygotowany przez aplikację Strongman Next.`;
+  const body = `Wyniki zawodów ${eventName || 'Strong Man'}\n\nPełna klasyfikacja końcowa została przygotowana w pliku ${filename || 'HTML'}. Dołącz pobrany plik do tej wiadomości przed wysłaniem.`;
   return `mailto:?bcc=${encodeURIComponent(recipients.join(','))}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }

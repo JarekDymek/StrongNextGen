@@ -1,12 +1,12 @@
 # Strongman Next
 
-## Wersja stabilna 1.3.3
+## Wersja stabilna 1.3.4
 
 ### Trwały sezon, pliki z poczty i wysyłka wyników
 
 Sezon ma osobną trwałą bazę `strongman-next.season-database.v1`. Reset bieżących zawodów nie usuwa już imprez dodanych po wbudowanej bazie 11 zawodów, a aktualizacja zachowuje późniejsze poprawne wpisy. Zainstalowana PWA rejestruje się jako cel udostępniania zgłoszeń. Na Androidzie załącznik należy udostępnić do `Strongman Next`, ponieważ systemowe okno `Otwórz w` nie gwarantuje obsługi PWA dla plików JSON.
 
-W klasyfikacji końcowej dostępna jest akcja wysyłki wyników na prywatne adresy e-mail uczestników. Automatyczny backend akceptuje wyłącznie kontakty podpisane podczas bezpośredniej wysyłki formularza. Dla starszych lub ręcznie przekazanych zgłoszeń aplikacja pobiera raport HTML i otwiera gotową wiadomość z adresami umieszczonymi w UDW. Dotychczasowy ręczny eksport HTML pozostaje bez zmian.
+W klasyfikacji końcowej dostępna jest akcja wysyłki wyników na prywatne adresy e-mail uczestników. Automatyczny backend akceptuje wyłącznie kontakty podpisane podczas bezpośredniej wysyłki formularza i dołącza pełny raport `Klasyfikacja końcowa` jako plik HTML identyczny z ręcznym eksportem. Dla starszych lub ręcznie przekazanych zgłoszeń aplikacja pobiera ten sam raport HTML i otwiera gotową wiadomość z adresami umieszczonymi w UDW. Dotychczasowy ręczny eksport HTML pozostaje bez zmian.
 
 ### Klasyfikacja sezonu po 11 imprezach
 
@@ -200,4 +200,4 @@ RESULTS_FROM_EMAIL=Strongman Next <wyniki@zweryfikowana-domena.example>
 
 ## Status wydania
 
-Wersja 1.3.3 przeszła testy reguł punktacji, klasyfikacji sezonu, zachowania imprezy 12 po resecie, formularza PL/EN, importu schema v1/v2/v3, prywatnych kontaktów, odbioru pliku przez PWA, wysyłki i fallbacku wyników, pełnego przebiegu zawodów, widoków telefonu i iPada oraz działania offline. Projekt nie wymaga bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.
+Wersja 1.3.4 przeszła testy reguł punktacji, klasyfikacji sezonu, zachowania imprezy 12 po resecie, formularza PL/EN, importu schema v1/v2/v3, prywatnych kontaktów, odbioru pliku przez PWA, wysyłki pełnego raportu HTML i fallbacku wyników, pełnego przebiegu zawodów, widoków telefonu i iPada oraz działania offline. Projekt nie wymaga bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.

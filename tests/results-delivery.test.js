@@ -20,6 +20,7 @@ const sent = await sendResultsSummary({
   event: { name: 'Test' },
   recipients: [{ email: 'a@example.com', deliveryProof: proof }],
   html: '<!doctype html><html><body>' + 'x'.repeat(100) + '</body></html>',
+  filename: 'test_wyniki.html',
   fetchImpl: async (url, options) => {
     request = { url, options };
     return { ok: true, json: async () => ({ ok: true, sent: 1 }) };
@@ -28,13 +29,15 @@ const sent = await sendResultsSummary({
 assert.equal(sent.sent, 1);
 assert.equal(request.url, 'https://example.test/send-results');
 assert.equal(JSON.parse(request.options.body).recipients[0].email, 'a@example.com');
+assert.equal(JSON.parse(request.options.body).filename, 'test_wyniki.html');
 
 const mailto = buildResultsMailto({
   emails: ['a@example.com', 'a@example.com', 'b@example.com'],
   eventName: 'Puchar Polski',
-  standings: [{ rank: 1, name: 'JAN TESTOWY', points: 5 }]
+  filename: 'Puchar_Polski_wyniki.html'
 });
 assert.match(decodeURIComponent(mailto), /bcc=a@example\.com,b@example\.com/);
-assert.match(decodeURIComponent(mailto), /1\. JAN TESTOWY — 5\.00 pkt/);
+assert.match(decodeURIComponent(mailto), /Pełna klasyfikacja końcowa/);
+assert.match(decodeURIComponent(mailto), /Puchar_Polski_wyniki\.html/);
 
 console.log('Results delivery tests passed');
