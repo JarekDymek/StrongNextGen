@@ -1,4 +1,4 @@
-const CACHE_NAME = 'strongman-next-v1.3.4';
+const CACHE_NAME = 'strongman-next-v1.3.4-live-display';
 const SHARED_SUBMISSION_CACHE = 'strongman-next-shared-submission-v1';
 const SHARED_SUBMISSION_PATH = '__shared-submission__';
 const APP_SHELL = [
@@ -22,6 +22,9 @@ const APP_SHELL = [
   './src/season-data.js',
   './src/shared-import.js',
   './src/results-delivery.js',
+  './src/live-display.js',
+  './src/live-display-transport.js',
+  './src/public-display-snapshot.js',
   './src/storage.js',
   './src/styles.css',
   './src/styles.css?v=1.3.4',
@@ -45,6 +48,9 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const requestUrl = new URL(event.request.url);
+  // Live API is never cached; receiver retains its last validated snapshot itself.
+  if (/\/api\/display-(publish|state)$/.test(requestUrl.pathname)) return;
+  if (requestUrl.pathname.includes('/display/')) return;
   if (event.request.method === 'POST' && requestUrl.pathname.endsWith('/share-target')) {
     event.respondWith(receiveSharedSubmission(event.request));
     return;
