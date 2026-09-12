@@ -89,6 +89,7 @@ const competitorDatabaseReadFailed = hasStorageWarning('bazy zawodników');
 const seasonDatabaseReadFailed = hasStorageWarning('bazy sezonu');
 const stateMigrationRequired = Boolean(savedStateAtStartup && savedStateAtStartup.baseRevision !== BASE_REVISION);
 let state = hydrateState(savedStateAtStartup, competitorDatabaseAtStartup, seasonDatabaseAtStartup);
+let notifyLiveDisplay = () => {};
 state.ui = createUiState();
 let persistenceFailureReported = false;
 if (!competitorDatabaseReadFailed) {
@@ -122,6 +123,11 @@ consumeStorageWarnings().forEach(warning => flash(warning));
 registerServiceWorker();
 initPwaInstall();
 initializeIncomingSubmissions().catch(error => reportUnexpectedError(error));
+// Optional module: network/import failures must never interrupt judging or PWA startup.
+import('./live-display.js').then(({ mountLiveDisplay }) => {
+  notifyLiveDisplay = mountLiveDisplay({ getState: () => state,
+    getOrder: () => getOrderForEvent(state.currentEventIndex) });
+}).catch(() => {});
 
 app.addEventListener('click', event => {
   handleClick(event).catch(error => reportUnexpectedError(error));
@@ -3510,6 +3516,7 @@ function persist({ competitorsChanged = false, seasonChanged = false } = {}) {
     }
     saveState(state);
     persistenceFailureReported = false;
+    try { notifyLiveDisplay(); } catch {}
     return true;
   } catch (error) {
     reportPersistenceFailure(error);

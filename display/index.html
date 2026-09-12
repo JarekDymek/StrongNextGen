@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#080e18">
+  <title>Strongman — Live Display</title>
+  <link rel="icon" href="../assets/icon-192.png">
+  <link rel="stylesheet" href="./display.css">
+</head>
+<body>
+  <form id="pair">
+    <img src="../assets/logo-strong-man.png" alt="Strong Man">
+    <h1>LIVE DISPLAY</h1>
+    <label for="room">Kod sesji z iPada</label>
+    <input id="room" name="room" required pattern="[A-Za-z2-9]{10}" maxlength="10" autocomplete="off" autocapitalize="characters">
+    <button>Połącz telebim</button>
+  </form>
+  <main id="screen" hidden>
+    <img id="watermark" alt="" aria-hidden="true">
+    <header><img id="logo" alt="Strong Man"><div><p id="location"></p><h1 id="event"></h1></div><span class="live">● NA ŻYWO</span></header>
+    <section class="headline"><p id="event-number"></p><h2 id="title"></h2></section>
+    <section id="content"></section>
+    <footer><span id="phase"></span><span id="status">Oczekiwanie na pierwszy wynik</span><span id="page"></span></footer>
+  </main>
+  <script type="module" src="./display.js"></script>
+</body>
+</html>
+
