@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict';
+import { DEFAULT_SEASON } from '../src/season-data.js';
+import { FINAL_2026 } from '../src/season-final-2026.js';
+import { applySeasonFinalUpdate, eventsForSeason, calculateSeasonStandings } from '../src/season.js';
+import { buildSeasonHtml } from '../src/season-export.js';
+const extra = {id:'local-opole',date:'2026-08-23',location:'Opole',number:12,ranking:[]};
+const s=applySeasonFinalUpdate({seasonEvents:[...DEFAULT_SEASON.events,extra]},FINAL_2026);
+assert.equal(s.seasonYear,2027);
+assert.equal(eventsForSeason(s.seasonEvents,2027).length,0);
+assert.equal(s.seasonEvents.length,13);
+assert(s.seasonEvents.some(e=>e.id==='local-opole'));
+const final=s.seasonEvents.find(e=>e.id===FINAL_2026.id);
+assert.equal(final.ranking[0].name,'Jakub Szczechowski');
+assert.equal(final.competitions.length,7);
+assert.equal(final.competitions.flatMap(e=>e.results).length,42);
+const snapshot=JSON.stringify(s);
+applySeasonFinalUpdate(s,FINAL_2026);
+assert.equal(JSON.stringify(s),snapshot);
+s.seasonEvents=s.seasonEvents.filter(e=>e.id!==FINAL_2026.id);
+applySeasonFinalUpdate(s,FINAL_2026);
+assert(!s.seasonEvents.some(e=>e.id===FINAL_2026.id),'User deletion survives subsequent starts');
+const onlyFinal=calculateSeasonStandings([FINAL_2026]);
+assert.deepEqual(onlyFinal.map(r=>r.countedPoints),[5,4,3,2,1]);
+const html=buildSeasonHtml({events:[FINAL_2026],standings:onlyFinal});
+assert(html.includes('5 na 6 worków — 19,82 s'));
+assert(html.includes('155 minut'));
+assert(html.includes('0 powtórzeń'));
+assert(!html.includes('DNF'));
+assert(html.includes('Marcin Stankiewicz'));
+console.log('Season final, rollover preservation and formatted export tests passed');
+const {RECOVERED_2026}=await import('../src/season-final-2026.js');
+const local14=[...DEFAULT_SEASON.events,...RECOVERED_2026,
+ {id:'local-13',number:13,date:'2026-08-30',location:'Test lokalny A',ranking:[]},
+ {id:'local-14',number:14,date:'2026-09-06',location:'Test lokalny B',ranking:[]}];
+const complete=applySeasonFinalUpdate({seasonEvents:local14},FINAL_2026,null,RECOVERED_2026);
+assert.equal(complete.seasonEvents.length,15);
+assert.equal(eventsForSeason(complete.seasonEvents,2027).length,0);
+assert.equal(complete.seasonEvents.filter(e=>e.date==='2026-08-23').length,1);

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'strongman-next-v1.3.6';
+const CACHE_NAME = 'strongman-next-v1.3.7';
 const SHARED_SUBMISSION_CACHE = 'strongman-next-shared-submission-v1';
 const SHARED_SUBMISSION_PATH = '__shared-submission__';
 const APP_SHELL = [
@@ -7,7 +7,7 @@ const APP_SHELL = [
   './manifest.json',
   './version.json',
   './src/app.js',
-  './src/app.js?v=1.3.6',
+  './src/app.js?v=1.3.7',
   './src/help.js',
   './src/competitor-data.js',
   './src/competitor-profile-data.js',
@@ -18,6 +18,7 @@ const APP_SHELL = [
   './src/image-tools.js',
   './src/scoring.js',
   './src/season.js',
+  './src/season-final-2026.js',
   './src/season-export.js',
   './src/season-data.js',
   './src/shared-import.js',
@@ -27,7 +28,7 @@ const APP_SHELL = [
   './src/public-display-snapshot.js',
   './src/storage.js',
   './src/styles.css',
-  './src/styles.css?v=1.3.6',
+  './src/styles.css?v=1.3.7',
   './assets/icon-192.png',
   './assets/icon-512.png',
   './assets/logo-strong-man.png'

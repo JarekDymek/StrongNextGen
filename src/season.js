@@ -175,3 +175,28 @@ function normalizeText(value) {
 function slug(value) {
   return normalizeText(value).replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'event';
 }
+
+export function eventsForSeason(events, year) {
+  return normalizeSeasonEvents(events).filter(event => event.date.slice(0, 4) === String(year));
+}
+
+// Adds the supplied final once without discarding later local rounds or edits.
+export function applySeasonFinalUpdate(state, finalEvent, durable = null, recovered = []) {
+  const alreadyApplied = durable?.final2026Applied || state.final2026Applied;
+  if (!alreadyApplied) {
+    for (const event of recovered) {
+      if (!state.seasonEvents.some(local => seasonEventKey(local) === seasonEventKey(event))) {
+        state.seasonEvents = mergeSeasonEvents(state.seasonEvents, [event]);
+      }
+    }
+    const existing = state.seasonEvents.find(event => event.date === finalEvent.date &&
+      normalizeText(event.location).replace(/ 2026$/, '') === normalizeText(finalEvent.location));
+    state.seasonEvents = mergeSeasonEvents(
+      state.seasonEvents.filter(event => event.id !== existing?.id),
+      [{ ...finalEvent, id: existing?.id || finalEvent.id }]
+    );
+  }
+  state.final2026Applied = true;
+  state.seasonYear = Number(durable?.seasonYear || state.seasonYear) || 2027;
+  return state;
+}

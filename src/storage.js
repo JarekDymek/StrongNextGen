@@ -80,9 +80,10 @@ export function loadSeasonDatabase() {
   }
 }
 
-export function saveSeasonDatabase({ baseRevision = '', events = [], maxCountedStarts = 4 } = {}) {
+export function saveSeasonDatabase({ baseRevision = '', events = [], maxCountedStarts = 4, seasonYear = 2027, final2026Applied = false } = {}) {
   localStorage.setItem(SEASON_DATABASE_KEY, JSON.stringify({
     baseRevision: String(baseRevision || ''),
+    seasonYear, final2026Applied,
     events: Array.isArray(events) ? events : [],
     maxCountedStarts: Math.max(1, Number.parseInt(maxCountedStarts, 10) || 4),
     savedAt: new Date().toISOString()

@@ -1,6 +1,7 @@
+import { FINAL_2026, RECOVERED_2026 } from './season-final-2026.js';
 import { APP_VERSION, BASE_REVISION, DEFAULT_COMPETITORS, DEFAULT_EVENTS, DEFAULT_SEASON, EVENT_TYPE_LABEL } from './data.js';
 import { formatEventResult, buildFinalStartOrder, buildNextStartOrder, buildScores, calculateEventPoints, rankStandings } from './scoring.js';
-import { calculateSeasonStandings, formatSeasonDate, mergeCanonicalSeasonEvents, mergeSeasonEvents, normalizeSeasonEvent, normalizeSeasonEvents, seasonPointsForPosition } from './season.js';
+import { applySeasonFinalUpdate, eventsForSeason, calculateSeasonStandings, formatSeasonDate, mergeCanonicalSeasonEvents, mergeSeasonEvents, normalizeSeasonEvent, normalizeSeasonEvents, seasonPointsForPosition } from './season.js';
 import { buildSeasonHtml } from './season-export.js';
 import {
   competitorMatchesCategory,
@@ -104,7 +105,8 @@ if (!seasonDatabaseReadFailed) {
     saveSeasonDatabase({
       baseRevision: BASE_REVISION,
       events: state.seasonEvents,
-      maxCountedStarts: state.seasonMaxCountedStarts
+      maxCountedStarts: state.seasonMaxCountedStarts,
+      seasonYear: state.seasonYear, final2026Applied: state.final2026Applied
     });
   } catch (error) {
     reportPersistenceFailure(error);
@@ -218,6 +220,10 @@ function createUiState() {
 }
 
 function hydrateState(saved, durableDatabase = null, durableSeason = null) {
+  return applySeasonFinalUpdate(hydrateCompetitionState(saved, durableDatabase, durableSeason), FINAL_2026, durableSeason, RECOVERED_2026);
+}
+
+function hydrateCompetitionState(saved, durableDatabase = null, durableSeason = null) {
   const databaseSeed = Array.isArray(durableDatabase) ? durableDatabase : DEFAULT_COMPETITORS;
   const base = createInitialState(databaseSeed);
   const durableSeasonEvents = normalizeSeasonEvents(durableSeason?.events || []);
@@ -711,7 +717,7 @@ function stageSubtitle() {
   if (state.stage === 'setup') return selected;
   if (state.stage === 'draw') return 'Ustaw lub wylosuj pierwszą kolejność startową';
   if (state.stage === 'scoring') return currentEvent()?.name || 'Wpisywanie wyników';
-  if (state.stage === 'season') return `Puchar Polski 2026 · ${state.seasonEvents.length} imprez`;
+  if (state.stage === 'season') return `Puchar Polski ${state.seasonYear} · ${selectedSeasonEvents().length} imprez`;
   return 'Wyniki końcowe i eksport';
 }
 
@@ -1195,17 +1201,28 @@ function renderEventSummaryDetails(event) {
   `;
 }
 
+function seasonCoverageNote() {
+  const count = selectedSeasonEvents().filter(event => event.ranking.length).length;
+  return state.seasonYear === 2026 && count < 15
+    ? `Dostępne wyniki: ${count} z 15 imprez (14 rund i finał). Brakuje ${15 - count} imprez — klasyfikacja częściowa. Zaimportuj pełne dane sezonu z urządzenia używanego podczas zawodów.` : '';
+}
+
+function selectedSeasonEvents() { return eventsForSeason(state.seasonEvents, state.seasonYear); }
+
 function renderSeason() {
-  const standings = calculateSeasonStandings(state.seasonEvents, state.seasonMaxCountedStarts);
-  const completedEvents = state.seasonEvents.filter(event => event.ranking.length).length;
+  const standings = calculateSeasonStandings(selectedSeasonEvents(), state.seasonMaxCountedStarts);
+  const completedEvents = selectedSeasonEvents().filter(event => event.ranking.length).length;
   return `
     <section class="panel strong-panel season-overview">
       <div class="panel-heading">
-        <span class="panel-icon">2026</span>
+        <span class="panel-icon">${state.seasonYear}</span>
         <div>
           <h2>Klasyfikacja generalna</h2>
           <p>${completedEvents} imprez · punkty 5-4-3-2-1 · liczą się ${state.seasonMaxCountedStarts} najlepsze starty</p>
         </div>
+      </div>
+      <div class="button-row">
+        ${[...new Set([2026, 2027, state.seasonYear, ...state.seasonEvents.map(e => Number(e.date.slice(0,4)))])].sort().map(year => `<button type="button" class="${year === state.seasonYear ? 'primary' : 'secondary'}-button" data-action="select-season" data-year="${year}">${year}${year === 2026 ? ' · archiwum' : ''}</button>`).join('')}
       </div>
       <div class="button-column season-actions">
         <button type="button" class="primary-button" data-action="add-season-event">Dodaj zawody</button>
@@ -1213,10 +1230,11 @@ function renderSeason() {
         <button type="button" class="success-button" data-action="export-season-html">Eksportuj czytelny HTML</button>
         <button type="button" class="secondary-button" data-action="export-season">Eksportuj dane JSON</button>
       </div>
+      ${seasonCoverageNote() ? `<p class="season-import-note">${escapeHtml(seasonCoverageNote())}</p>` : ''}
       <p class="season-import-note">Plik HTML z wynikami aplikacji można wczytać bez przepisywania tabeli. PDF dodaj ręcznie, aby uniknąć błędów odczytu.</p>
     </section>
 
-    <section class="season-standings" aria-label="Klasyfikacja generalna sezonu 2026">
+    <section class="season-standings" aria-label="Klasyfikacja generalna sezonu ${state.seasonYear}">
       ${standings.length ? standings.map(row => renderSeasonStanding(row)).join('') : '<div class="empty-state">Brak wyników sezonu.</div>'}
     </section>
 
@@ -1229,7 +1247,7 @@ function renderSeason() {
         </div>
       </div>
       <div class="season-event-list">
-        ${state.seasonEvents.map((event, index) => renderSeasonEvent(event, index)).join('')}
+        ${selectedSeasonEvents().map((event, index) => renderSeasonEvent(event, index)).join('')}
       </div>
     </section>
   `;
@@ -1248,7 +1266,7 @@ function renderSeasonStanding(row) {
         <strong class="season-total">${row.countedPoints} pkt</strong>
       </summary>
       <div class="season-points-strip">
-        ${state.seasonEvents.map(event => {
+        ${selectedSeasonEvents().map(event => {
           const result = resultByEvent.get(event.id);
           if (!result) return `<span class="season-point is-empty" title="${escapeAttr(event.location)}">-</span>`;
           const counted = row.countedEventIds.includes(event.id);
@@ -1277,6 +1295,7 @@ function renderSeasonEvent(event, index) {
             </div>
           `).join('') || '<div class="empty-state">Brak wpisanych lokat.</div>'}
         </div>
+        ${(event.competitions || []).filter(competition => Array.isArray(competition?.results)).map(competition => renderEventSummaryDetails(competition)).join('')}
         ${event.sourceFile ? `<small>Źródło: ${escapeHtml(event.sourceFile)}</small>` : ''}
         <div class="button-row">
           <button type="button" class="secondary-button" data-action="edit-season-event" data-id="${escapeAttr(event.id)}">Edytuj</button>
@@ -1717,6 +1736,7 @@ async function handleClick(event) {
   if (action === 'export-competitors') return exportCompetitors();
   if (action === 'import-events') return importEvents();
   if (action === 'export-events') return exportEvents();
+  if (action === 'select-season') { state.seasonYear = Number(trigger.dataset.year); return persistAndRender('', { seasonChanged: true }); }
   if (action === 'add-season-event') return openSeasonEditor();
   if (action === 'edit-season-event') return openSeasonEditor(id);
   if (action === 'delete-season-event') return deleteSeasonEvent(id);
@@ -2809,8 +2829,8 @@ function exportEvents() {
 function openSeasonEditor(id = '', seed = null) {
   const source = seed || state.seasonEvents.find(event => event.id === id) || {
     id: '',
-    date: state.eventDate || '',
-    location: state.eventLocation || '',
+    date: '',
+    location: '',
     sourceFile: '',
     ranking: []
   };
@@ -2874,7 +2894,7 @@ function saveSeasonEvent(data) {
   });
   state.competitors.sort((a, b) => collator.compare(a.name, b.name));
 
-  const previous = state.seasonEvents.find(event => event.id === id) || duplicate;
+  const previous = state.seasonEvents.find(event => event.id === id) || duplicate || state.ui.seasonEditor;
   const normalized = normalizeSeasonEvent({
     ...previous,
     id: previous?.id || `season-${date}-${slug(location)}-${Date.now()}`,
@@ -2888,6 +2908,7 @@ function saveSeasonEvent(data) {
     ...state.seasonEvents.filter(event => event.id !== id && event.id !== duplicate?.id),
     normalized,
   ]);
+  state.seasonYear = Number(date.slice(0, 4));
   state.ui.seasonEditor = null;
   persistAndRender('Zawody sezonu zapisane i klasyfikacja przeliczona.', { competitorsChanged: true, seasonChanged: true });
 }
@@ -2903,15 +2924,20 @@ function deleteSeasonEvent(id) {
 function exportSeason() {
   const payload = {
     schemaVersion: 1,
-    season: 2026,
+    season: state.seasonYear,
+    coverageNote: seasonCoverageNote(),
     seriesName: DEFAULT_SEASON.seriesName,
     maxCountedStarts: state.seasonMaxCountedStarts,
     pointsByPosition: DEFAULT_SEASON.pointsByPosition,
     exportedAt: new Date().toISOString(),
-    events: state.seasonEvents,
-    standings: calculateSeasonStandings(state.seasonEvents, state.seasonMaxCountedStarts),
+    events: selectedSeasonEvents().map(event => ({ ...event,
+      competitions: (event.competitions || []).map(competition => ({ ...competition,
+        results: (competition.results || []).map(row => ({ ...row, displayResult: formatEventResult(row, competition) }))
+      }))
+    })),
+    standings: calculateSeasonStandings(selectedSeasonEvents(), state.seasonMaxCountedStarts),
   };
-  downloadJson(`klasyfikacja_generalna_2026_${timestamp()}.json`, payload);
+  downloadJson(`klasyfikacja_generalna_${state.seasonYear}_${timestamp()}.json`, payload);
   flash('Eksport sezonu przygotowany.');
 }
 
@@ -2922,17 +2948,18 @@ async function exportSeasonHtml(trigger) {
     trigger.setAttribute('aria-busy', 'true');
   }
   try {
-    const standings = calculateSeasonStandings(state.seasonEvents, state.seasonMaxCountedStarts);
+    const standings = calculateSeasonStandings(selectedSeasonEvents(), state.seasonMaxCountedStarts);
     const html = buildSeasonHtml({
-      season: 2026,
+      season: state.seasonYear,
+      coverageNote: seasonCoverageNote(),
       seriesName: DEFAULT_SEASON.seriesName,
       maxCountedStarts: state.seasonMaxCountedStarts,
-      events: state.seasonEvents,
+      events: selectedSeasonEvents(),
       standings,
       exportedAt: new Date().toISOString(),
       logoData: await getExportLogoData()
     });
-    downloadHtmlFile(`klasyfikacja_generalna_2026_${timestamp()}.html`, html);
+    downloadHtmlFile(`klasyfikacja_generalna_${state.seasonYear}_${timestamp()}.html`, html);
     flash('Czytelny plik HTML klasyfikacji został przygotowany.');
   } finally {
     if (trigger?.isConnected) {
@@ -3006,14 +3033,14 @@ function parseSeasonHtml(text, sourceFile) {
   if (ranking.length !== 5) return null;
 
   const pageText = documentNode.body?.textContent || '';
-  const dateMatch = pageText.match(/(\d{1,2})[.\/-](\d{1,2})[.\/-](2026)/);
+  const dateMatch = pageText.match(/(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/);
   const date = dateMatch ? `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}` : '';
   const subtitle = [...documentNode.querySelectorAll('h2, body > p')]
     .map(node => node.textContent.trim())
     .find(value => value && !/klasyfikacja|szczegółowe|wygenerowano/i.test(value) && !/^\d+\./.test(value));
   const location = String(subtitle || '')
     .split('·')[0]
-    .replace(/\d{1,2}[.\/-]\d{1,2}[.\/-]2026.*$/, '')
+    .replace(/\d{1,2}[.\/-]\d{1,2}[.\/-]\d{4}.*$/, '')
     .trim();
   return { id: '', date, location, sourceFile, ranking };
 }
@@ -3033,6 +3060,7 @@ function seasonEventFromCompetitionState(payload, sourceFile) {
     date: payload.eventDate || '',
     location: payload.eventLocation || '',
     sourceFile,
+    competitions: structuredClone(payload.eventHistory),
     ranking: standings.map(row => ({
       position: row.rank,
       competitorId: row.id,
@@ -3513,7 +3541,8 @@ function persist({ competitorsChanged = false, seasonChanged = false } = {}) {
       saveSeasonDatabase({
         baseRevision: BASE_REVISION,
         events: state.seasonEvents,
-        maxCountedStarts: state.seasonMaxCountedStarts
+        maxCountedStarts: state.seasonMaxCountedStarts,
+        seasonYear: state.seasonYear, final2026Applied: state.final2026Applied
       });
     }
     saveState(state);

@@ -1,3 +1,4 @@
+import { formatEventResult } from './scoring.js';
 import { formatSeasonDate, seasonPointsForPosition } from './season.js';
 
 export function buildSeasonHtml({
@@ -7,6 +8,7 @@ export function buildSeasonHtml({
   events = [],
   standings = [],
   exportedAt = new Date().toISOString(),
+  coverageNote = '',
   logoData = ''
 } = {}) {
   const eventById = new Map(events.map(event => [event.id, event]));
@@ -39,7 +41,7 @@ export function buildSeasonHtml({
   }).join('');
 
   const eventsMarkup = events.map((event, index) => `
-    <article class="event-card">
+    <article class="event-card"${event.competitions?.length ? ' style="grid-column:1/-1"' : ''}>
       <header>
         <span>${index + 1}</span>
         <div>
@@ -58,6 +60,11 @@ export function buildSeasonHtml({
             </tr>`).join('')}
         </tbody>
       </table>
+      ${(event.competitions || []).map(competition => `
+        <h3>${escapeHtml(String(competition.nr || ''))}. ${escapeHtml(competition.name)}</h3>
+        <table><thead><tr><th>Miejsce</th><th>Zawodnik</th><th>Wynik</th><th>Pkt zawodów</th></tr></thead><tbody>
+          ${(competition.results || []).map(row => `<tr><td>${escapeHtml(String(row.place))}</td><td>${escapeHtml(row.name)}</td><td>${escapeHtml(formatEventResult(row, competition))}</td><td>${escapeHtml(String(row.points))}</td></tr>`).join('')}
+        </tbody></table>`).join('')}
     </article>`).join('');
 
   return `<!doctype html>
@@ -121,6 +128,7 @@ export function buildSeasonHtml({
         <p class="hero-info">Klasyfikacja generalna po ${completedEvents} imprezach</p>
       </div>
     </header>
+    ${coverageNote ? `<p class="hero-info">${escapeHtml(coverageNote)}</p>` : ''}
     <section class="rules" aria-label="Zasady klasyfikacji">
       <div class="rule"><strong>5-4-3-2-1</strong><span>Punkty za miejsca 1-5</span></div>
       <div class="rule"><strong>${escapeHtml(String(maxCountedStarts))}</strong><span>Najlepsze starty w sumie</span></div>

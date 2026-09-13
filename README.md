@@ -227,3 +227,22 @@ Jednostki rozpoznawane są z nazwy i typu konkurencji. Dla nieznanej
 konkurencji typu „więcej = lepiej” formatter nie odgaduje jednostki.
 Nazwy oraz obciążenia konkretnych zawodów pozostają danymi edytowanymi
 w bazie konkurencji, nie są narzucane wszystkim zawodom.
+
+## Finał 2026 i przygotowanie 2027 (1.3.7)
+
+Finał Męcinka z 13.09.2026 jest dodawany jednokrotnie z modułu
+`src/season-final-2026.js`, na podstawie raportu organizatora. Zawiera pełne
+wyniki siedmiu konkurencji; do klasyfikacji sezonu trafia pięć pierwszych
+miejsc według dotychczasowej punktacji 5–4–3–2–1 i czterech najlepszych startów.
+
+Zakładka Sezon otwiera sezon 2027. Przełącznik „2026 · archiwum” udostępnia
+poprzedni sezon. Wszystkie lata są zachowane w trwałej bazie, ale klasyfikacje
+i eksporty liczone są osobno według roku daty zawodów. Reset bieżących zawodów
+nie usuwa archiwum. Aktualizacja nie usuwa lokalnie dodanych późniejszych rund.
+
+Baza repozytorium zawiera jedenaście rund do 09.08.2026, odzyskane wyniki
+Sierakowa Śląskiego 23.08.2026 oraz finał. Organizator potwierdził 14 rund
+i finał (15 imprez). Dwie pozostałe rundy wymagają danych z urządzenia;
+przy niekompletnej bazie aplikacja i raport oznaczają klasyfikację częściową. Eksport wykonany na
+urządzeniu obejmuje również dodatkowe rundy zapisane lokalnie. HTML sezonu
+pokazuje dostępne szczegóły konkurencji z obowiązującymi jednostkami.
