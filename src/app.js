@@ -1,5 +1,5 @@
 import { APP_VERSION, BASE_REVISION, DEFAULT_COMPETITORS, DEFAULT_EVENTS, DEFAULT_SEASON, EVENT_TYPE_LABEL } from './data.js';
-import { buildFinalStartOrder, buildNextStartOrder, buildScores, calculateEventPoints, rankStandings } from './scoring.js';
+import { formatEventResult, buildFinalStartOrder, buildNextStartOrder, buildScores, calculateEventPoints, rankStandings } from './scoring.js';
 import { calculateSeasonStandings, formatSeasonDate, mergeCanonicalSeasonEvents, mergeSeasonEvents, normalizeSeasonEvent, normalizeSeasonEvents, seasonPointsForPosition } from './season.js';
 import { buildSeasonHtml } from './season-export.js';
 import {
@@ -1077,7 +1077,7 @@ function renderResultCard(id, index, event, draft, finalized) {
       </div>
       <div class="quick-actions">
         <button type="button" class="secondary-button" data-action="open-stopwatch" data-id="${escapeAttr(id)}">Stoper</button>
-        <button type="button" class="secondary-button" data-action="set-dnf" data-id="${escapeAttr(id)}">DNF / 0</button>
+        <button type="button" class="secondary-button" data-action="set-dnf" data-id="${escapeAttr(id)}">${escapeHtml(formatEventResult("0", event))}</button>
         <button type="button" class="secondary-button" data-action="clear-result" data-id="${escapeAttr(id)}">Wyczyść</button>
       </div>
     </article>
@@ -1111,7 +1111,7 @@ function renderEventSummary(event) {
           <div class="table-row">
             <span>${escapeHtml(String(row.place))}</span>
             <strong>${escapeHtml(row.name)}</strong>
-            <span>${escapeHtml(String(row.result))}</span>
+            <span>${escapeHtml(formatEventResult(row, event))}</span>
             <span>${escapeHtml(String(row.points))} pkt</span>
           </div>
         `).join('')}
@@ -1186,7 +1186,7 @@ function renderEventSummaryDetails(event) {
           <div class="table-row">
             <span>${escapeHtml(String(row.place))}</span>
             <strong>${escapeHtml(row.name)}</strong>
-            <span>${escapeHtml(String(row.result))}</span>
+            <span>${escapeHtml(formatEventResult(row, event))}</span>
             <span>${escapeHtml(String(row.points))} pkt</span>
           </div>
         `).join('')}
@@ -2646,7 +2646,9 @@ function createCheckpoint() {
 
 function exportState() {
   const filename = safeFilename(`${state.eventName || 'zawody'}_strongman_next_${timestamp()}.json`);
-  downloadJson(filename, state);
+  downloadJson(filename, { ...state, eventHistory: state.eventHistory.map(event => ({
+    ...event, results: event.results.map(row => ({ ...row, displayResult: formatEventResult(row, event) }))
+  })) });
   flash('Eksport przygotowany.');
 }
 
@@ -3658,7 +3660,7 @@ function buildResultsHtml(standings) {
           <tr>
             <td>${escapeHtml(String(result.place))}</td>
             <td>${escapeHtml(result.name)}</td>
-            <td>${escapeHtml(String(result.result))}</td>
+            <td>${escapeHtml(formatEventResult(result, event))}</td>
             <td>${escapeHtml(String(result.points))}</td>
           </tr>
         `).join('')}

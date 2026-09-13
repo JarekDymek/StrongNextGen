@@ -21,13 +21,13 @@ const state = () => ({
 const snapshot = () => buildPublicDisplaySnapshot(state(), { orderIds: ['b', 'a'] });
 test('public result formatting preserves existing time/distance convention', () => {
   for (const [input, output] of [['039', '39 m'], ['015', '15 m'], ['005', '5 m'],
-    ['15,24', '15,24 s'], ['15.24', '15,24 s'], ['DNF+39m', '39 m'], ['0', 'DNF'], ['dnf', 'DNF'], ['', '—'], ['oops', '—']]) {
+    ['15,24', '15,24 s'], ['15.24', '15,24 s'], ['DNF+39m', '39 m'], ['0', '0 s'], ['dnf', '0 s'], ['', '—'], ['oops', '—']]) {
     assert.equal(formatPublicResult(input), output);
   }
   assert.equal(formatPublicResult({ rawInput: '039', result: 'DNF+39m', isDist: true }), '39 m');
   assert.equal(formatPublicResult({ result: 'DNF+15m', isDist: true }), '15 m');
   assert.equal(formatPublicResult('15', 'high'), '15');
-  assert.equal(formatPublicResult('1:05', 'low'), '1:05 s');
+  assert.equal(formatPublicResult('1:05', 'low'), '65,00 s');
 });
 test('snapshot allowlist, real start order, photos and completed results', () => {
   const s = state(); const before = JSON.stringify(s);

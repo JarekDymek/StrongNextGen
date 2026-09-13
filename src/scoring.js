@@ -264,3 +264,45 @@ export function buildFinalStartOrder(competitors, scores, eventHistory, finalist
   const limit = Math.max(1, Math.min(Number.parseInt(finalistsLimit, 10) || 5, ranked.length));
   return ranked.slice(0, limit).reverse();
 }
+
+// Presentation only: never feed these labels back into scoring or tie-breaks.
+// Legacy bag convention approved for the six-bag throw: +100 per missing bag.
+export function resultFormat(event = {}) {
+  const name = String(event.name || '').toLowerCase().replace(/ł/g, 'l')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (/\bzegar\b/.test(name)) return 'clock';
+  if (/przerzucanie (?:6 )?workow nad poprzeczka/.test(name)) return 'bags';
+  if (/martwy ciag|wyciskanie platformy|powtorzen|axel|wyciskanie belki|przerzucanie kuli/.test(name) && event.type !== 'low') return 'reps';
+  if (/na dystans/.test(name) || /spacer|przeciaganie|pociag|yoke|kowadlo|nosidlo|tir w siadzie/.test(name)) return event.type === 'high' ? 'distance' : 'course';
+  if (/uchwyt herkulesa|waga placzu/.test(name)) return 'seconds';
+  return event.type === 'low' ? 'seconds' : 'number';
+}
+
+export function formatEventResult(value, event = {}) {
+  const row = value && typeof value === 'object' ? value : null;
+  const raw = row ? row.rawInput ?? row.result : value;
+  if (String(raw ?? '').trim() === '') return '—';
+  const parsed = parseResult(raw, event.type || 'low');
+  const kind = resultFormat(event);
+  const decimal = n => String(n).replace('.', ',');
+  if (parsed.isDist) return `${decimal(parsed.distance)} m`;
+  if (parsed.error) return '—';
+  if (parsed.dnf || row?.isDnf) {
+    if (kind === 'bags') return '0 na 6 worków';
+    if (kind === 'reps') return '0 powtórzeń';
+    if (kind === 'clock') return '0 minut';
+    if (kind === 'course' || kind === 'distance') return '0 metrów';
+    if (kind === 'seconds') return '0 s';
+    return '0';
+  }
+  if (kind === 'bags') {
+    const missing = Math.floor(parsed.val / 100);
+    if (missing < 0 || missing > 5) return 'Wynik worków do sprawdzenia';
+    return `${6 - missing} na 6 worków — ${decimal((parsed.val - missing * 100).toFixed(2))} s`;
+  }
+  if (kind === 'clock') return `${decimal(parsed.val)} minut`;
+  if (kind === 'reps') return `${decimal(parsed.val)} powt.`;
+  if (kind === 'distance') return `${decimal(parsed.val)} m`;
+  if (kind === 'course' || kind === 'seconds') return `${decimal(parsed.val.toFixed(2))} s`;
+  return decimal(parsed.val);
+}

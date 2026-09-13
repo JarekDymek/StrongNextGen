@@ -201,3 +201,29 @@ RESULTS_FROM_EMAIL=Strongman Next <wyniki@zweryfikowana-domena.example>
 ## Status wydania
 
 Wersja 1.3.4 przeszła testy reguł punktacji, klasyfikacji sezonu, zachowania imprezy 12 po resecie, formularza PL/EN, importu schema v1/v2/v3, prywatnych kontaktów, odbioru pliku przez PWA, wysyłki pełnego raportu HTML i fallbacku wyników, pełnego przebiegu zawodów, widoków telefonu i iPada oraz działania offline. Projekt nie wymaga bundlowania: publikowany katalog jest bezpośrednio produkcyjną aplikacją statyczną GitHub Pages.
+
+## Obowiązujący zapis wyników (1.3.6)
+
+Wspólny formatter `formatEventResult` obsługuje podsumowania konkurencji,
+klasyfikację szczegółową, raport HTML (również załącznik wysyłany zawodnikom)
+i telebim. Eksport pełnego stanu JSON dodaje `displayResult`, zachowując
+`result` i `rawInput` do importu, punktacji oraz rozstrzygania remisów.
+
+- Czas: sekundy, np. `51,45 s`; wejście `1:12.5` daje `72,50 s`.
+- Nieukończony dystans: np. `18,5 m`, z wejścia `018.5` albo `DNF+18.5m`.
+  Nie wolno odgadywać dystansu na podstawie samego czasu lub miejsca.
+- Powtórzenia: `5 powt.`; brak zaliczonego powtórzenia: `0 powtórzeń`.
+- Brak dystansu: `0 metrów`. Raporty nie pokazują technicznego oznaczenia DNF.
+- Zegar: `155 minut`; pełne okrążenie ma 60 minut. To miara okrążenia,
+  nie czas ze stopera; wartości nie są przeliczane na sekundy.
+- Przerzucanie sześciu worków nad poprzeczką: `6 na 6 worków — 19,20 s`,
+  `5 na 6 worków — 19,82 s`, `4 na 6 worków — 35,81 s`.
+  Dotychczasowy zapis wejściowy to czas + 100 za każdy brakujący worek
+  (odpowiednio `19.20`, `119.82`, `235.81`). Reguła dotyczy wyłącznie
+  tej konkurencji, a nie każdego wyniku powyżej 100.
+- Puste lub niepoprawne dane pokazują `—`, bez dopisywania osiągnięcia.
+
+Jednostki rozpoznawane są z nazwy i typu konkurencji. Dla nieznanej
+konkurencji typu „więcej = lepiej” formatter nie odgaduje jednostki.
+Nazwy oraz obciążenia konkretnych zawodów pozostają danymi edytowanymi
+w bazie konkurencji, nie są narzucane wszystkim zawodom.
